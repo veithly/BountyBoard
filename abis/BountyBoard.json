@@ -39,13 +39,26 @@
 		"anonymous": false,
 		"inputs": [
 			{
-				"indexed": false,
+				"indexed": true,
+				"internalType": "uint256",
+				"name": "boardId",
+				"type": "uint256"
+			}
+		],
+		"name": "BountyBoardClosed",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
 				"internalType": "uint256",
 				"name": "boardId",
 				"type": "uint256"
 			},
 			{
-				"indexed": false,
+				"indexed": true,
 				"internalType": "address",
 				"name": "creator",
 				"type": "address"
@@ -55,6 +68,24 @@
 				"internalType": "string",
 				"name": "name",
 				"type": "string"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "description",
+				"type": "string"
+			},
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "rewardToken",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "createdAt",
+				"type": "uint256"
 			}
 		],
 		"name": "BountyBoardCreated",
@@ -64,19 +95,69 @@
 		"anonymous": false,
 		"inputs": [
 			{
-				"indexed": false,
+				"indexed": true,
 				"internalType": "uint256",
 				"name": "boardId",
 				"type": "uint256"
 			},
 			{
 				"indexed": false,
+				"internalType": "string",
+				"name": "name",
+				"type": "string"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "description",
+				"type": "string"
+			},
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "rewardToken",
+				"type": "address"
+			}
+		],
+		"name": "BountyBoardUpdated",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "uint256",
+				"name": "boardId",
+				"type": "uint256"
+			},
+			{
+				"indexed": true,
+				"internalType": "uint256",
+				"name": "bountyId",
+				"type": "uint256"
+			}
+		],
+		"name": "BountyCancelled",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "uint256",
+				"name": "boardId",
+				"type": "uint256"
+			},
+			{
+				"indexed": true,
 				"internalType": "uint256",
 				"name": "bountyId",
 				"type": "uint256"
 			},
 			{
-				"indexed": false,
+				"indexed": true,
 				"internalType": "address",
 				"name": "creator",
 				"type": "address"
@@ -86,6 +167,30 @@
 				"internalType": "string",
 				"name": "description",
 				"type": "string"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "deadline",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "maxCompletions",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "rewardAmount",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "createdAt",
+				"type": "uint256"
 			}
 		],
 		"name": "BountyCreated",
@@ -95,15 +200,27 @@
 		"anonymous": false,
 		"inputs": [
 			{
-				"indexed": false,
+				"indexed": true,
 				"internalType": "uint256",
 				"name": "boardId",
 				"type": "uint256"
 			},
 			{
-				"indexed": false,
+				"indexed": true,
 				"internalType": "uint256",
 				"name": "bountyId",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "bountyDescription",
+				"type": "string"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "rewardAmount",
 				"type": "uint256"
 			}
 		],
@@ -114,13 +231,13 @@
 		"anonymous": false,
 		"inputs": [
 			{
-				"indexed": false,
+				"indexed": true,
 				"internalType": "uint256",
 				"name": "boardId",
 				"type": "uint256"
 			},
 			{
-				"indexed": false,
+				"indexed": true,
 				"internalType": "uint256",
 				"name": "bountyId",
 				"type": "uint256"
@@ -130,6 +247,18 @@
 				"internalType": "address",
 				"name": "participant",
 				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "bountyDescription",
+				"type": "string"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "rewardAmount",
+				"type": "uint256"
 			}
 		],
 		"name": "BountySucceeded",
@@ -139,15 +268,39 @@
 		"anonymous": false,
 		"inputs": [
 			{
-				"indexed": false,
+				"indexed": true,
 				"internalType": "uint256",
 				"name": "boardId",
 				"type": "uint256"
 			},
 			{
-				"indexed": false,
+				"indexed": true,
 				"internalType": "uint256",
 				"name": "bountyId",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "description",
+				"type": "string"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "deadline",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "maxCompletions",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "rewardAmount",
 				"type": "uint256"
 			}
 		],
@@ -246,22 +399,34 @@
 		"anonymous": false,
 		"inputs": [
 			{
-				"indexed": false,
+				"indexed": true,
 				"internalType": "uint256",
 				"name": "boardId",
 				"type": "uint256"
 			},
 			{
-				"indexed": false,
+				"indexed": true,
 				"internalType": "uint256",
 				"name": "bountyId",
 				"type": "uint256"
 			},
 			{
-				"indexed": false,
+				"indexed": true,
 				"internalType": "address",
 				"name": "submitter",
 				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "proof",
+				"type": "string"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "submittedAt",
+				"type": "uint256"
 			}
 		],
 		"name": "SubmissionMade",
@@ -271,19 +436,19 @@
 		"anonymous": false,
 		"inputs": [
 			{
-				"indexed": false,
+				"indexed": true,
 				"internalType": "uint256",
 				"name": "boardId",
 				"type": "uint256"
 			},
 			{
-				"indexed": false,
+				"indexed": true,
 				"internalType": "uint256",
 				"name": "bountyId",
 				"type": "uint256"
 			},
 			{
-				"indexed": false,
+				"indexed": true,
 				"internalType": "address",
 				"name": "reviewer",
 				"type": "address"
@@ -308,13 +473,13 @@
 		"anonymous": false,
 		"inputs": [
 			{
-				"indexed": false,
+				"indexed": true,
 				"internalType": "uint256",
 				"name": "boardId",
 				"type": "uint256"
 			},
 			{
-				"indexed": false,
+				"indexed": true,
 				"internalType": "address",
 				"name": "pledger",
 				"type": "address"
@@ -333,13 +498,38 @@
 		"anonymous": false,
 		"inputs": [
 			{
-				"indexed": false,
+				"indexed": true,
 				"internalType": "uint256",
 				"name": "boardId",
 				"type": "uint256"
 			},
 			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "withdrawer",
+				"type": "address"
+			},
+			{
 				"indexed": false,
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "TokensWithdrawn",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "uint256",
+				"name": "boardId",
+				"type": "uint256"
+			},
+			{
+				"indexed": true,
 				"internalType": "address",
 				"name": "user",
 				"type": "address"
@@ -351,19 +541,6 @@
 	{
 		"stateMutability": "payable",
 		"type": "fallback"
-	},
-	{
-		"inputs": [],
-		"name": "ADMIN_ROLE",
-		"outputs": [
-			{
-				"internalType": "bytes32",
-				"name": "",
-				"type": "bytes32"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
 	},
 	{
 		"inputs": [],
@@ -394,12 +571,22 @@
 	{
 		"inputs": [
 			{
+				"internalType": "uint256",
+				"name": "_boardId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_bountyId",
+				"type": "uint256"
+			},
+			{
 				"internalType": "address",
 				"name": "_reviewer",
 				"type": "address"
 			}
 		],
-		"name": "addReviewer",
+		"name": "addReviewerToBounty",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -456,6 +643,11 @@
 				"internalType": "uint256",
 				"name": "createdAt",
 				"type": "uint256"
+			},
+			{
+				"internalType": "bool",
+				"name": "closed",
+				"type": "bool"
 			}
 		],
 		"stateMutability": "view",
@@ -508,6 +700,37 @@
 			}
 		],
 		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_boardId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_bountyId",
+				"type": "uint256"
+			}
+		],
+		"name": "cancelBounty",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_boardId",
+				"type": "uint256"
+			}
+		],
+		"name": "closeBoard",
+		"outputs": [],
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
@@ -812,11 +1035,6 @@
 				"type": "uint256"
 			},
 			{
-				"internalType": "address[]",
-				"name": "_reviewers",
-				"type": "address[]"
-			},
-			{
 				"internalType": "uint256",
 				"name": "_rewardAmount",
 				"type": "uint256"
@@ -830,12 +1048,53 @@
 	{
 		"inputs": [
 			{
+				"internalType": "uint256",
+				"name": "_boardId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "string",
+				"name": "_name",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "_description",
+				"type": "string"
+			},
+			{
+				"internalType": "address",
+				"name": "_rewardToken",
+				"type": "address"
+			}
+		],
+		"name": "updateBountyBoard",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
 				"internalType": "address",
 				"name": "newImplementation",
 				"type": "address"
 			}
 		],
 		"name": "upgradeTo",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_boardId",
+				"type": "uint256"
+			}
+		],
+		"name": "withdrawPledgedTokens",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"

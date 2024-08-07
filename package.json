@@ -9,14 +9,23 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@prisma/client": "^5.18.0",
+    "@rainbow-me/rainbowkit": "^2.1.4",
+    "@tanstack/react-query": "^5.51.21",
+    "autoprefixer": "^10.4.20",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
+    "graphql-request": "^7.1.0",
     "lucide-react": "^0.424.0",
     "next": "14.2.5",
+    "prisma": "^5.18.0",
     "react": "^18",
     "react-dom": "^18",
+    "shadcn-ui": "^0.8.0",
     "tailwind-merge": "^2.4.0",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "viem": "2.x",
+    "wagmi": "^2.12.4"
   },
   "devDependencies": {
     "@types/node": "^20",
@@ -25,7 +34,7 @@
     "eslint": "^8",
     "eslint-config-next": "14.2.5",
     "postcss": "^8",
-    "tailwindcss": "^3.4.1",
+    "tailwindcss": "^3.4.7",
     "typescript": "^5"
   }
 }

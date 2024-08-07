@@ -8,7 +8,6 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 
 contract BountyBoard is Initializable, AccessControl {
     bytes32 public constant REVIEWER_ROLE = keccak256("REVIEWER_ROLE");
-    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
 
     // Structure to represent a bounty (task)
     struct Bounty {
@@ -17,10 +16,11 @@ contract BountyBoard is Initializable, AccessControl {
         uint256 deadline;       // Unix timestamp for the bounty deadline (0 for no deadline)
         uint256 maxCompletions; // Maximum number of completions allowed
         uint256 numCompletions; // Current number of completions
-        address[] reviewers;    // Addresses of reviewers (can be empty for no review)
+        mapping(address => bool) reviewers;    // Mapping of reviewers for this specific bounty
         bool completed;         // Flag to indicate if the bounty is completed
         uint256 rewardAmount;    // Amount of reward tokens offered for the bounty
         uint256 createdAt;      // Timestamp of bounty creation
+        bool cancelled;          // Flag to indicate if the bounty is cancelled
     }
 
     // Structure to represent a bounty board
@@ -33,6 +33,7 @@ contract BountyBoard is Initializable, AccessControl {
         uint256 totalPledged;   // Total amount of reward tokens pledged
         mapping(address => bool) members; // Mapping to track board members
         uint256 createdAt;      // Timestamp of board creation
+        bool closed;            // Flag to indicate if the board is closed
     }
 
     // Mapping from bounty board ID to bounty board details
@@ -52,31 +53,43 @@ contract BountyBoard is Initializable, AccessControl {
     mapping(uint256 => mapping(uint256 => Submission[])) public bountySubmissions;
 
     // Event emitted when a new bounty board is created
-    event BountyBoardCreated(uint256 boardId, address creator, string name);
+    event BountyBoardCreated(uint256 indexed boardId, address indexed creator, string name, string description, address rewardToken, uint256 createdAt);
 
     // Event emitted when a new bounty is created
-    event BountyCreated(uint256 boardId, uint256 bountyId, address creator, string description);
+    event BountyCreated(uint256 indexed boardId, uint256 indexed bountyId, address indexed creator, string description, uint256 deadline, uint256 maxCompletions, uint256 rewardAmount, uint256 createdAt);
 
     // Event emitted when a bounty is successfully completed
-    event BountySucceeded(uint256 boardId, uint256 bountyId, address participant);
+    event BountySucceeded(uint256 indexed boardId, uint256 indexed bountyId, address participant, string bountyDescription, uint256 rewardAmount);
 
     // Event emitted when a bounty fails due to no valid submissions
-    event BountyFailed(uint256 boardId, uint256 bountyId);
+    event BountyFailed(uint256 indexed boardId, uint256 indexed bountyId, string bountyDescription, uint256 rewardAmount);
 
     // Event emitted when tokens are pledged to a bounty board
-    event TokensPledged(uint256 boardId, address pledger, uint256 amount);
+    event TokensPledged(uint256 indexed boardId, address indexed pledger, uint256 amount);
 
     // Event emitted when bounty details are updated
-    event BountyUpdated(uint256 boardId, uint256 bountyId);
+    event BountyUpdated(uint256 indexed boardId, uint256 indexed bountyId, string description, uint256 deadline, uint256 maxCompletions, uint256 rewardAmount);
 
     // Event emitted when a submission is made for a bounty
-    event SubmissionMade(uint256 boardId, uint256 bountyId, address submitter);
+    event SubmissionMade(uint256 indexed boardId, uint256 indexed bountyId, address indexed submitter, string proof, uint256 submittedAt);
 
     // Event emitted when a submission is reviewed
-    event SubmissionReviewed(uint256 boardId, uint256 bountyId, address reviewer, address submitter, bool approved);
+    event SubmissionReviewed(uint256 indexed boardId, uint256 indexed bountyId, address indexed reviewer, address submitter, bool approved);
 
     // Event emitted when a user joins a board
-    event UserJoinedBoard(uint256 boardId, address user);
+    event UserJoinedBoard(uint256 indexed boardId, address indexed user);
+
+    // Event emitted when a bounty is cancelled
+    event BountyCancelled(uint256 indexed boardId, uint256 indexed bountyId);
+
+    // Event emitted when a bounty board is closed
+    event BountyBoardClosed(uint256 indexed boardId);
+
+    // Event emitted when pledged tokens are withdrawn
+    event TokensWithdrawn(uint256 indexed boardId, address indexed withdrawer, uint256 amount);
+
+    // Event emitted when a bounty board is updated
+    event BountyBoardUpdated(uint256 indexed boardId, string name, string description, address rewardToken);
 
     // --- Upgradeability ---
     address public implementation;
@@ -91,8 +104,6 @@ contract BountyBoard is Initializable, AccessControl {
     function initialize() public initializer {
         boardCount = 0;
         implementation = address(this);
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _grantRole(ADMIN_ROLE, msg.sender); // Grant the admin role to the deployer
     }
 
     // --- Bounty Board Functions ---
@@ -123,8 +134,26 @@ contract BountyBoard is Initializable, AccessControl {
         // Record the creation time
         newBoard.createdAt = block.timestamp;
 
-        // Emit the BountyBoardCreated event
-        emit BountyBoardCreated(boardCount, msg.sender, _name);
+        // Grant the creator the REVIEWER_ROLE for this board
+        _grantRole(REVIEWER_ROLE, msg.sender);
+
+        // Emit the BountyBoardCreated event with relevant data
+        emit BountyBoardCreated(boardCount, msg.sender, _name, _description, _rewardToken, block.timestamp);
+    }
+
+    // Function to update bounty board details
+    function updateBountyBoard(uint256 _boardId, string memory _name, string memory _description, address _rewardToken) public {
+        Board storage board = boards[_boardId];
+        require(msg.sender == board.creator, "Only the board creator can update the board");
+
+        board.name = _name;
+        board.description = _description;
+
+        if (_rewardToken != address(0)) {
+            board.rewardToken = IERC20(_rewardToken);
+        }
+
+        emit BountyBoardUpdated(_boardId, _name, _description, _rewardToken);
     }
 
     // Function to create a new bounty within a bounty board
@@ -135,13 +164,9 @@ contract BountyBoard is Initializable, AccessControl {
         uint256 _maxCompletions,
         uint256 _rewardAmount
     ) public {
-        // Get the bounty board from the `boards` mapping
         Board storage board = boards[_boardId];
+        require(board.creator == msg.sender, "Only the board creator can create bounties");
 
-        // Only the bounty board creator can create bounties
-        require(board.creator == msg.sender, "Only the bounty board creator can create bounties");
-
-        // Create a new bounty and add it to the `bounties` array of the board
         uint256 bountyId = board.bounties.length;
         board.bounties.push();
         Bounty storage newBounty = board.bounties[bountyId];
@@ -149,46 +174,40 @@ contract BountyBoard is Initializable, AccessControl {
         newBounty.creator = msg.sender;
         newBounty.description = _description;
         newBounty.deadline = _deadline;
-        newBounty.maxCompletions = _maxCompletions > 0 ? _maxCompletions : 1; // Default to 1 if 0 or less
+        newBounty.maxCompletions = _maxCompletions > 0 ? _maxCompletions : 1;
         newBounty.numCompletions = 0;
         newBounty.completed = false;
         newBounty.rewardAmount = _rewardAmount;
         newBounty.createdAt = block.timestamp;
+        newBounty.cancelled = false;
 
-        // Set the default reviewer to the creator
-        newBounty.reviewers.push(msg.sender);
+        // Grant the creator the REVIEWER_ROLE for this specific bounty
+        newBounty.reviewers[msg.sender] = true;
 
-        // Emit the BountyCreated event
-        emit BountyCreated(_boardId, bountyId, msg.sender, _description);
+        emit BountyCreated(_boardId, bountyId, msg.sender, _description, _deadline, _maxCompletions, _rewardAmount, block.timestamp);
     }
-
 
     // Function to pledge tokens to a bounty board
     function pledgeTokens(uint256 _boardId, uint256 _amount) public payable {
-        // Get the bounty board from the `boards` mapping
         Board storage board = boards[_boardId];
+        require(!board.closed, "Board is closed");
 
-        // If the reward token is ETH, require a non-zero ETH value
         if (board.rewardToken == IERC20(address(0))) {
             require(msg.value > 0, "Pledge amount must be greater than 0");
-            // Update the total pledged amount for the board (in Wei)
             board.totalPledged += msg.value;
         } else {
-            // Require a non-zero token amount
             require(_amount > 0, "Pledge amount must be greater than 0");
-            // Transfer tokens from the user to the contract
             board.rewardToken.transferFrom(msg.sender, address(this), _amount);
-            // Update the total pledged amount for the board
             board.totalPledged += _amount;
         }
 
-        // Emit the TokensPledged event
         emit TokensPledged(_boardId, msg.sender, board.rewardToken == IERC20(address(0)) ? msg.value : _amount);
     }
 
     // Function to join a bounty board
     function joinBoard(uint256 _boardId) public {
         Board storage board = boards[_boardId];
+        require(!board.closed, "Board is closed");
         require(!board.members[msg.sender], "User is already a member of this board");
 
         board.members[msg.sender] = true;
@@ -202,37 +221,31 @@ contract BountyBoard is Initializable, AccessControl {
         string memory _description,
         uint256 _deadline,
         uint256 _maxCompletions,
-        address[] memory _reviewers,
         uint256 _rewardAmount
     ) public {
-        // Get the bounty board and bounty from the `boards` mapping
         Board storage board = boards[_boardId];
         Bounty storage bounty = board.bounties[_bountyId];
+        require(msg.sender == bounty.creator, "Only the bounty creator can update the bounty");
+        require(!bounty.completed, "Bounty is already completed");
+        require(!bounty.cancelled, "Bounty is cancelled");
 
-        // Only the bounty creator can update the bounty
-        require(bounty.creator == msg.sender, "Only the bounty creator can update the bounty");
-
-        // Update the bounty details
         bounty.description = _description;
         bounty.deadline = _deadline;
         bounty.maxCompletions = _maxCompletions;
-        bounty.reviewers = _reviewers;
         bounty.rewardAmount = _rewardAmount;
 
-        // Emit the BountyUpdated event
-        emit BountyUpdated(_boardId, _bountyId);
+        emit BountyUpdated(_boardId, _bountyId, _description, _deadline, _maxCompletions, _rewardAmount);
     }
 
     // Function to submit proof of completion for a bounty
     function submitProof(uint256 _boardId, uint256 _bountyId, string memory _proof) public {
         Board storage board = boards[_boardId];
         Bounty storage bounty = board.bounties[_bountyId];
-
-        // Ensure the bounty is not completed and the user is a member of the board
+        require(!board.closed, "Board is closed");
         require(!bounty.completed, "Bounty is already completed");
+        require(!bounty.cancelled, "Bounty is cancelled");
         require(board.members[msg.sender], "User is not a member of this board");
 
-        // Add the submission to the bountySubmissions array
         bountySubmissions[_boardId][_bountyId].push(Submission({
             submitter: msg.sender,
             proof: _proof,
@@ -241,8 +254,7 @@ contract BountyBoard is Initializable, AccessControl {
             submittedAt: block.timestamp
         }));
 
-        // Emit the SubmissionMade event
-        emit SubmissionMade(_boardId, _bountyId, msg.sender);
+        emit SubmissionMade(_boardId, _bountyId, msg.sender, _proof, block.timestamp);
     }
 
     // Function for reviewers to review a submission
@@ -251,34 +263,29 @@ contract BountyBoard is Initializable, AccessControl {
         Bounty storage bounty = board.bounties[_bountyId];
         Submission storage submission = bountySubmissions[_boardId][_bountyId][_submissionIndex];
 
-        // Ensure the caller has the REVIEWER_ROLE and the bounty is not completed
-        require(hasRole(REVIEWER_ROLE, msg.sender) || msg.sender == bounty.creator, "Caller is not a reviewer");
+        require(bounty.reviewers[msg.sender], "Caller is not a reviewer for this bounty");
         require(!bounty.completed, "Bounty is already completed");
+        require(!bounty.cancelled, "Bounty is cancelled");
 
-        // Update the submission
         submission.reviewed = true;
         submission.approved = _approved;
 
-        // Emit the SubmissionReviewed event
         emit SubmissionReviewed(_boardId, _bountyId, msg.sender, submission.submitter, _approved);
 
-        // If the submission is approved, distribute the reward and increment completion count
         if (_approved) {
             distributeReward(_boardId, _bountyId, submission.submitter);
             bounty.numCompletions++;
 
-            // Check if the bounty has reached the maximum number of completions
             if (bounty.numCompletions == bounty.maxCompletions) {
                 bounty.completed = true;
             }
 
-            emit BountySucceeded(_boardId, _bountyId, submission.submitter);
+            emit BountySucceeded(_boardId, _bountyId, submission.submitter, bounty.description, bounty.rewardAmount);
         }
 
-        // If all submissions are reviewed and none are approved, the bounty fails
         if (allSubmissionsReviewed(_boardId, _bountyId) && !anySubmissionApproved(_boardId, _bountyId)) {
             bounty.completed = true;
-            emit BountyFailed(_boardId, _bountyId);
+            emit BountyFailed(_boardId, _bountyId, bounty.description, bounty.rewardAmount);
         }
     }
 
@@ -287,18 +294,14 @@ contract BountyBoard is Initializable, AccessControl {
         Board storage board = boards[_boardId];
         Bounty storage bounty = board.bounties[_bountyId];
 
-        // Ensure the bounty has enough pledged tokens/ETH
         require(board.totalPledged >= bounty.rewardAmount, "Not enough pledged tokens to distribute reward");
 
-        // If the reward token is ETH, transfer ETH directly
         if (board.rewardToken == IERC20(address(0))) {
             payable(_participant).transfer(bounty.rewardAmount);
         } else {
-            // Transfer the reward tokens to the participant
             board.rewardToken.transfer(_participant, bounty.rewardAmount);
         }
 
-        // Update the total pledged amount for the board
         board.totalPledged -= bounty.rewardAmount;
     }
 
@@ -324,18 +327,60 @@ contract BountyBoard is Initializable, AccessControl {
         return false;
     }
 
-    // Function for the admin to add a reviewer
-    function addReviewer(address _reviewer) public onlyRole(ADMIN_ROLE) {
-        _grantRole(REVIEWER_ROLE, _reviewer);
+    // Function for the board creator to add a reviewer to a specific bounty
+    function addReviewerToBounty(uint256 _boardId, uint256 _bountyId, address _reviewer) public {
+        Board storage board = boards[_boardId];
+        Bounty storage bounty = board.bounties[_bountyId];
+        require(msg.sender == bounty.creator, "Only the bounty creator can add reviewers");
+
+        bounty.reviewers[_reviewer] = true;
     }
+
+    // Function for the board creator to cancel a bounty
+    function cancelBounty(uint256 _boardId, uint256 _bountyId) public {
+        Board storage board = boards[_boardId];
+        Bounty storage bounty = board.bounties[_bountyId];
+        require(msg.sender == bounty.creator, "Only the bounty creator can cancel the bounty");
+        require(!bounty.completed, "Bounty is already completed");
+
+        bounty.cancelled = true;
+        emit BountyCancelled(_boardId, _bountyId);
+    }
+
+    // Function for the board creator to close the board
+    function closeBoard(uint256 _boardId) public {
+        Board storage board = boards[_boardId];
+        require(msg.sender == board.creator, "Only the board creator can close the board");
+
+        board.closed = true;
+        emit BountyBoardClosed(_boardId);
+    }
+
+    // Function for users to withdraw pledged tokens if the board is closed
+    function withdrawPledgedTokens(uint256 _boardId) public {
+        Board storage board = boards[_boardId];
+        require(board.closed, "Board is not closed");
+        require(board.members[msg.sender], "User is not a member of this board");
+
+        uint256 amount = board.rewardToken == IERC20(address(0)) ? board.totalPledged : 0;
+
+        if (amount > 0) {
+            board.totalPledged = 0;
+            payable(msg.sender).transfer(amount);
+        } else {
+            require(board.rewardToken.balanceOf(address(this)) >= board.totalPledged, "Not enough tokens to withdraw");
+            board.rewardToken.transfer(msg.sender, board.totalPledged);
+            board.totalPledged = 0;
+        }
+
+        emit TokensWithdrawn(_boardId, msg.sender, amount);
+    }
+
 
     // --- Upgradeability Functions ---
 
     function upgradeTo(address newImplementation) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        // Require a valid implementation address
         require(newImplementation != address(0), "Invalid implementation address");
-
-        // Update the implementation address
         implementation = newImplementation;
     }
 
@@ -351,13 +396,9 @@ contract BountyBoard is Initializable, AccessControl {
 
     // Internal function to handle fallback and receive
     function _fallback() internal {
-        // Get the current implementation address
         address _implementation = implementation;
-
-        // Require a valid implementation address
         require(_implementation != address(0), "Implementation not set");
 
-        // Delegate the call to the implementation contract
         assembly {
             calldatacopy(0, 0, calldatasize())
             let result := delegatecall(gas(), _implementation, 0, calldatasize(), 0, 0)
