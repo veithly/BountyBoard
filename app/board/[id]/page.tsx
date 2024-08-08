@@ -28,7 +28,8 @@ import {
   useUpdateBountyBoard,
   useJoinBoard,
   usePledgeTokens,
-  useUpdateBounty } from '@/utils/contract';
+  useUpdateBounty, 
+  useTokenSymbol} from '@/utils/contract';
 
 // GraphQL and Contract Addresses
 const url = process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT || 'https://api.studio.thegraph.com/query/82957/bounty-board/version/latest';
@@ -116,6 +117,10 @@ export default function BoardPage() {
               maxCompletions
               numCompletions
               rewardAmount
+              reviewers {
+                id
+                reviewerAddress
+              }
               createdAt
             }
             members {
@@ -140,9 +145,22 @@ export default function BoardPage() {
           }
         }
       `;
+
+      const reviewersQuery = gql`
+        query ReviewersForBounty($boardId: ID!, $bountyId: ID!) {
+          reviewers(where: { boardId: $boardId, bountyId: $bountyId }) {
+            id
+            reviewerAddress
+          }
+        }
+      `;
       // Fetch data from The Graph
       const boardData = await request(url, boardQuery, { boardId });
       const submissionsData = await request(url, submissionsQuery, { boardId });
+      const reviewersData = await request(url, reviewersQuery, {
+        boardId,
+        bountyId: 0,
+      });
 
       return {
         board: boardData.board,
@@ -150,31 +168,16 @@ export default function BoardPage() {
       };
     },
   });
+  const tokenSymbol = 'mtk';// useTokenSymbol(data?.board.rewardToken);
 
   if (!data?.board) {
     return <div>Loading...</div>;
   }
-
   const board = data.board;
-  const submissions = data.submissions;
   const rewardTokenAddress = board.rewardToken;
+  const submissions = data.submissions;
   const totalPledged = board.totalPledged;
 
-  // // eslint-disable-next-line react-hooks/rules-of-hooks
-  // const {data: tokenSymbol} = useReadContract({
-  //   address: rewardTokenAddress,
-  //   abi: [
-  //     {
-  //       inputs: [],
-  //       name: 'symbol',
-  //       outputs: [{ internalType: 'string', name: '', type: 'string' }],
-  //       stateMutability: 'view',
-  //       type: 'function',
-  //     },
-  //   ],
-  //   functionName: 'symbol',
-  // });
-  const tokenSymbol = 'mtk';
   return (
     <div className="container mx-auto p-4">
       <BoardDetails
@@ -234,6 +237,10 @@ function BoardDetails({
   // User Roles
   const isCreator = address?.toLowerCase() === board.creator;
   const isMember = board.members.some((member) => member.member === address?.toLowerCase());
+  const isReviewerForBounty = (bountyId: string) => {
+    const bounty = board.bounties.find((b) => b.id === bountyId);
+    return bounty?.reviewers.includes(address?.toLowerCase());
+  };
 
   // Modal Handlers
   const handleOpenModal = (
@@ -259,14 +266,6 @@ function BoardDetails({
       switch (action) {
         case 'joinBoard':
           await joinBoard({ boardId: boardIdNum });
-          break;
-        case 'pledgeTokens':
-          // TODO: Get pledge amount from user input
-          const amount = 1; // Example amount in ether
-          await pledgeTokens({
-            boardId: boardIdNum,
-            amount: amount,
-          });
           break;
         case 'cancelBounty':
           await cancelBounty({
@@ -457,6 +456,7 @@ function BoardDetails({
           members={board.members}
           bounties={board.bounties}
           submissions={submissions}
+          address={address}
           onOpenReviewSubmissionModal={(submission) =>
             handleOpenModal('reviewSubmission', submission.bounty.id)
           }

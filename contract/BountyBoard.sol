@@ -79,6 +79,9 @@ contract BountyBoard is Initializable, AccessControl {
     // Event emitted when a user joins a board
     event UserJoinedBoard(uint256 indexed boardId, address indexed user);
 
+    // Event emitted when a reviewer is added to a bounty
+    event ReviewerAdded(uint256 indexed boardId, uint256 indexed bountyId, address reviewer);
+
     // Event emitted when a bounty is cancelled
     event BountyCancelled(uint256 indexed boardId, uint256 indexed bountyId);
 
@@ -110,9 +113,6 @@ contract BountyBoard is Initializable, AccessControl {
 
     // Function to create a new bounty board
     function createBountyBoard(string memory _name, string memory _description, address _rewardToken) public {
-        // Increment the board count
-        boardCount++;
-
         // Create a new bounty board and store it in the `boards` mapping
         Board storage newBoard = boards[boardCount];
         newBoard.creator = msg.sender;
@@ -139,6 +139,8 @@ contract BountyBoard is Initializable, AccessControl {
 
         // Emit the BountyBoardCreated event with relevant data
         emit BountyBoardCreated(boardCount, msg.sender, _name, _description, _rewardToken, block.timestamp);
+
+        boardCount++;
     }
 
     // Function to update bounty board details
@@ -334,6 +336,7 @@ contract BountyBoard is Initializable, AccessControl {
         require(msg.sender == bounty.creator, "Only the bounty creator can add reviewers");
 
         bounty.reviewers[_reviewer] = true;
+        emit ReviewerAdded(_boardId, _bountyId, _reviewer); 
     }
 
     // Function for the board creator to cancel a bounty

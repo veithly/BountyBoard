@@ -1,6 +1,7 @@
-import { useWriteContract } from 'wagmi';
+import { useReadContract, useWriteContract } from 'wagmi';
 import { useToast } from "@/components/ui/use-toast"
 import abi from '@/abis/BountyBoard.json';
+import { erc20Abi } from 'viem';
 
 const contractAddress = process.env.NEXT_PUBLIC_BOUNTY_BOARD_CONTRACT_ADDRESS as `0x${string}`;
 
@@ -131,4 +132,13 @@ export function useUpdateBountyBoard() {
     { boardId: number; name: string; description: string; rewardToken: string }) => {
     return contractFunction([boardId, name, description, rewardToken]);
   };
+}
+
+export function useTokenSymbol(rewardTokenAddress: `0x${string}` | undefined) {
+  if (rewardTokenAddress)
+    return useReadContract({
+      address: rewardTokenAddress,
+      abi: erc20Abi,
+      functionName: 'symbol',
+    });
 }

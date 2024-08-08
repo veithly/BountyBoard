@@ -26,7 +26,7 @@ export default function BountyList({
   onCancelBounty
 }: BountyListProps) {
 
-  const isCreator = bounties.some(bounty => bounty.creator === address);
+  const isCreator = bounties.some(bounty => bounty.creator === address?.toLowerCase());
 
   return (
     <ul>

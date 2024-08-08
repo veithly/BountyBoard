@@ -11,15 +11,17 @@ import {
   TableRow
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
+import { Check, X } from 'lucide-react';
 
 interface MemberSubmissionTableProps {
   members: any[];
   bounties: any[];
   submissions: any[];
   onOpenReviewSubmissionModal: (submission: any) => void;
+  address: string | undefined;
 }
 
-export default function MemberSubmissionTable({ members, bounties, submissions, onOpenReviewSubmissionModal }: MemberSubmissionTableProps) {
+export default function MemberSubmissionTable({ members, bounties, submissions, address,onOpenReviewSubmissionModal }: MemberSubmissionTableProps) {
 
   // Create a mapping to easily find submissions by submitter and bounty ID
   const submissionsByMemberAndBounty = submissions.reduce((acc, submission) => {
@@ -48,18 +50,34 @@ export default function MemberSubmissionTable({ members, bounties, submissions, 
           <TableRow key={member.member}>
             <TableCell className="font-medium">{member.member}</TableCell>
             {bounties.map((bounty) => {
-              const submission = submissionsByMemberAndBounty[member.member]?.[bounty.id];
+              const submission =
+                submissionsByMemberAndBounty[member.member]?.[bounty.id];
+              console.log(submission, address, bounty);
               return (
                 <TableCell key={bounty.id}>
-                  {submission ? (
-                    <Button
-                      variant="link"
-                      onClick={() => onOpenReviewSubmissionModal(submission)}
-                    >
-                      {submission.reviewed ? "Reviewed" : "Pending Review"}
-                    </Button>
+                  { 
+                  submission ? (
+                    submission.reviewed ? (
+                      submission.approved ? (
+                        <Check className="h-5 w-5 text-green-500" />
+                      ) : (
+                        <X className="h-5 w-5 text-red-500" />
+                      )
+                    ) : (
+                      // Only show "Pending Review" button if the user is a reviewer
+                      bounty.reviewers.includes(address?.toLowerCase()) ? ( 
+                        <Button
+                          variant="link"
+                          onClick={() => onOpenReviewSubmissionModal(submission)}
+                        >
+                          Pending Review
+                        </Button>
+                      ) : (
+                        'Pending Review'
+                      )
+                    )
                   ) : (
-                    "Not Submitted"
+                    'Not Submitted'
                   )}
                 </TableCell>
               );
