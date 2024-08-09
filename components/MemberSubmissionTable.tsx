@@ -8,37 +8,31 @@ import {
   TableCell,
   TableHead,
   TableHeader,
-  TableRow
+  TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Check, X } from 'lucide-react';
+import { Board, Bounty, Member, Reviewer, Submission } from '@/types/types';
+import { Address } from './ui/Address';
 
 interface MemberSubmissionTableProps {
-  members: any[];
-  bounties: any[];
-  submissions: any[];
-  onOpenReviewSubmissionModal: (submission: any) => void;
+  board: Board;
   address: string | undefined;
+  onOpenReviewSubmissionModal: (submission: Submission, bounty: Bounty) => void;
 }
 
-export default function MemberSubmissionTable({ members, bounties, submissions, address,onOpenReviewSubmissionModal }: MemberSubmissionTableProps) {
-
-  // Create a mapping to easily find submissions by submitter and bounty ID
-  const submissionsByMemberAndBounty = submissions.reduce((acc, submission) => {
-    const memberId = submission.submitter;
-    const bountyId = submission.bounty.id;
-    acc[memberId] = acc[memberId] || {};
-    acc[memberId][bountyId] = submission;
-    return acc;
-  }, {});
-
+export default function MemberSubmissionTable({
+  board,
+  address,
+  onOpenReviewSubmissionModal,
+}: MemberSubmissionTableProps) {
   return (
     <Table>
       <TableCaption>Member Submission Status</TableCaption>
       <TableHeader>
         <TableRow>
           <TableCell className="font-bold">Member</TableCell>
-          {bounties.map((bounty) => (
+          {board.bounties.map((bounty) => (
             <TableCell key={bounty.id} className="font-bold">
               {bounty.description}
             </TableCell>
@@ -46,17 +40,15 @@ export default function MemberSubmissionTable({ members, bounties, submissions, 
         </TableRow>
       </TableHeader>
       <TableBody>
-        {members.map((member) => (
+        {board.members.map((member: Member) => (
           <TableRow key={member.member}>
-            <TableCell className="font-medium">{member.member}</TableCell>
-            {bounties.map((bounty) => {
-              const submission =
-                submissionsByMemberAndBounty[member.member]?.[bounty.id];
-              console.log(submission, address, bounty);
+            <TableCell className="font-medium"><Address address={member.member} size='lg' /></TableCell>
+            {board.bounties.map((bounty: Bounty) => {
+              const submission = bounty.submissions.find((submission: Submission) => submission.submitter === member.member);
+
               return (
                 <TableCell key={bounty.id}>
-                  { 
-                  submission ? (
+                  {submission ? (
                     submission.reviewed ? (
                       submission.approved ? (
                         <Check className="h-5 w-5 text-green-500" />
@@ -65,15 +57,18 @@ export default function MemberSubmissionTable({ members, bounties, submissions, 
                       )
                     ) : (
                       // Only show "Pending Review" button if the user is a reviewer
-                      bounty.reviewers.includes(address?.toLowerCase()) ? ( 
+                      bounty.reviewers.some(
+                        (reviewer: Reviewer) =>
+                          reviewer.reviewerAddress.toLowerCase() === address?.toLowerCase()
+                      ) ? (
                         <Button
                           variant="link"
-                          onClick={() => onOpenReviewSubmissionModal(submission)}
+                          onClick={() => onOpenReviewSubmissionModal(submission, bounty)}
                         >
                           Pending Review
                         </Button>
                       ) : (
-                        'Pending Review'
+                        'Not Reviewed'
                       )
                     )
                   ) : (

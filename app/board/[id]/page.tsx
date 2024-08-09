@@ -1,20 +1,21 @@
-'use client';
+"use client";
 
-import { useParams } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
-import { gql, request } from 'graphql-request';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { useAccount, useReadContract } from 'wagmi';
-import { useState } from 'react';
-import { format } from 'date-fns';
-import { toast } from '@/components/ui/use-toast';
+import { useParams } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
+import { gql, request } from "graphql-request";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { useAccount, useReadContract } from "wagmi";
+import { useState } from "react";
+import { format } from "date-fns";
+import { toast } from "@/components/ui/use-toast";
 
 // Components
-import BountyList from '@/components/BountyList';
-import MemberSubmissionTable from '@/components/MemberSubmissionTable';
-import DynamicModal from '@/components/DynamicModal';
-import BoardActionsDropdown from '@/components/BoardActionsDropdown';
+import BountyList from "@/components/BountyList";
+import MemberSubmissionTable from "@/components/MemberSubmissionTable";
+import DynamicModal from "@/components/DynamicModal";
+import BoardActionsDropdown from "@/components/BoardActionsDropdown";
+import LoadingSpinner from "@/components/ui/loading";
 
 // Contract Hooks & ABI
 import {
@@ -28,63 +29,74 @@ import {
   useUpdateBountyBoard,
   useJoinBoard,
   usePledgeTokens,
-  useUpdateBounty, 
-  useTokenSymbol} from '@/utils/contract';
-
+  useUpdateBounty,
+  useTokenSymbol,
+} from "@/hooks/contract";
 // GraphQL and Contract Addresses
-const url = process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT || 'https://api.studio.thegraph.com/query/82957/bounty-board/version/latest';
-const contractAddress = process.env.NEXT_PUBLIC_BOUNTY_BOARD_CONTRACT_ADDRESS as `0x${string}`;
+import { BOARD_DETAILS_QUERY } from "@/graphql/queries";
+import { Board, Bounty, Submission } from "@/types/types";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Address } from "@/components/ui/Address";
+
+const url =
+  process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT ||
+  "https://api.studio.thegraph.com/query/82957/bounty-board/version/latest";
+const contractAddress = process.env
+  .NEXT_PUBLIC_BOUNTY_BOARD_CONTRACT_ADDRESS as `0x${string}`;
 
 // Modal Configurations
 const modalConfigs = {
   addBounty: {
-    title: 'Add Bounty',
-    description: 'Create a new bounty with a description, deadline, max completions, and reward amount.',
+    title: "Add Bounty",
+    description:
+      "Create a new bounty with a description, deadline, max completions, and reward amount.",
     fields: [
-      { name: 'description', label: 'Description', type: 'text' },
-      { name: 'deadline', label: 'Deadline', type: 'date' },
-      { name: 'maxCompletions', label: 'Max Completions', type: 'number' },
-      { name: 'rewardAmount', label: 'Reward Amount', type: 'number' },
+      { name: "description", label: "Description", type: "text" },
+      { name: "deadline", label: "Deadline", type: "date" },
+      { name: "maxCompletions", label: "Max Completions", type: "number" },
+      { name: "rewardAmount", label: "Reward Amount", type: "number" },
     ],
   },
   submitProof: {
-    title: 'Submit Proof',
-    description: 'Submit your proof of completion for this bounty.',
-    fields: [{ name: 'proof', label: 'Proof', type: 'text' }],
+    title: "Submit Proof",
+    description: "Submit your proof of completion for this bounty.",
+    fields: [{ name: "proof", label: "Proof", type: "text" }],
   },
   reviewSubmission: {
-    title: 'Review Submission',
-    description: 'Review the submitted proof and decide whether to approve or reject it.',
-    fields: [{ name: 'approved', label: 'Approve', type: 'checkbox' }],
+    title: "Review Submission",
+    description:
+      "Review the submitted proof and decide whether to approve or reject it.",
+    fields: [{ name: "approved", label: "Approve", type: "checkbox" }],
   },
   addReviewer: {
-    title: 'Add Reviewer',
-    description: 'Add a reviewer to this bounty.',
-    fields: [{ name: 'reviewer', label: 'Reviewer Address', type: 'text' }],
+    title: "Add Reviewer",
+    description: "Add a reviewer to this bounty.",
+    fields: [{ name: "reviewer", label: "Reviewer Address", type: "text" }],
   },
   updateBoard: {
-    title: 'Update Board',
-    description: 'Update the board name, description, and reward token.',
+    title: "Update Board",
+    description: "Update the board name, description, and reward token.",
     fields: [
-      { name: 'name', label: 'Name', type: 'text' },
-      { name: 'description', label: 'Description', type: 'text' },
-      { name: 'rewardToken', label: 'Reward Token Address', type: 'text' },
+      { name: "name", label: "Name", type: "text" },
+      { name: "description", label: "Description", type: "text" },
+      { name: "rewardToken", label: "Reward Token Address", type: "text" },
     ],
   },
   updateBounty: {
-    title: 'Update Bounty',
-    description: 'Update the bounty description, deadline, max completions, and reward amount.',
+    title: "Update Bounty",
+    description:
+      "Update the bounty description, deadline, max completions, and reward amount.",
     fields: [
-      { name: 'description', label: 'Description', type: 'text' },
-      { name: 'deadline', label: 'Deadline', type: 'date' },
-      { name: 'maxCompletions', label: 'Max Completions', type: 'number' },
-      { name: 'rewardAmount', label: 'Reward Amount', type: 'number' },
+      { name: "description", label: "Description", type: "text" },
+      { name: "deadline", label: "Deadline", type: "date" },
+      { name: "maxCompletions", label: "Max Completions", type: "number" },
+      { name: "rewardAmount", label: "Reward Amount", type: "number" },
     ],
   },
   pledgeTokens: {
-    title: 'Pledge Tokens',
-    description: 'Pledge tokens to the board.',
-    fields: [{ name: 'amount', label: 'Amount', type: 'number' }],
+    title: "Pledge Tokens",
+    description: "Pledge tokens to the board.",
+    fields: [{ name: "amount", label: "Amount", type: "number" }],
   },
 };
 
@@ -95,100 +107,44 @@ export default function BoardPage() {
   const { address } = useAccount();
   const [selectedBounty, setSelectedBounty] = useState<any>(null);
 
-  const { data, refetch } = useQuery({
-    queryKey: ['board', boardId],
+  const { data: boardData, refetch } = useQuery({
+    queryKey: ["board", boardId],
     queryFn: async () => {
-      // GraphQL Queries
-      const boardQuery = gql`
-        query BoardDetails($boardId: ID!) {
-          board(id: $boardId) {
-            id
-            creator
-            name
-            description
-            rewardToken
-            totalPledged
-            createdAt
-            bounties {
-              id
-              description
-              creator
-              deadline
-              maxCompletions
-              numCompletions
-              rewardAmount
-              reviewers {
-                id
-                reviewerAddress
-              }
-              createdAt
-            }
-            members {
-              member
-            }
-          }
-        }
-      `;
-
-      const submissionsQuery = gql`
-        query SubmissionsForBoard($boardId: ID!) {
-          submissions(where: { bounty_: { board: $boardId } }) {
-            id
-            bounty {
-              id
-            }
-            submitter
-            proof
-            reviewed
-            approved
-            submittedAt
-          }
-        }
-      `;
-
-      const reviewersQuery = gql`
-        query ReviewersForBounty($boardId: ID!, $bountyId: ID!) {
-          reviewers(where: { boardId: $boardId, bountyId: $bountyId }) {
-            id
-            reviewerAddress
-          }
-        }
-      `;
       // Fetch data from The Graph
-      const boardData = await request(url, boardQuery, { boardId });
-      const submissionsData = await request(url, submissionsQuery, { boardId });
-      const reviewersData = await request(url, reviewersQuery, {
-        boardId,
-        bountyId: 0,
-      });
-
-      return {
-        board: boardData.board,
-        submissions: submissionsData.submissions,
-      };
+      const boardData: { board: Board } = await request(
+        url,
+        BOARD_DETAILS_QUERY,
+        { boardId }
+      );
+      return boardData.board;
     },
   });
-  const tokenSymbol = 'mtk';// useTokenSymbol(data?.board.rewardToken);
 
-  if (!data?.board) {
-    return <div>Loading...</div>;
+  if (!boardData) {
+    return <LoadingSpinner />;
   }
-  const board = data.board;
-  const rewardTokenAddress = board.rewardToken;
-  const submissions = data.submissions;
-  const totalPledged = board.totalPledged;
+
+  const isCreator = address?.toLowerCase() === boardData.creator;
+  const isMember = boardData.members.some(
+    (member) => member.member === address?.toLowerCase()
+  );
+  const isReviewerForBounty = (bountyId: string) => {
+    const bounty = boardData.bounties.find((b) => b.id === bountyId);
+    return bounty?.reviewers.some(
+      (reviewer) => reviewer.reviewerAddress === address?.toLowerCase()
+    );
+  };
 
   return (
     <div className="container mx-auto p-4">
       <BoardDetails
-        board={board}
-        submissions={submissions}
+        board={boardData}
         address={address}
-        rewardTokenAddress={rewardTokenAddress}
-        totalPledged={totalPledged}
-        tokenSymbol={tokenSymbol as string}
         onBountySelect={setSelectedBounty}
         refetch={refetch}
+        isCreator={isCreator}
+        isMember={isMember}
+        isReviewerForBounty={isReviewerForBounty}
       />
     </div>
   );
@@ -197,22 +153,20 @@ export default function BoardPage() {
 // Board Details Component
 function BoardDetails({
   board,
-  submissions,
   address,
-  rewardTokenAddress,
-  totalPledged,
-  tokenSymbol,
   onBountySelect,
   refetch,
+  isCreator,
+  isMember,
+  isReviewerForBounty,
 }: {
-  board: any;
-  submissions: any[];
+  board: Board;
   address: string | undefined;
-  rewardTokenAddress: string;
-  totalPledged: bigint;
-  tokenSymbol: string;
-  onBountySelect: (bounty: any) => void;
+  onBountySelect: (bounty: Bounty) => void;
   refetch: () => void;
+  isCreator: boolean;
+  isMember: boolean;
+  isReviewerForBounty: (bountyId: string) => boolean | undefined;
 }) {
   // Contract Hooks
   const createBounty = useCreateBounty();
@@ -225,30 +179,28 @@ function BoardDetails({
   const closeBoard = useCloseBoard();
   const withdrawPledgedTokens = useWithdrawPledgedTokens();
   const joinBoard = useJoinBoard();
-  const pledgeTokens = usePledgeTokens();
+  const pledgeTokens = usePledgeTokens(board.rewardToken);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState<keyof typeof modalConfigs | null>(
-    null,
+    null
   );
   const [selectedBountyId, setSelectedBountyId] = useState<string | null>(null);
-
-  // User Roles
-  const isCreator = address?.toLowerCase() === board.creator;
-  const isMember = board.members.some((member) => member.member === address?.toLowerCase());
-  const isReviewerForBounty = (bountyId: string) => {
-    const bounty = board.bounties.find((b) => b.id === bountyId);
-    return bounty?.reviewers.includes(address?.toLowerCase());
-  };
+  const [selectedSubmission, setSelectedSubmission] =
+    useState<Submission>();
+  // Tab State
+  const [activeTab, setActiveTab] = useState("bounties");
 
   // Modal Handlers
   const handleOpenModal = (
     type: keyof typeof modalConfigs,
     bountyId?: string,
+    submission?: Submission
   ) => {
     setModalType(type);
     setSelectedBountyId(bountyId || null);
+    setSelectedSubmission(submission);
     setIsModalOpen(true);
   };
 
@@ -264,34 +216,34 @@ function BoardDetails({
 
     try {
       switch (action) {
-        case 'joinBoard':
+        case "joinBoard":
           await joinBoard({ boardId: boardIdNum });
           break;
-        case 'cancelBounty':
+        case "cancelBounty":
           await cancelBounty({
             boardId: boardIdNum,
             bountyId: parseInt(bountyId!),
           });
           break;
-        case 'closeBoard':
+        case "closeBoard":
           await closeBoard({ boardId: boardIdNum });
           break;
-        case 'withdrawPledgedTokens':
+        case "withdrawPledgedTokens":
           await withdrawPledgedTokens({ boardId: boardIdNum });
           break;
         default:
           break;
       }
       toast({
-        title: 'Success',
+        title: "Success",
         description: `${action} successful!`,
       });
       refetch();
     } catch (error) {
       console.error(`Error performing ${action}:`, error);
       toast({
-        variant: 'destructive',
-        title: 'Error',
+        variant: "destructive",
+        title: "Error",
         description: `Error performing ${action}: ${error}`,
       });
     }
@@ -303,7 +255,7 @@ function BoardDetails({
 
     try {
       switch (modalType) {
-        case 'addBounty':
+        case "addBounty":
           await createBounty({
             boardId: boardIdNum,
             description: data.description,
@@ -312,31 +264,30 @@ function BoardDetails({
             rewardAmount: data.rewardAmount,
           });
           break;
-        case 'submitProof':
+        case "submitProof":
           await submitProof({
             boardId: boardIdNum,
             bountyId: parseInt(selectedBountyId!),
             proof: data.proof,
           });
           break;
-        case 'reviewSubmission':
+        case "reviewSubmission":
+          if (!selectedSubmission) return;
           await reviewSubmission({
             boardId: boardIdNum,
             bountyId: parseInt(selectedBountyId!),
-            submissionIndex: submissions.findIndex(
-              (submission) => submission.id === selectedBountyId,
-            ),
+            submissionIndex: parseInt(selectedSubmission.id),
             approved: data.approved,
           });
           break;
-        case 'addReviewer':
+        case "addReviewer":
           await addReviewerToBounty({
             boardId: boardIdNum,
             bountyId: parseInt(selectedBountyId!),
             reviewer: data.reviewer,
           });
           break;
-        case 'updateBoard':
+        case "updateBoard":
           await updateBountyBoard({
             boardId: boardIdNum,
             name: data.name,
@@ -344,7 +295,7 @@ function BoardDetails({
             rewardToken: data.rewardToken,
           });
           break;
-        case 'updateBounty':
+        case "updateBounty":
           await updateBounty({
             boardId: boardIdNum,
             bountyId: parseInt(selectedBountyId!),
@@ -354,13 +305,17 @@ function BoardDetails({
             rewardAmount: data.rewardAmount,
           });
           break;
-        case 'pledgeTokens':
-          await pledgeTokens({ boardId: boardIdNum, amount: data.amount });
+        case "pledgeTokens":
+          await pledgeTokens({
+            boardId: boardIdNum,
+            amount: data.amount as number,
+          });
+          break;
         default:
           break;
       }
       toast({
-        title: 'Success',
+        title: "Success",
         description: `${modalType} successful!`,
       });
       refetch();
@@ -368,25 +323,30 @@ function BoardDetails({
     } catch (error) {
       console.error(`Error performing ${modalType}:`, error);
       toast({
-        variant: 'destructive',
-        title: 'Error',
+        variant: "destructive",
+        title: "Error",
         description: `Error performing ${modalType}: ${error}`,
       });
     }
   };
+
+  const tokenSymbol = useTokenSymbol(board.rewardToken);
 
   return (
     <Card>
       <CardHeader>
         <div className="flex justify-between items-center">
           <CardTitle>{board.name}</CardTitle>
-          {isCreator && (
+          {(isCreator || isMember) && (
             <BoardActionsDropdown
-              onOpenUpdateBoardModal={() => handleOpenModal('updateBoard')}
-              onCloseBoard={() => handleAction('closeBoard')}
+              isCreator={isCreator}
+              isMember={isMember}
+              onOpenUpdateBoardModal={() => handleOpenModal("updateBoard")}
+              onCloseBoard={() => handleAction("closeBoard")}
               onWithdrawPledgedTokens={() =>
-                handleAction('withdrawPledgedTokens')
+                handleAction("withdrawPledgedTokens")
               }
+              onOpenPledgeTokensModal={() => handleOpenModal("pledgeTokens")}
             />
           )}
         </div>
@@ -397,70 +357,71 @@ function BoardDetails({
           <strong>Description:</strong> {board.description}
         </p>
         <p className="mb-2">
-          <strong>Created:</strong>{' '}
-          {format(new Date(board.createdAt * 1000), 'PPP')}
+          <strong>Created:</strong>{" "}
+          {format(new Date(parseInt(board.createdAt) * 1000), "PPP")}
         </p>
         <p className="mb-2">
-          <strong>Reward Token:</strong> {tokenSymbol} (
-          {rewardTokenAddress})
+          <strong>Reward Token:</strong> {tokenSymbol.data} <Address address={board.rewardToken} />
         </p>
         <p className="mb-4">
-          <strong>Total Pledged:</strong>{' '}
-          {totalPledged.toString()} {tokenSymbol}
+          <strong>Total Pledged:</strong> {board.totalPledged}{" "}
+          {tokenSymbol.data}
         </p>
 
         {/* Join Board Button */}
         {!isMember && (
-          <Button onClick={() => handleAction('joinBoard')}>
-            Join Board
-          </Button>
-        )}
-
-        {/* Pledge Tokens Button */}
-        {isMember && (
-          <Button onClick={() => handleOpenModal('pledgeTokens')}>
-            Pledge Tokens
-          </Button>
+          <Button onClick={() => handleAction("joinBoard")}>Join Board</Button>
         )}
 
         {/* Add Bounty Button */}
         {isCreator && (
-          <Button onClick={() => handleOpenModal('addBounty')}>
+          <Button onClick={() => handleOpenModal("addBounty")}>
             Add Bounty
           </Button>
         )}
 
-        {/* Bounty List */}
-        <h2 className="text-xl font-bold mb-2 mt-4">Bounties</h2>
-        <BountyList
-          bounties={board.bounties}
-          address={address}
-          onBountySelect={onBountySelect}
-          onOpenSubmitProofModal={(bountyId) =>
-            handleOpenModal('submitProof', bountyId)
-          }
-          onOpenAddReviewerModal={(bountyId) =>
-            handleOpenModal('addReviewer', bountyId)
-          }
-          onOpenUpdateBountyModal={(bountyId) =>
-            handleOpenModal('updateBounty', bountyId)
-          }
-          onCancelBounty={(bountyId) => handleAction('cancelBounty', bountyId)}
-        />
-
-        {/* Member Submission Table */}
-        <h2 className="text-xl font-bold mb-2 mt-4">
-          Members and Submissions
-        </h2>
-        <MemberSubmissionTable
-          members={board.members}
-          bounties={board.bounties}
-          submissions={submissions}
-          address={address}
-          onOpenReviewSubmissionModal={(submission) =>
-            handleOpenModal('reviewSubmission', submission.bounty.id)
-          }
-        />
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-6">
+          <TabsList>
+            <TabsTrigger value="bounties">Bounties</TabsTrigger>
+            <TabsTrigger value="submissions">
+              Members and Submissions
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="bounties">
+            {/* Bounty List */}
+            <BountyList
+              bounties={board.bounties}
+              address={address}
+              onBountySelect={onBountySelect}
+              onOpenSubmitProofModal={(bountyId) =>
+                handleOpenModal("submitProof", bountyId)
+              }
+              onOpenAddReviewerModal={(bountyId) =>
+                isCreator && handleOpenModal("addReviewer", bountyId)
+              }
+              onOpenUpdateBountyModal={(bountyId) =>
+                isCreator && handleOpenModal("updateBounty", bountyId)
+              }
+              onCancelBounty={(bountyId) =>
+                isCreator && handleAction("cancelBounty", bountyId)
+              }
+            />
+          </TabsContent>
+          <TabsContent value="submissions">
+            {/* Member Submission Table */}
+            <MemberSubmissionTable
+              board={board}
+              address={address}
+              onOpenReviewSubmissionModal={(submission, bounty) => {
+                setSelectedBountyId(bounty.id);
+                if (isReviewerForBounty(bounty.id)) {
+                  handleOpenModal("reviewSubmission", bounty.id, submission);
+                }
+              }}
+            />
+          </TabsContent>
+        </Tabs>
 
         {/* Dynamic Modal */}
         {modalType && (
@@ -468,9 +429,7 @@ function BoardDetails({
             isOpen={isModalOpen}
             onClose={handleCloseModal}
             config={modalConfigs[modalType]}
-            boardId={board.id}
-            bountyId={selectedBountyId as string}
-            selectedBounty={selectedBountyId}
+            selectedSubmission={selectedSubmission}
             onSubmit={handleModalSubmit}
           />
         )}

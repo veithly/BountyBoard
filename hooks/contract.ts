@@ -1,13 +1,13 @@
-import { useReadContract, useWriteContract } from 'wagmi';
+import { useAccount, useReadContract, useWriteContract } from 'wagmi';
 import { useToast } from "@/components/ui/use-toast"
 import abi from '@/abis/BountyBoard.json';
-import { erc20Abi } from 'viem';
+import { erc20Abi, parseUnits } from 'viem';
 
 const contractAddress = process.env.NEXT_PUBLIC_BOUNTY_BOARD_CONTRACT_ADDRESS as `0x${string}`;
 
 export function useContractFunction(functionName: string) {
   const { writeContractAsync } = useWriteContract();
-  const {toast} = useToast();
+  const { toast } = useToast();
   return async (args: any[]) => {
       try {
         await writeContractAsync({
@@ -17,7 +17,7 @@ export function useContractFunction(functionName: string) {
           args,
         });
       } catch (error: Error | any) {
-        toast({ title: "Error", description: error.message, status: "error" });
+        toast({ title: "Error", description: error.message });
         console.error("Write Error:", error);
       }
     }
@@ -42,11 +42,46 @@ export function useCreateBounty() {
 }
 
 // 质押代币
-export function usePledgeTokens() {
-  const contractFunction = useContractFunction('pledgeTokens');
-
-  return ({ boardId, amount }: { boardId: number; amount: number }) => {
-    return contractFunction([boardId, amount]);
+export function usePledgeTokens(tokenAddress: `0x${string}`) {
+  const { address } = useAccount();
+  const { writeContractAsync } = useWriteContract();
+  const { data: allowance } = useReadContract({
+    address: tokenAddress,
+    abi: erc20Abi,
+    functionName: 'allowance',
+    args: [address as `0x${string}`, contractAddress], // 检查当前用户的授权额度
+  });
+  const { toast } = useToast();
+  // console.log('Pledge Tokens:', tokenAddress, allowance);
+  return async ({ boardId, amount }: { boardId: number; amount: number }) => {
+    console.log('Pledge Tokens:', boardId, amount, tokenAddress, allowance);
+    const allowanceNumber = allowance ? Number(allowance) : 0;
+    try {
+      // 检查授权额度是否足够
+      if (allowanceNumber < amount) {
+        // 授权代币
+        toast({ title: "Approving", description: "Approving tokens for transfer..." });
+        await writeContractAsync({
+          address: tokenAddress,
+          abi: erc20Abi,
+          functionName: 'approve',
+          args: [contractAddress, parseUnits(amount.toString(),18)],
+        });
+        toast({ title: "Success", description: "Approved successfully" });
+      }
+      // 质押代币
+      toast({ title: "Pledging", description: "Pledging tokens to the board..." });
+      await writeContractAsync({
+        functionName: 'pledgeTokens',
+        abi,
+        address: contractAddress,
+        args: [boardId, amount],
+      });
+      toast({ title: "Success", description: "Pledged successfully" });
+    } catch (error: Error | any) {
+      toast({ title: "Error", description: error.message });
+      console.error('Write Error:', error);
+    }
   };
 }
 
@@ -84,6 +119,8 @@ export function useReviewSubmission() {
 
   return ({ boardId, bountyId, submissionIndex, approved }:
     { boardId: number; bountyId: number; submissionIndex: number; approved: boolean }) => {
+      console.log('Review Submission:', boardId, bountyId, submissionIndex, approved);
+
     return contractFunction([boardId, bountyId, submissionIndex, approved]);
   };
 }
@@ -134,11 +171,10 @@ export function useUpdateBountyBoard() {
   };
 }
 
-export function useTokenSymbol(rewardTokenAddress: `0x${string}` | undefined) {
-  if (rewardTokenAddress)
-    return useReadContract({
-      address: rewardTokenAddress,
-      abi: erc20Abi,
-      functionName: 'symbol',
-    });
+export function useTokenSymbol(rewardTokenAddress: `0x${string}`) {
+  return useReadContract({
+    address: rewardTokenAddress,
+    abi: erc20Abi,
+    functionName: 'symbol',
+  });
 }

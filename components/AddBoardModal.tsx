@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
-import { useCreateBountyBoard } from '@/utils/contract';
+import { useCreateBountyBoard } from '@/hooks/contract';
 
 interface AddBoardModalProps {
   isOpen: boolean;
