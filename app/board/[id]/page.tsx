@@ -37,6 +37,7 @@ import { BOARD_DETAILS_QUERY } from "@/graphql/queries";
 import { Board, Bounty, Submission } from "@/types/types";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Address } from "@/components/ui/Address";
+import { formatUnits } from "viem";
 
 const url =
   process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT ||
@@ -252,7 +253,9 @@ function BoardDetails({
   // Modal Submission Handler
   const handleModalSubmit = async (data: any) => {
     const boardIdNum = parseInt(board.id);
-
+    const bountyIdNum = parseInt(selectedBountyId?.split('-')[1]!);
+    console.log('Board ID:', boardIdNum, 'Bounty ID:', selectedBountyId);
+    
     try {
       switch (modalType) {
         case "addBounty":
@@ -264,26 +267,29 @@ function BoardDetails({
             rewardAmount: data.rewardAmount,
           });
           break;
-        case "submitProof":
+        case "submitProof":         
           await submitProof({
             boardId: boardIdNum,
-            bountyId: parseInt(selectedBountyId!),
+            bountyId: bountyIdNum,
             proof: data.proof,
           });
           break;
         case "reviewSubmission":
           if (!selectedSubmission) return;
+          const submissionIndex = board.bounties[bountyIdNum].submissions.findIndex(
+            (submission) => submission.id === selectedSubmission.id
+          );
           await reviewSubmission({
             boardId: boardIdNum,
-            bountyId: parseInt(selectedBountyId!),
-            submissionIndex: parseInt(selectedSubmission.id),
+            bountyId: bountyIdNum,
+            submissionIndex: submissionIndex,
             approved: data.approved,
           });
           break;
         case "addReviewer":
           await addReviewerToBounty({
             boardId: boardIdNum,
-            bountyId: parseInt(selectedBountyId!),
+            bountyId: bountyIdNum,
             reviewer: data.reviewer,
           });
           break;
@@ -298,7 +304,7 @@ function BoardDetails({
         case "updateBounty":
           await updateBounty({
             boardId: boardIdNum,
-            bountyId: parseInt(selectedBountyId!),
+            bountyId: bountyIdNum,
             description: data.description,
             deadline: data.deadline,
             maxCompletions: data.maxCompletions,
@@ -364,7 +370,7 @@ function BoardDetails({
           <strong>Reward Token:</strong> {tokenSymbol.data} <Address address={board.rewardToken} />
         </p>
         <p className="mb-4">
-          <strong>Total Pledged:</strong> {board.totalPledged}{" "}
+          <strong>Total Pledged:</strong> {formatUnits(BigInt(board.totalPledged), 18)}{" "}
           {tokenSymbol.data}
         </p>
 

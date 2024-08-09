@@ -9,6 +9,7 @@ export function useContractFunction(functionName: string) {
   const { writeContractAsync } = useWriteContract();
   const { toast } = useToast();
   return async (args: any[]) => {
+      console.log('Contract Function:', functionName, args);
       try {
         await writeContractAsync({
           functionName,
@@ -37,7 +38,8 @@ export function useCreateBounty() {
 
   return ({ boardId, description, deadline, maxCompletions, rewardAmount }:
     { boardId: number; description: string; deadline: number; maxCompletions: number; rewardAmount: number }) => {
-    return contractFunction([boardId, description, deadline, maxCompletions, rewardAmount]);
+      const formatAmount = parseUnits(rewardAmount.toString(), 18);
+    return contractFunction([boardId, description, deadline, maxCompletions, formatAmount]);
   };
 }
 
@@ -54,18 +56,19 @@ export function usePledgeTokens(tokenAddress: `0x${string}`) {
   const { toast } = useToast();
   // console.log('Pledge Tokens:', tokenAddress, allowance);
   return async ({ boardId, amount }: { boardId: number; amount: number }) => {
-    console.log('Pledge Tokens:', boardId, amount, tokenAddress, allowance);
+    const formatAmount = parseUnits(amount.toString(), 18);
     const allowanceNumber = allowance ? Number(allowance) : 0;
+
     try {
       // 检查授权额度是否足够
-      if (allowanceNumber < amount) {
+      if (allowanceNumber < formatAmount) {
         // 授权代币
         toast({ title: "Approving", description: "Approving tokens for transfer..." });
         await writeContractAsync({
           address: tokenAddress,
           abi: erc20Abi,
           functionName: 'approve',
-          args: [contractAddress, parseUnits(amount.toString(),18)],
+          args: [contractAddress, formatAmount],
         });
         toast({ title: "Success", description: "Approved successfully" });
       }
@@ -75,7 +78,7 @@ export function usePledgeTokens(tokenAddress: `0x${string}`) {
         functionName: 'pledgeTokens',
         abi,
         address: contractAddress,
-        args: [boardId, amount],
+        args: [boardId, formatAmount],
       });
       toast({ title: "Success", description: "Pledged successfully" });
     } catch (error: Error | any) {
@@ -100,7 +103,8 @@ export function useUpdateBounty() {
 
   return ({ boardId, bountyId, description, deadline, maxCompletions, rewardAmount }:
     { boardId: number; bountyId: number; description: string; deadline: number; maxCompletions: number; rewardAmount: number }) => {
-    return contractFunction([boardId, bountyId, description, deadline, maxCompletions, rewardAmount]);
+    const formatAmount = parseUnits(rewardAmount.toString(), 18);
+    return contractFunction([boardId, bountyId, description, deadline, maxCompletions, formatAmount]);
   };
 }
 

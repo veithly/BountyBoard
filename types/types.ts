@@ -15,7 +15,7 @@ export interface Submission {
 export interface Bounty {
   id: string;
   description: string;
-  creator: string;
+  creator: `0x${string}`;
   deadline: string;
   maxCompletions: string;
   numCompletions: string;

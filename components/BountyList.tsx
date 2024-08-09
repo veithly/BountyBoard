@@ -5,9 +5,12 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { MoreHorizontal } from 'lucide-react'
 import { format } from 'date-fns';
+import { Address } from './ui/Address';
+import { formatUnits } from 'viem';
+import { Bounty } from '@/types/types';
 
 interface BountyListProps {
-  bounties: any[];
+  bounties: Bounty[];
   address: string | undefined;
   onBountySelect: (bounty: any) => void;
   onOpenSubmitProofModal: (bountyId: string) => void;
@@ -29,9 +32,9 @@ export default function BountyList({
   const isCreator = bounties.some(bounty => bounty.creator === address?.toLowerCase());
 
   return (
-    <ul>
+    <ul className="space-y-4">
       {bounties.map((bounty) => (
-        <li key={bounty.id} className="mb-4">
+        <li key={bounty.id} className="card mb-4 p-4 shadow-lg rounded-lg border border-gray-200">
           {/* Bounty Details */}
           <div
             className="flex justify-between items-center cursor-pointer"
@@ -39,9 +42,9 @@ export default function BountyList({
           >
             <div>
               <h3 className="font-bold">{bounty.description}</h3>
-              <p>Creator: {bounty.creator}</p>
-              <p>Reward: {bounty.rewardAmount}</p>
-              <p>Created: {format(new Date(bounty.createdAt * 1000), 'PPP')}</p>
+              <p>Creator: <Address address={bounty.creator} size='lg' /></p>
+              <p>Reward: {formatUnits(BigInt(bounty.rewardAmount), 18)}</p>
+              <p>Created: {format(new Date(Number(bounty.createdAt) * 1000), 'PPP')}</p>
             </div>
 
             {/* Actions Dropdown */}
