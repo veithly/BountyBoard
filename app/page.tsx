@@ -1,5 +1,5 @@
 "use client";
-// import ConnectWallet from "@/components/ConnectWalletButton";
+
 import AddBoardModal from "@/components/AddBoardModal";
 import { useState } from "react";
 import Boards from "@/components/Boards";

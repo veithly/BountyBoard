@@ -50,5 +50,4 @@ export const BOARDS = gql`
     totalPledged
     createdAt
   }
-}
-`;
+}`;

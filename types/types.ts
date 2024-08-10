@@ -1,11 +1,11 @@
 export interface Reviewer {
   id: string;
-  reviewerAddress: string;
+  reviewerAddress: `0x${string}`;
 }
 
 export interface Submission {
   id: string;
-  submitter: string;
+  submitter: `0x${string}`;
   proof: string;
   reviewed: boolean;
   approved: boolean;
@@ -31,7 +31,7 @@ export interface Member {
 
 export interface Board {
   id: string;
-  creator: string;
+  creator: `0x${string}`;
   name: string;
   description: string;
   rewardToken: `0x${string}`;

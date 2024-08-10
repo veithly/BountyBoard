@@ -38,12 +38,10 @@ import { Board, Bounty, Submission } from "@/types/types";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Address } from "@/components/ui/Address";
 import { formatUnits } from "viem";
+import { Info, Calendar, Coins, Users } from "lucide-react";
 
-const url =
-  process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT ||
-  "https://api.studio.thegraph.com/query/82957/bounty-board/version/latest";
-const contractAddress = process.env
-  .NEXT_PUBLIC_BOUNTY_BOARD_CONTRACT_ADDRESS as `0x${string}`;
+const url = process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT as string;
+const contractAddress = process.env.NEXT_PUBLIC_BOUNTY_BOARD_CONTRACT_ADDRESS as `0x${string}`;
 
 // Modal Configurations
 const modalConfigs = {
@@ -254,12 +252,14 @@ function BoardDetails({
   const handleModalSubmit = async (data: any) => {
     const boardIdNum = parseInt(board.id);
     const bountyIdNum = parseInt(selectedBountyId?.split('-')[1]!);
-    console.log('Board ID:', boardIdNum, 'Bounty ID:', selectedBountyId);
-    
+    let result: {
+      hash?: string;
+      error?: string;
+    };
     try {
       switch (modalType) {
         case "addBounty":
-          await createBounty({
+          result = await createBounty({
             boardId: boardIdNum,
             description: data.description,
             deadline: data.deadline,
@@ -267,8 +267,8 @@ function BoardDetails({
             rewardAmount: data.rewardAmount,
           });
           break;
-        case "submitProof":         
-          await submitProof({
+        case "submitProof":
+          result = await submitProof({
             boardId: boardIdNum,
             bountyId: bountyIdNum,
             proof: data.proof,
@@ -279,7 +279,7 @@ function BoardDetails({
           const submissionIndex = board.bounties[bountyIdNum].submissions.findIndex(
             (submission) => submission.id === selectedSubmission.id
           );
-          await reviewSubmission({
+          result = await reviewSubmission({
             boardId: boardIdNum,
             bountyId: bountyIdNum,
             submissionIndex: submissionIndex,
@@ -287,14 +287,14 @@ function BoardDetails({
           });
           break;
         case "addReviewer":
-          await addReviewerToBounty({
+          result = await addReviewerToBounty({
             boardId: boardIdNum,
             bountyId: bountyIdNum,
             reviewer: data.reviewer,
           });
           break;
         case "updateBoard":
-          await updateBountyBoard({
+          result = await updateBountyBoard({
             boardId: boardIdNum,
             name: data.name,
             description: data.description,
@@ -302,7 +302,7 @@ function BoardDetails({
           });
           break;
         case "updateBounty":
-          await updateBounty({
+          result = await updateBounty({
             boardId: boardIdNum,
             bountyId: bountyIdNum,
             description: data.description,
@@ -312,25 +312,28 @@ function BoardDetails({
           });
           break;
         case "pledgeTokens":
-          await pledgeTokens({
+          result = await pledgeTokens({
             boardId: boardIdNum,
             amount: data.amount as number,
           });
           break;
         default:
+          result = {};
           break;
       }
-      toast({
-        title: "Success",
-        description: `${modalType} successful!`,
-      });
-      refetch();
-      handleCloseModal(); // Close the modal after successful submission
+      if (result?.error) {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: `Error performing ${modalType}: ${result?.error}`,
+        });
+      }
+      return result;
     } catch (error) {
       console.error(`Error performing ${modalType}:`, error);
       toast({
-        variant: "destructive",
-        title: "Error",
+        variant: 'destructive',
+        title: 'Error',
         description: `Error performing ${modalType}: ${error}`,
       });
     }
@@ -343,10 +346,11 @@ function BoardDetails({
       <CardHeader>
         <div className="flex justify-between items-center">
           <CardTitle>{board.name}</CardTitle>
-          {(isCreator || isMember) && (
+          {(isCreator) && (
             <BoardActionsDropdown
               isCreator={isCreator}
               isMember={isMember}
+              rewardTokenAddress={board.rewardToken}
               onOpenUpdateBoardModal={() => handleOpenModal("updateBoard")}
               onCloseBoard={() => handleAction("closeBoard")}
               onWithdrawPledgedTokens={() =>
@@ -358,21 +362,26 @@ function BoardDetails({
         </div>
       </CardHeader>
       <CardContent>
-        {/* Board Information */}
-        <p className="mb-2">
+        <div className="flex items-center gap-2 text-muted-foreground mb-2">
+          <Info className="h-4 w-4" />
           <strong>Description:</strong> {board.description}
-        </p>
-        <p className="mb-2">
-          <strong>Created:</strong>{" "}
-          {format(new Date(parseInt(board.createdAt) * 1000), "PPP")}
-        </p>
-        <p className="mb-2">
+        </div>
+        <div className="flex items-center gap-2 text-muted-foreground mb-2">
+          <Calendar className="h-4 w-4" />
+          <strong>Created:</strong> {format(new Date(parseInt(board.createdAt) * 1000), 'PPP')}
+        </div>
+        <div className="flex items-center gap-2 text-muted-foreground mb-2">
+          <Coins className="h-4 w-4" />
           <strong>Reward Token:</strong> {tokenSymbol.data} <Address address={board.rewardToken} />
-        </p>
-        <p className="mb-4">
-          <strong>Total Pledged:</strong> {formatUnits(BigInt(board.totalPledged), 18)}{" "}
-          {tokenSymbol.data}
-        </p>
+        </div>
+        <div className="flex items-center gap-2 text-muted-foreground mb-4">
+          <Coins className="h-4 w-4" />
+          <strong>Total Pledged:</strong> {formatUnits(BigInt(board.totalPledged), 18)} {tokenSymbol.data}
+        </div>
+        <div className="flex items-center gap-2 text-muted-foreground mb-4">
+          <Users className="h-4 w-4" />
+          <strong>Creator:</strong> <Address address={board.creator} />
+        </div>
 
         {/* Join Board Button */}
         {!isMember && (
@@ -437,6 +446,7 @@ function BoardDetails({
             config={modalConfigs[modalType]}
             selectedSubmission={selectedSubmission}
             onSubmit={handleModalSubmit}
+            onConfirmed={refetch}
           />
         )}
       </CardContent>

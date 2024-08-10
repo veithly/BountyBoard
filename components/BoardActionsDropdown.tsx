@@ -10,10 +10,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { MoreHorizontal } from "lucide-react";
+import { erc20Abi, parseUnits } from "viem";
+import { toast } from "@/components/ui/use-toast";
+import { useWaitForTransactionReceipt, useWriteContract } from "wagmi";
+import { use } from "react";
 
 interface BoardActionsDropdownProps {
   isCreator: boolean;
   isMember: boolean;
+  rewardTokenAddress: `0x${string}`;
   onOpenUpdateBoardModal: () => void;
   onCloseBoard: () => void;
   onWithdrawPledgedTokens: () => void;
@@ -23,11 +28,32 @@ interface BoardActionsDropdownProps {
 export default function BoardActionsDropdown({
   isCreator,
   isMember,
+  rewardTokenAddress,
   onOpenUpdateBoardModal,
   onCloseBoard,
   onWithdrawPledgedTokens,
   onOpenPledgeTokensModal,
 }: BoardActionsDropdownProps) {
+  const { writeContractAsync } = useWriteContract();
+
+  const handleApproveTokens = async () => {
+    try {
+      const amount = parseUnits('1000000000', 18); // 设置一个较大的授权额度
+      await writeContractAsync({
+        address: rewardTokenAddress,
+        abi: erc20Abi,
+        functionName: 'approve',
+        args: [rewardTokenAddress, amount],
+      });
+    } catch (error: Error | any) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error.message,
+      });
+    }
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -38,9 +64,14 @@ export default function BoardActionsDropdown({
       <DropdownMenuContent align="end">
         <DropdownMenuLabel>Board Actions</DropdownMenuLabel>
         {isMember && (
-          <DropdownMenuItem onClick={onOpenPledgeTokensModal}>
-            Pledge Tokens
-          </DropdownMenuItem>
+          <>
+            <DropdownMenuItem onClick={handleApproveTokens}>
+              Approve Tokens
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onOpenPledgeTokensModal}>
+              Pledge Tokens
+            </DropdownMenuItem>
+          </>
         )}
         {isCreator && (
           <>

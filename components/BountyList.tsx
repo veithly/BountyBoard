@@ -3,7 +3,7 @@
 
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { MoreHorizontal } from 'lucide-react'
+import { Calendar, Clock, Coins, MoreHorizontal, User2, UserPlus } from 'lucide-react'
 import { format } from 'date-fns';
 import { Address } from './ui/Address';
 import { formatUnits } from 'viem';
@@ -42,9 +42,30 @@ export default function BountyList({
           >
             <div>
               <h3 className="font-bold">{bounty.description}</h3>
-              <p>Creator: <Address address={bounty.creator} size='lg' /></p>
-              <p>Reward: {formatUnits(BigInt(bounty.rewardAmount), 18)}</p>
-              <p>Created: {format(new Date(Number(bounty.createdAt) * 1000), 'PPP')}</p>
+              <div className="flex items-center gap-2 mt-2 text-muted-foreground">
+                <User2 className="h-4 w-4" />
+                <Address address={bounty.creator} size="sm" />
+              </div>
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Coins className="h-4 w-4" />
+                Reward: {formatUnits(BigInt(bounty.rewardAmount), 18)}
+              </div>
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <UserPlus className="h-4 w-4" />
+                Max Submissions: {bounty.maxCompletions}
+              </div>
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Calendar className="h-4 w-4" />
+                Created: {format(
+                  new Date(Number(bounty.createdAt) * 1000),
+                  'PPP',
+                )}
+              </div>
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Clock className="h-4 w-4" />
+                Deadline:{' '}
+                {format(new Date(Number(bounty.deadline)), 'PPP')}
+              </div>
             </div>
 
             {/* Actions Dropdown */}

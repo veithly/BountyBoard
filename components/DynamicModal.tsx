@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Popover,
   PopoverContent,
@@ -18,15 +18,26 @@ import {
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
+import { format, set } from "date-fns";
 import { Submission } from "@/types/types";
+import { useWaitForTransactionReceipt } from "wagmi";
+
+interface ModalField {
+  name: string;
+  label: string;
+  type: 'text' | 'number' | 'date' | 'checkbox'; 
+}
 
 interface DynamicModalProps {
   isOpen: boolean;
   onClose: () => void;
   config: any;
   selectedSubmission?: Submission | null;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: any) => Promise<{
+    hash?: string;
+    error?: string;
+  } | undefined>;
+  onConfirmed: () => void;
 }
 
 export default function DynamicModal({
@@ -35,8 +46,11 @@ export default function DynamicModal({
   config,
   selectedSubmission,
   onSubmit,
+  onConfirmed,
 }: DynamicModalProps) {
-  const [formData, setFormData] = useState({});
+  const [formData, setFormData] = useState<Record<string, any>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [transactionHash, setTransactionHash] = useState<`0x${string}` | null>(null);
 
   const handleChange = (event: any) => {
     const { name, value, type, checked } = event.target;
@@ -46,10 +60,30 @@ export default function DynamicModal({
     }));
   };
 
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault(); // Prevent default form submission
-    await onSubmit(formData); // Call the onSubmit function from props
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    try {
+      const result: any = await onSubmit(formData);
+      result?.hash && setTransactionHash(result.hash); // 保存交易哈希值
+    } catch (error) {
+      setIsSubmitting(false);
+      console.error('Error submitting form:', error);
+    }
   };
+
+  // 在组件中使用 useWaitForTransactionReceipt
+  const { isLoading: isConfirming, isSuccess: isConfirmed, error } = useWaitForTransactionReceipt({
+    hash: transactionHash as `0x${string}`,
+  });
+
+  // 在确认或错误发生时关闭模态框
+  useEffect(() => {
+    if (isConfirmed || error) {
+      setIsSubmitting(false);
+      onConfirmed();
+      onClose();
+    }
+  }, [isConfirmed, error, onClose]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -65,7 +99,7 @@ export default function DynamicModal({
               <p>Proof: {selectedSubmission.proof}</p>
             </div>
           )}
-          {config.fields.map((field) => (
+          {config.fields.map((field: ModalField) => (
             <div key={field.name}>
               <label
                 htmlFor={field.name}
@@ -99,7 +133,7 @@ export default function DynamicModal({
                       onSelect={(date) => {
                         setFormData((prevData) => ({
                           ...prevData,
-                          [field.name]: date.getTime(),
+                          [field.name]: (date as Date).getTime(),
                         }));
                       }}
                       initialFocus
@@ -118,8 +152,8 @@ export default function DynamicModal({
           ))}
         </div>
         <DialogFooter>
-          <Button type="submit" onClick={handleSubmit}>
-            Submit
+          <Button type="submit" onClick={handleSubmit} disabled={isSubmitting}>
+            {isSubmitting ? 'Submitting...' : 'Submit'}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -1,28 +1,44 @@
-import { useAccount, useReadContract, useWriteContract } from 'wagmi';
+import { useAccount, useReadContract, useWaitForTransactionReceipt, useWriteContract, type BaseError } from 'wagmi';
 import { useToast } from "@/components/ui/use-toast"
 import abi from '@/abis/BountyBoard.json';
 import { erc20Abi, parseUnits } from 'viem';
 
 const contractAddress = process.env.NEXT_PUBLIC_BOUNTY_BOARD_CONTRACT_ADDRESS as `0x${string}`;
 
+// 通用合约函数调用 hook
 export function useContractFunction(functionName: string) {
   const { writeContractAsync } = useWriteContract();
   const { toast } = useToast();
+
   return async (args: any[]) => {
-      console.log('Contract Function:', functionName, args);
-      try {
-        await writeContractAsync({
-          functionName,
-          abi,
-          address: contractAddress,
-          args,
-        });
-      } catch (error: Error | any) {
-        toast({ title: "Error", description: error.message });
-        console.error("Write Error:", error);
-      }
+    console.log('Contract Function:', functionName, args);
+    try {
+      const hash = await writeContractAsync({
+        functionName,
+        abi,
+        address: contractAddress,
+        args,
+      });
+
+      // 显示等待确认的提示信息
+      toast({
+        title: 'Pending',
+        description: 'Waiting for transaction confirmation...',
+      });
+
+      // 返回交易哈希值
+      return { hash };
+    } catch (err: Error | any) {
+      toast({
+        title: 'Error',
+        description: err.message,
+        variant: 'destructive',
+      });
+      console.error('Write Error:', err);
+      throw err;
     }
-}
+  };
+};
 
 // 创建赏金板
 export function useCreateBountyBoard() {
@@ -32,13 +48,14 @@ export function useCreateBountyBoard() {
     return contractFunction([name, description, rewardToken]);
   };
 }
+
 // 创建赏金任务
 export function useCreateBounty() {
   const contractFunction = useContractFunction('createBounty');
 
   return ({ boardId, description, deadline, maxCompletions, rewardAmount }:
     { boardId: number; description: string; deadline: number; maxCompletions: number; rewardAmount: number }) => {
-      const formatAmount = parseUnits(rewardAmount.toString(), 18);
+    const formatAmount = parseUnits(rewardAmount.toString(), 18);
     return contractFunction([boardId, description, deadline, maxCompletions, formatAmount]);
   };
 }
@@ -51,40 +68,20 @@ export function usePledgeTokens(tokenAddress: `0x${string}`) {
     address: tokenAddress,
     abi: erc20Abi,
     functionName: 'allowance',
-    args: [address as `0x${string}`, contractAddress], // 检查当前用户的授权额度
+    args: [address as `0x${string}`, contractAddress],
   });
   const { toast } = useToast();
-  // console.log('Pledge Tokens:', tokenAddress, allowance);
+  const contractFunction = useContractFunction('pledgeTokens');
   return async ({ boardId, amount }: { boardId: number; amount: number }) => {
     const formatAmount = parseUnits(amount.toString(), 18);
     const allowanceNumber = allowance ? Number(allowance) : 0;
-
-    try {
-      // 检查授权额度是否足够
-      if (allowanceNumber < formatAmount) {
-        // 授权代币
-        toast({ title: "Approving", description: "Approving tokens for transfer..." });
-        await writeContractAsync({
-          address: tokenAddress,
-          abi: erc20Abi,
-          functionName: 'approve',
-          args: [contractAddress, formatAmount],
-        });
-        toast({ title: "Success", description: "Approved successfully" });
-      }
-      // 质押代币
-      toast({ title: "Pledging", description: "Pledging tokens to the board..." });
-      await writeContractAsync({
-        functionName: 'pledgeTokens',
-        abi,
-        address: contractAddress,
-        args: [boardId, formatAmount],
-      });
-      toast({ title: "Success", description: "Pledged successfully" });
-    } catch (error: Error | any) {
-      toast({ title: "Error", description: error.message });
-      console.error('Write Error:', error);
+    // 检查授权额度是否足够
+    if (allowanceNumber < formatAmount) {
+      toast({ title: "Need Approval", description: "Please approve the contract to spend your tokens." });
+      throw new Error('Need Approval');
     }
+    // 质押代币
+    return await contractFunction([boardId, formatAmount]);
   };
 }
 
@@ -123,7 +120,7 @@ export function useReviewSubmission() {
 
   return ({ boardId, bountyId, submissionIndex, approved }:
     { boardId: number; bountyId: number; submissionIndex: number; approved: boolean }) => {
-      console.log('Review Submission:', boardId, bountyId, submissionIndex, approved);
+    console.log('Review Submission:', boardId, bountyId, submissionIndex, approved);
 
     return contractFunction([boardId, bountyId, submissionIndex, approved]);
   };
