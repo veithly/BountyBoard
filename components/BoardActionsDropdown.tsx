@@ -12,8 +12,7 @@ import { Button } from "@/components/ui/button";
 import { MoreHorizontal } from "lucide-react";
 import { erc20Abi, parseUnits } from "viem";
 import { toast } from "@/components/ui/use-toast";
-import { useWaitForTransactionReceipt, useWriteContract } from "wagmi";
-import { use } from "react";
+import { useWriteContract } from "wagmi";
 
 interface BoardActionsDropdownProps {
   isCreator: boolean;
@@ -24,6 +23,8 @@ interface BoardActionsDropdownProps {
   onWithdrawPledgedTokens: () => void;
   onOpenPledgeTokensModal: () => void;
 }
+
+const contractAddress = process.env.NEXT_PUBLIC_BOUNTY_BOARD_CONTRACT_ADDRESS as `0x${string}`;
 
 export default function BoardActionsDropdown({
   isCreator,
@@ -43,7 +44,7 @@ export default function BoardActionsDropdown({
         address: rewardTokenAddress,
         abi: erc20Abi,
         functionName: 'approve',
-        args: [rewardTokenAddress, amount],
+        args: [contractAddress, amount],
       });
     } catch (error: Error | any) {
       toast({

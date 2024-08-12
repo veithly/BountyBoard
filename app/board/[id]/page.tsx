@@ -2,10 +2,10 @@
 
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { gql, request } from "graphql-request";
+import { request } from "graphql-request";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useAccount, useReadContract } from "wagmi";
+import { useAccount, useWaitForTransactionReceipt } from "wagmi";
 import { useState } from "react";
 import { format } from "date-fns";
 import { toast } from "@/components/ui/use-toast";
@@ -41,7 +41,6 @@ import { formatUnits } from "viem";
 import { Info, Calendar, Coins, Users } from "lucide-react";
 
 const url = process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT as string;
-const contractAddress = process.env.NEXT_PUBLIC_BOUNTY_BOARD_CONTRACT_ADDRESS as `0x${string}`;
 
 // Modal Configurations
 const modalConfigs = {
@@ -59,7 +58,7 @@ const modalConfigs = {
   submitProof: {
     title: "Submit Proof",
     description: "Submit your proof of completion for this bounty.",
-    fields: [{ name: "proof", label: "Proof", type: "text" }],
+    fields: [{ name: "proof", label: "Proof", type: "textarea" }],
   },
   reviewSubmission: {
     title: "Review Submission",
@@ -178,7 +177,7 @@ function BoardDetails({
   const closeBoard = useCloseBoard();
   const withdrawPledgedTokens = useWithdrawPledgedTokens();
   const joinBoard = useJoinBoard();
-  const pledgeTokens = usePledgeTokens(board.rewardToken);
+  let pledgeTokens = usePledgeTokens(board.rewardToken);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -186,8 +185,8 @@ function BoardDetails({
     null
   );
   const [selectedBountyId, setSelectedBountyId] = useState<string | null>(null);
-  const [selectedSubmission, setSelectedSubmission] =
-    useState<Submission>();
+  const [selectedSubmission, setSelectedSubmission] = useState<Submission>();
+
   // Tab State
   const [activeTab, setActiveTab] = useState("bounties");
 
@@ -212,131 +211,108 @@ function BoardDetails({
   // Contract Action Handlers
   const handleAction = async (action: string, bountyId?: string) => {
     const boardIdNum = parseInt(board.id);
-
-    try {
-      switch (action) {
-        case "joinBoard":
-          await joinBoard({ boardId: boardIdNum });
-          break;
-        case "cancelBounty":
-          await cancelBounty({
-            boardId: boardIdNum,
-            bountyId: parseInt(bountyId!),
-          });
-          break;
-        case "closeBoard":
-          await closeBoard({ boardId: boardIdNum });
-          break;
-        case "withdrawPledgedTokens":
-          await withdrawPledgedTokens({ boardId: boardIdNum });
-          break;
-        default:
-          break;
-      }
-      toast({
-        title: "Success",
-        description: `${action} successful!`,
-      });
-      refetch();
-    } catch (error) {
-      console.error(`Error performing ${action}:`, error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: `Error performing ${action}: ${error}`,
-      });
+    let res: {
+      hash?: string;
+      error?: string;
+    };
+    switch (action) {
+      case "joinBoard":
+        res = await joinBoard({ boardId: boardIdNum });
+        break;
+      case "cancelBounty":
+        res = await cancelBounty({
+          boardId: boardIdNum,
+          bountyId: parseInt(bountyId!),
+        });
+        break;
+      case "closeBoard":
+        res = await closeBoard({ boardId: boardIdNum });
+        break;
+      case "withdrawPledgedTokens":
+        res = await withdrawPledgedTokens({ boardId: boardIdNum });
+        break;
+      default:
+        res = { error: "Invalid action" };
+        break;
     }
+
+    return res;
   };
 
   // Modal Submission Handler
   const handleModalSubmit = async (data: any) => {
     const boardIdNum = parseInt(board.id);
-    const bountyIdNum = parseInt(selectedBountyId?.split('-')[1]!);
+    const bountyIdNum = parseInt(selectedBountyId?.split("-")[1]!);
     let result: {
       hash?: string;
-      error?: string;
     };
-    try {
-      switch (modalType) {
-        case "addBounty":
-          result = await createBounty({
-            boardId: boardIdNum,
-            description: data.description,
-            deadline: data.deadline,
-            maxCompletions: data.maxCompletions,
-            rewardAmount: data.rewardAmount,
-          });
-          break;
-        case "submitProof":
-          result = await submitProof({
-            boardId: boardIdNum,
-            bountyId: bountyIdNum,
-            proof: data.proof,
-          });
-          break;
-        case "reviewSubmission":
-          if (!selectedSubmission) return;
-          const submissionIndex = board.bounties[bountyIdNum].submissions.findIndex(
-            (submission) => submission.id === selectedSubmission.id
-          );
-          result = await reviewSubmission({
-            boardId: boardIdNum,
-            bountyId: bountyIdNum,
-            submissionIndex: submissionIndex,
-            approved: data.approved,
-          });
-          break;
-        case "addReviewer":
-          result = await addReviewerToBounty({
-            boardId: boardIdNum,
-            bountyId: bountyIdNum,
-            reviewer: data.reviewer,
-          });
-          break;
-        case "updateBoard":
-          result = await updateBountyBoard({
-            boardId: boardIdNum,
-            name: data.name,
-            description: data.description,
-            rewardToken: data.rewardToken,
-          });
-          break;
-        case "updateBounty":
-          result = await updateBounty({
-            boardId: boardIdNum,
-            bountyId: bountyIdNum,
-            description: data.description,
-            deadline: data.deadline,
-            maxCompletions: data.maxCompletions,
-            rewardAmount: data.rewardAmount,
-          });
-          break;
-        case "pledgeTokens":
-          result = await pledgeTokens({
-            boardId: boardIdNum,
-            amount: data.amount as number,
-          });
-          break;
-        default:
-          result = {};
-          break;
-      }
-      if (result?.error) {
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: `Error performing ${modalType}: ${result?.error}`,
+    switch (modalType) {
+      case "addBounty":
+        result = await createBounty({
+          boardId: boardIdNum,
+          description: data.description,
+          deadline: data.deadline,
+          maxCompletions: data.maxCompletions,
+          rewardAmount: data.rewardAmount,
         });
-      }
-      return result;
-    } catch (error) {
-      console.error(`Error performing ${modalType}:`, error);
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: `Error performing ${modalType}: ${error}`,
-      });
+        break;
+      case "submitProof":
+        result = await submitProof({
+          boardId: boardIdNum,
+          bountyId: bountyIdNum,
+          proof: data.proof,
+        });
+        break;
+      case "reviewSubmission":
+        if (!selectedSubmission) return;
+        const submissionIndex = board.bounties[
+          bountyIdNum
+        ].submissions.findIndex(
+          (submission) => submission.id === selectedSubmission.id
+        );
+        result = await reviewSubmission({
+          boardId: boardIdNum,
+          bountyId: bountyIdNum,
+          submissionIndex: submissionIndex,
+          approved: data.approved,
+        });
+        break;
+      case "addReviewer":
+        result = await addReviewerToBounty({
+          boardId: boardIdNum,
+          bountyId: bountyIdNum,
+          reviewer: data.reviewer,
+        });
+        break;
+      case "updateBoard":
+        result = await updateBountyBoard({
+          boardId: boardIdNum,
+          name: data.name,
+          description: data.description,
+          rewardToken: data.rewardToken,
+        });
+        break;
+      case "updateBounty":
+        result = await updateBounty({
+          boardId: boardIdNum,
+          bountyId: bountyIdNum,
+          description: data.description,
+          deadline: data.deadline,
+          maxCompletions: data.maxCompletions,
+          rewardAmount: data.rewardAmount,
+        });
+        break;
+      case "pledgeTokens":
+        result = await pledgeTokens({
+          boardId: boardIdNum,
+          amount: data.amount as number,
+        });
+        break;
+      default:
+        result = {};
+        break;
     }
+    return result;
   };
 
   const tokenSymbol = useTokenSymbol(board.rewardToken);
@@ -346,7 +322,7 @@ function BoardDetails({
       <CardHeader>
         <div className="flex justify-between items-center">
           <CardTitle>{board.name}</CardTitle>
-          {(isCreator) && (
+          {isCreator && (
             <BoardActionsDropdown
               isCreator={isCreator}
               isMember={isMember}
@@ -368,15 +344,18 @@ function BoardDetails({
         </div>
         <div className="flex items-center gap-2 text-muted-foreground mb-2">
           <Calendar className="h-4 w-4" />
-          <strong>Created:</strong> {format(new Date(parseInt(board.createdAt) * 1000), 'PPP')}
+          <strong>Created:</strong>{" "}
+          {format(new Date(parseInt(board.createdAt) * 1000), "PPP")}
         </div>
         <div className="flex items-center gap-2 text-muted-foreground mb-2">
           <Coins className="h-4 w-4" />
-          <strong>Reward Token:</strong> {tokenSymbol.data} <Address address={board.rewardToken} />
+          <strong>Reward Token:</strong> {tokenSymbol.data}{" "}
+          <Address address={board.rewardToken} />
         </div>
         <div className="flex items-center gap-2 text-muted-foreground mb-4">
           <Coins className="h-4 w-4" />
-          <strong>Total Pledged:</strong> {formatUnits(BigInt(board.totalPledged), 18)} {tokenSymbol.data}
+          <strong>Total Pledged:</strong>{" "}
+          {formatUnits(BigInt(board.totalPledged), 18)} {tokenSymbol.data}
         </div>
         <div className="flex items-center gap-2 text-muted-foreground mb-4">
           <Users className="h-4 w-4" />

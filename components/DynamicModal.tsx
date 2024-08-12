@@ -25,7 +25,7 @@ import { useWaitForTransactionReceipt } from "wagmi";
 interface ModalField {
   name: string;
   label: string;
-  type: 'text' | 'number' | 'date' | 'checkbox'; 
+  type: 'text' | 'number' | 'date' | 'checkbox' | 'textarea';
 }
 
 interface DynamicModalProps {
