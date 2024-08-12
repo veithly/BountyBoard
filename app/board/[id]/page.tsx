@@ -6,7 +6,7 @@ import { request } from "graphql-request";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAccount, useWaitForTransactionReceipt } from "wagmi";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { toast } from "@/components/ui/use-toast";
 
@@ -179,15 +179,18 @@ function BoardDetails({
   const joinBoard = useJoinBoard();
   let pledgeTokens = usePledgeTokens(board.rewardToken);
 
-  // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState<keyof typeof modalConfigs | null>(
     null
   );
   const [selectedBountyId, setSelectedBountyId] = useState<string | null>(null);
   const [selectedSubmission, setSelectedSubmission] = useState<Submission>();
-
-  // Tab State
+  const [actionHash, setActionHash] = useState<`0x${string}`>();
+  const [loadingToast, setLoadingToast] = useState<{
+    id: string;
+    dismiss: () => void;
+    update: (props: any) => void;
+} | null>(null);
   const [activeTab, setActiveTab] = useState("bounties");
 
   // Modal Handlers
@@ -212,7 +215,7 @@ function BoardDetails({
   const handleAction = async (action: string, bountyId?: string) => {
     const boardIdNum = parseInt(board.id);
     let res: {
-      hash?: string;
+      hash?: `0x${string}`;
       error?: string;
     };
     switch (action) {
@@ -235,9 +238,45 @@ function BoardDetails({
         res = { error: "Invalid action" };
         break;
     }
-
+    setActionHash(res.hash);
     return res;
   };
+
+  const { isLoading: isConfirming, isSuccess: isConfirmed, error } = useWaitForTransactionReceipt({
+    hash: actionHash,
+  });
+
+  // 监听交易确认状态
+  useEffect(() => {
+    if (isConfirmed) {
+      toast({
+        title: "Success!",
+        description: "Transaction confirmed.",
+      })
+      refetch(); // 重新获取数据
+    } else if (error) {
+      toast({
+        title: "Error!",
+        description: "Transaction failed.",
+      })
+    }
+  }, [isConfirmed, error, refetch]);
+
+  useEffect(() => {
+    if (actionHash) {
+      const _loadingToast = toast({
+        title: "Pending",
+        description: "Waiting for transaction confirmation...",
+        duration: Infinity,
+      })
+      setLoadingToast(_loadingToast);
+    }
+
+    // 清理函数: 交易确认或失败后关闭 toast
+    return () => {
+      loadingToast?.dismiss();
+    };
+  }, [actionHash]); 
 
   // Modal Submission Handler
   const handleModalSubmit = async (data: any) => {
@@ -363,7 +402,7 @@ function BoardDetails({
         </div>
 
         {/* Join Board Button */}
-        {!isMember && (
+        {(address && !isMember) && (
           <Button onClick={() => handleAction("joinBoard")}>Join Board</Button>
         )}
 

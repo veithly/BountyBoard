@@ -69,7 +69,7 @@ export default function BountyList({
             </div>
 
             {/* Actions Dropdown */}
-            <DropdownMenu>
+            {address && <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm">
                   <MoreHorizontal className="h-4 w-4" />
@@ -98,7 +98,7 @@ export default function BountyList({
                   </>
                 )}
               </DropdownMenuContent>
-            </DropdownMenu>
+            </DropdownMenu>}
           </div>
         </li>
       ))}
