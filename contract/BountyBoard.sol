@@ -94,6 +94,9 @@ contract BountyBoard is Initializable, AccessControl {
     // Event emitted when a bounty board is updated
     event BountyBoardUpdated(uint256 indexed boardId, string name, string description, address rewardToken);
 
+    // Event emmitted when distribution of reward tokens is updated
+    event RewardDistributionUpdated(uint256 indexed boardId, uint256 totalPledged);
+
     // --- Upgradeability ---
     address public implementation;
 
@@ -246,6 +249,7 @@ contract BountyBoard is Initializable, AccessControl {
         require(!board.closed, "Board is closed");
         require(!bounty.completed, "Bounty is already completed");
         require(!bounty.cancelled, "Bounty is cancelled");
+        require(bounty.deadline >= block.timestamp * 1000, "Bounty deadline has passed");
         require(board.members[msg.sender], "User is not a member of this board");
 
         bountySubmissions[_boardId][_bountyId].push(Submission({
@@ -284,11 +288,6 @@ contract BountyBoard is Initializable, AccessControl {
 
             emit BountySucceeded(_boardId, _bountyId, submission.submitter, bounty.description, bounty.rewardAmount);
         }
-
-        if (allSubmissionsReviewed(_boardId, _bountyId) && !anySubmissionApproved(_boardId, _bountyId)) {
-            bounty.completed = true;
-            emit BountyFailed(_boardId, _bountyId, bounty.description, bounty.rewardAmount);
-        }
     }
 
     // Function to distribute the reward to the participant
@@ -305,28 +304,8 @@ contract BountyBoard is Initializable, AccessControl {
         }
 
         board.totalPledged -= bounty.rewardAmount;
-    }
 
-    // Helper function to check if all submissions for a bounty have been reviewed
-    function allSubmissionsReviewed(uint256 _boardId, uint256 _bountyId) internal view returns (bool) {
-        Submission[] storage submissions = bountySubmissions[_boardId][_bountyId];
-        for (uint256 i = 0; i < submissions.length; i++) {
-            if (!submissions[i].reviewed) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    // Helper function to check if any submission for a bounty has been approved
-    function anySubmissionApproved(uint256 _boardId, uint256 _bountyId) internal view returns (bool) {
-        Submission[] storage submissions = bountySubmissions[_boardId][_bountyId];
-        for (uint256 i = 0; i < submissions.length; i++) {
-            if (submissions[i].approved) {
-                return true;
-            }
-        }
-        return false;
+        emit RewardDistributionUpdated(_boardId, board.totalPledged);
     }
 
     // Function for the board creator to add a reviewer to a specific bounty

@@ -10,6 +10,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "./ui/checkbox";
 import { useEffect, useState } from "react";
 import {
   Popover,
@@ -25,7 +27,7 @@ import { useWaitForTransactionReceipt } from "wagmi";
 interface ModalField {
   name: string;
   label: string;
-  type: 'text' | 'number' | 'date' | 'checkbox'; 
+  type: 'text' | 'number' | 'date' | 'checkbox' | 'textarea';
 }
 
 interface DynamicModalProps {
@@ -65,6 +67,7 @@ export default function DynamicModal({
     try {
       const result: any = await onSubmit(formData);
       result?.hash && setTransactionHash(result.hash); // 保存交易哈希值
+      result?.error && setIsSubmitting(false);
     } catch (error) {
       setIsSubmitting(false);
       console.error('Error submitting form:', error);
@@ -83,7 +86,7 @@ export default function DynamicModal({
       onConfirmed();
       onClose();
     }
-  }, [isConfirmed, error, onClose]);
+  }, [isConfirmed, error, onClose, onConfirmed]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -140,12 +143,29 @@ export default function DynamicModal({
                     />
                   </PopoverContent>
                 </Popover>
+              )  : field.type === 'textarea' ? (
+                <Textarea
+                  placeholder={field.label}
+                  name={field.name}
+                  onChange={handleChange}
+                  className="mt-2"
+                />
+              ) : field.type === 'checkbox' ? (
+                <Checkbox
+                  id={field.name}
+                  name={field.name}
+                  checked={formData[field.name] || false} // 设置默认值为 false
+                  onCheckedChange={(checked: boolean) => handleChange({ target: { name: field.name, type: 'checkbox', checked } })}
+                >
+                  {field.label}
+                </Checkbox>
               ) : (
                 <Input
                   type={field.type}
                   placeholder={field.label}
                   name={field.name}
                   onChange={handleChange}
+                  className="mt-2"
                 />
               )}
             </div>
