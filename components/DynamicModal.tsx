@@ -67,6 +67,7 @@ export default function DynamicModal({
     try {
       const result: any = await onSubmit(formData);
       result?.hash && setTransactionHash(result.hash); // 保存交易哈希值
+      result?.error && setIsSubmitting(false);
     } catch (error) {
       setIsSubmitting(false);
       console.error('Error submitting form:', error);

@@ -10,11 +10,14 @@ export const BOARD_DETAILS_QUERY = gql`
       rewardToken
       totalPledged
       createdAt
+      closed
       bounties {
         id
         description
         creator
         deadline
+        cancelled
+        completed
         maxCompletions
         numCompletions
         rewardAmount
@@ -49,5 +52,6 @@ export const BOARDS = gql`
     rewardToken
     totalPledged
     createdAt
+    closed
   }
 }`;

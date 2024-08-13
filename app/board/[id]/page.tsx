@@ -31,6 +31,7 @@ import {
   usePledgeTokens,
   useUpdateBounty,
   useTokenSymbol,
+  useApproveTokens,
 } from "@/hooks/contract";
 // GraphQL and Contract Addresses
 import { BOARD_DETAILS_QUERY } from "@/graphql/queries";
@@ -177,7 +178,8 @@ function BoardDetails({
   const closeBoard = useCloseBoard();
   const withdrawPledgedTokens = useWithdrawPledgedTokens();
   const joinBoard = useJoinBoard();
-  let pledgeTokens = usePledgeTokens(board.rewardToken);
+  const approveTokens = useApproveTokens(board.rewardToken);
+  const pledgeTokens = usePledgeTokens(board.rewardToken);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState<keyof typeof modalConfigs | null>(
@@ -185,12 +187,7 @@ function BoardDetails({
   );
   const [selectedBountyId, setSelectedBountyId] = useState<string | null>(null);
   const [selectedSubmission, setSelectedSubmission] = useState<Submission>();
-  const [actionHash, setActionHash] = useState<`0x${string}`>();
-  const [loadingToast, setLoadingToast] = useState<{
-    id: string;
-    dismiss: () => void;
-    update: (props: any) => void;
-} | null>(null);
+  const [transactionHash, setTransactionHash] = useState<`0x${string}`>();
   const [activeTab, setActiveTab] = useState("bounties");
 
   // Modal Handlers
@@ -219,6 +216,9 @@ function BoardDetails({
       error?: string;
     };
     switch (action) {
+      case "approveTokens":
+        res = await approveTokens(BigInt(10^53));
+        break;
       case "joinBoard":
         res = await joinBoard({ boardId: boardIdNum });
         break;
@@ -238,45 +238,38 @@ function BoardDetails({
         res = { error: "Invalid action" };
         break;
     }
-    setActionHash(res.hash);
+    setTransactionHash(res.hash);
     return res;
   };
 
   const { isLoading: isConfirming, isSuccess: isConfirmed, error } = useWaitForTransactionReceipt({
-    hash: actionHash,
+    hash: transactionHash,
   });
 
   // 监听交易确认状态
   useEffect(() => {
-    if (isConfirmed) {
+    if (isConfirming) {
+      toast({
+        title: "Pending",
+        description: "Waiting for transaction confirmation...",
+        duration: Infinity,
+      });
+    } else if (isConfirmed) {
       toast({
         title: "Success!",
         description: "Transaction confirmed.",
-      })
+      });
       refetch(); // 重新获取数据
+      setTransactionHash(undefined); // 重置交易哈希值
     } else if (error) {
       toast({
         title: "Error!",
         description: "Transaction failed.",
-      })
+        variant: "destructive",
+      });
+      setTransactionHash(undefined); // 重置交易哈希值
     }
-  }, [isConfirmed, error, refetch]);
-
-  useEffect(() => {
-    if (actionHash) {
-      const _loadingToast = toast({
-        title: "Pending",
-        description: "Waiting for transaction confirmation...",
-        duration: Infinity,
-      })
-      setLoadingToast(_loadingToast);
-    }
-
-    // 清理函数: 交易确认或失败后关闭 toast
-    return () => {
-      loadingToast?.dismiss();
-    };
-  }, [actionHash, loadingToast]);
+  }, [isConfirming, isConfirmed, error, refetch]);
 
   // Modal Submission Handler
   const handleModalSubmit = async (data: any) => {
@@ -366,6 +359,7 @@ function BoardDetails({
               isCreator={isCreator}
               isMember={isMember}
               rewardTokenAddress={board.rewardToken}
+              onApproveTokens={() => handleAction("approveTokens")}
               onOpenUpdateBoardModal={() => handleOpenModal("updateBoard")}
               onCloseBoard={() => handleAction("closeBoard")}
               onWithdrawPledgedTokens={() =>

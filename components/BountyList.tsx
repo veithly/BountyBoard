@@ -37,7 +37,7 @@ export default function BountyList({
         <li key={bounty.id} className="card mb-4 p-4 shadow-lg rounded-lg border border-gray-200">
           {/* Bounty Details */}
           <div
-            className="flex justify-between items-center cursor-pointer"
+            className="flex justify-between items-center"
             onClick={() => onBountySelect(bounty)}
           >
             <div>

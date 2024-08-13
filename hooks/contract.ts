@@ -53,6 +53,35 @@ export function useCreateBounty() {
   };
 }
 
+// 授权代币
+export function useApproveTokens(tokenAddress: `0x${string}`) {
+  const { writeContractAsync } = useWriteContract();
+  const { toast } = useToast();
+
+  return async (amount: bigint) => {
+    try {
+      toast({
+        title: 'Notification',
+        description: 'Please confirm the transaction in your wallet.',
+      });
+      const hash = await writeContractAsync({
+        address: tokenAddress,
+        abi: erc20Abi,
+        functionName: 'approve',
+        args: [contractAddress, amount],
+      });
+      return { hash };
+    } catch (error: Error | any) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error.message,
+      });
+      return { error: error.message };
+    }
+  };
+}
+
 // 质押代币
 export function usePledgeTokens(tokenAddress: `0x${string}`) {
   const { address } = useAccount();
@@ -113,9 +142,7 @@ export function useReviewSubmission() {
 
   return ({ boardId, bountyId, submissionIndex, approved }:
     { boardId: number; bountyId: number; submissionIndex: number; approved: boolean }) => {
-    console.log('Review Submission:', boardId, bountyId, submissionIndex, approved);
-
-    return contractFunction([boardId, bountyId, submissionIndex, approved]);
+    return contractFunction([boardId, bountyId, submissionIndex, approved || false]);
   };
 }
 
