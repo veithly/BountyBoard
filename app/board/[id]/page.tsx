@@ -276,7 +276,7 @@ function BoardDetails({
     return () => {
       loadingToast?.dismiss();
     };
-  }, [actionHash]); 
+  }, [actionHash, loadingToast]);
 
   // Modal Submission Handler
   const handleModalSubmit = async (data: any) => {
