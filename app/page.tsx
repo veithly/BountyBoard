@@ -55,7 +55,7 @@ export default function HomePage() {
       </Button>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {boardsData?.map((board: Board) => (
-          <BoardCard key={board.id} board={board} />
+          !board.closed && <BoardCard key={board.id} board={board} />
         ))}
       </div>
       <DynamicModal

@@ -23,6 +23,8 @@ export interface Bounty {
   reviewers: Reviewer[];
   submissions: Submission[];
   createdAt: string;
+  cancelled: boolean;
+  completed: boolean;
 }
 
 export interface Member {
@@ -39,4 +41,5 @@ export interface Board {
   createdAt: string;
   bounties: Bounty[];
   members: Member[];
+  closed: boolean;
 }

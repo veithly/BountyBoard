@@ -16,6 +16,7 @@ import MemberSubmissionTable from "@/components/MemberSubmissionTable";
 import DynamicModal from "@/components/DynamicModal";
 import BoardActionsDropdown from "@/components/BoardActionsDropdown";
 import LoadingSpinner from "@/components/ui/loading";
+import { Badge } from '@/components/ui/badge';
 
 // Contract Hooks & ABI
 import {
@@ -353,7 +354,7 @@ function BoardDetails({
     <Card>
       <CardHeader>
         <div className="flex justify-between items-center">
-          <CardTitle>{board.name}</CardTitle>
+          <CardTitle>{board.name}{ board.closed && (<Badge variant="destructive" className="ml-5">Closed</Badge>)}</CardTitle>
           {isCreator && (
             <BoardActionsDropdown
               isCreator={isCreator}
