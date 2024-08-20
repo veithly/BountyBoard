@@ -15,7 +15,7 @@ const url = process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT as string;
 const modalConfigs = {
   addBoard: {
     title: 'Add New Board',
-    description: 'Create a new bounty board with a name, description, and reward token.',
+    description: 'Create a new bounty board with a name, description, and reward token(blank for ETH).',
     fields: [
       { name: 'name', label: 'Board Name', type: 'text' },
       { name: 'description', label: 'Description', type: 'text' },

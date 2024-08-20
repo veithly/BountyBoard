@@ -39,7 +39,7 @@ import { BOARD_DETAILS_QUERY } from "@/graphql/queries";
 import { Board, Bounty, Submission } from "@/types/types";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Address } from "@/components/ui/Address";
-import { formatUnits } from "viem";
+import { formatUnits, zeroAddress } from "viem";
 import { Info, Calendar, Coins, Users } from "lucide-react";
 
 const url = process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT as string;
@@ -298,15 +298,10 @@ function BoardDetails({
         break;
       case "reviewSubmission":
         if (!selectedSubmission) return;
-        const submissionIndex = board.bounties[
-          bountyIdNum
-        ].submissions.findIndex(
-          (submission) => submission.id === selectedSubmission.id
-        );
         result = await reviewSubmission({
           boardId: boardIdNum,
           bountyId: bountyIdNum,
-          submissionIndex: submissionIndex,
+          submissionAddress: selectedSubmission.submitter,
           approved: data.approved,
         });
         break;
@@ -383,13 +378,13 @@ function BoardDetails({
         </div>
         <div className="flex items-center gap-2 text-muted-foreground mb-2">
           <Coins className="h-4 w-4" />
-          <strong>Reward Token:</strong> {tokenSymbol.data}{" "}
-          <Address address={board.rewardToken} />
+          <strong>Reward Token:</strong> {tokenSymbol.data  ?? ((board.rewardToken === zeroAddress && 'ETH') || '')}
+          {!(board.rewardToken === zeroAddress) && <Address address={board.rewardToken} />}
         </div>
         <div className="flex items-center gap-2 text-muted-foreground mb-4">
           <Coins className="h-4 w-4" />
           <strong>Total Pledged:</strong>{" "}
-          {formatUnits(BigInt(board.totalPledged), 18)} {tokenSymbol.data}
+          {formatUnits(BigInt(board.totalPledged), 18)} {tokenSymbol.data  ?? ((board.rewardToken === zeroAddress && 'ETH') || '')}
         </div>
         <div className="flex items-center gap-2 text-muted-foreground mb-4">
           <Users className="h-4 w-4" />

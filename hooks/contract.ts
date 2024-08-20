@@ -1,7 +1,7 @@
 import { useAccount, useReadContract, useWriteContract, type BaseError } from 'wagmi';
 import { useToast } from "@/components/ui/use-toast"
 import abi from '@/abis/BountyBoard.json';
-import { erc20Abi, parseUnits } from 'viem';
+import { erc20Abi, parseUnits, zeroAddress } from 'viem';
 
 const contractAddress = process.env.NEXT_PUBLIC_BOUNTY_BOARD_CONTRACT_ADDRESS as `0x${string}`;
 
@@ -10,7 +10,7 @@ export function useContractFunction(functionName: string) {
   const { writeContractAsync } = useWriteContract();
   const { toast } = useToast();
 
-  return async (args: any[]) => {
+  return async (args: any[], value?: bigint) => {
     console.log('Contract Function:', functionName, args);
     try {
       toast({ title: 'Nofitication', description: 'Please confirm the transaction in your wallet.' });
@@ -19,6 +19,7 @@ export function useContractFunction(functionName: string) {
         abi,
         address: contractAddress,
         args,
+        value,
       });
       return { hash };
     } catch (err: BaseError | any) {
@@ -38,6 +39,9 @@ export function useCreateBountyBoard() {
   const contractFunction = useContractFunction('createBountyBoard');
 
   return ({ name, description, rewardToken }: { name: string; description: string; rewardToken: string }) => {
+    if (!rewardToken) {
+      rewardToken = zeroAddress;
+    }
     return contractFunction([name, description, rewardToken]);
   };
 }
@@ -98,9 +102,13 @@ export function usePledgeTokens(tokenAddress: `0x${string}`) {
     const allowanceNumber = allowance ? Number(allowance) : 0;
 
     // 检查授权额度是否足够
-    if (allowanceNumber < formatAmount) {
+    if (allowanceNumber < formatAmount && tokenAddress !== zeroAddress) {
       toast({ title: "Need Approval", description: "Please approve the contract to spend your tokens." });
       throw new Error('Need Approval');
+    }
+    else if (tokenAddress === zeroAddress) {
+      toast({ title: "Warning", description: "You are pledging ETH, please confirm the transaction in your wallet." });
+      return await contractFunction([boardId, formatAmount], formatAmount);
     }
     // 质押代币
     return await contractFunction([boardId, formatAmount]);
@@ -140,9 +148,9 @@ export function useSubmitProof() {
 export function useReviewSubmission() {
   const contractFunction = useContractFunction('reviewSubmission');
 
-  return ({ boardId, bountyId, submissionIndex, approved }:
-    { boardId: number; bountyId: number; submissionIndex: number; approved: boolean }) => {
-    return contractFunction([boardId, bountyId, submissionIndex, approved || false]);
+  return ({ boardId, bountyId, submissionAddress, approved }:
+    { boardId: number; bountyId: number; submissionAddress: `0x${string}`; approved: boolean }) => {
+    return contractFunction([boardId, bountyId, submissionAddress, approved || false]);
   };
 }
 

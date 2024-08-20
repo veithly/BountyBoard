@@ -10,9 +10,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { MoreHorizontal } from "lucide-react";
-import { erc20Abi, parseUnits } from "viem";
-import { toast } from "@/components/ui/use-toast";
-import { useWriteContract } from "wagmi";
 
 interface BoardActionsDropdownProps {
   isCreator: boolean;
@@ -25,12 +22,8 @@ interface BoardActionsDropdownProps {
   onOpenPledgeTokensModal: () => void;
 }
 
-const contractAddress = process.env.NEXT_PUBLIC_BOUNTY_BOARD_CONTRACT_ADDRESS as `0x${string}`;
 
 export default function BoardActionsDropdown({
-  isCreator,
-  isMember,
-  rewardTokenAddress,
   onOpenUpdateBoardModal,
   onCloseBoard,
   onWithdrawPledgedTokens,

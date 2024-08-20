@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { format } from 'date-fns';
 import { useTokenSymbol } from '@/hooks/contract';
 import { Board } from '@/types/types';
-import { formatUnits } from 'viem';
+import { formatUnits, zeroAddress } from 'viem';
 import { Address } from './ui/Address';
 import { User2, Calendar, Coins } from 'lucide-react';
 
@@ -31,7 +31,7 @@ export default function BoardCard({ board }: { board: Board }) {
             </div>
             <div className="flex items-center gap-1">
               <Coins className="h-4 w-4" />
-              {formatUnits(BigInt(board.totalPledged), 18)} {tokenSymbol ?? ''}
+              {formatUnits(BigInt(board.totalPledged), 18)} {tokenSymbol ?? ((board.rewardToken === zeroAddress && 'ETH') || '')}
             </div>
           </div>
         </CardContent>
