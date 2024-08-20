@@ -325,6 +325,50 @@
 		"inputs": [
 			{
 				"indexed": true,
+				"internalType": "uint256",
+				"name": "boardId",
+				"type": "uint256"
+			},
+			{
+				"indexed": true,
+				"internalType": "uint256",
+				"name": "bountyId",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "reviewer",
+				"type": "address"
+			}
+		],
+		"name": "ReviewerAdded",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "uint256",
+				"name": "boardId",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "totalPledged",
+				"type": "uint256"
+			}
+		],
+		"name": "RewardDistributionUpdated",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
 				"internalType": "bytes32",
 				"name": "role",
 				"type": "bytes32"
@@ -666,9 +710,9 @@
 				"type": "uint256"
 			},
 			{
-				"internalType": "uint256",
+				"internalType": "address",
 				"name": "",
-				"type": "uint256"
+				"type": "address"
 			}
 		],
 		"name": "bountySubmissions",
@@ -932,9 +976,9 @@
 				"type": "uint256"
 			},
 			{
-				"internalType": "uint256",
-				"name": "_submissionIndex",
-				"type": "uint256"
+				"internalType": "address",
+				"name": "_submitter",
+				"type": "address"
 			},
 			{
 				"internalType": "bool",
