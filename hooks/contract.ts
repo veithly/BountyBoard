@@ -1,9 +1,15 @@
-import { useAccount, useReadContract, useWriteContract, type BaseError } from 'wagmi';
-import { useToast } from "@/components/ui/use-toast"
-import abi from '@/abis/BountyBoard.json';
-import { erc20Abi, parseUnits, zeroAddress } from 'viem';
+import {
+  useAccount,
+  useReadContract,
+  useWriteContract,
+  type BaseError,
+} from "wagmi";
+import { useToast } from "@/components/ui/use-toast";
+import abi from "@/abis/BountyBoard.json";
+import { erc20Abi, parseUnits, zeroAddress } from "viem";
 
-const contractAddress = process.env.NEXT_PUBLIC_BOUNTY_BOARD_CONTRACT_ADDRESS as `0x${string}`;
+const contractAddress = process.env
+  .NEXT_PUBLIC_BOUNTY_BOARD_CONTRACT_ADDRESS as `0x${string}`;
 
 // 通用合约函数调用 hook
 export function useContractFunction(functionName: string) {
@@ -11,9 +17,12 @@ export function useContractFunction(functionName: string) {
   const { toast } = useToast();
 
   return async (args: any[], value?: bigint) => {
-    console.log('Contract Function:', functionName, args);
+    console.log("Contract Function:", functionName, args);
     try {
-      toast({ title: 'Nofitication', description: 'Please confirm the transaction in your wallet.' });
+      toast({
+        title: "Nofitication",
+        description: "Please confirm the transaction in your wallet.",
+      });
       const hash = await writeContractAsync({
         functionName,
         abi,
@@ -24,21 +33,29 @@ export function useContractFunction(functionName: string) {
       return { hash };
     } catch (err: BaseError | any) {
       toast({
-        title: 'Error',
+        title: "Error",
         description: err.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
-      console.error('Write Error:', err);
+      console.error("Write Error:", err);
       return { error: err.message };
     }
   };
-};
+}
 
 // 创建赏金板
 export function useCreateBountyBoard() {
-  const contractFunction = useContractFunction('createBountyBoard');
+  const contractFunction = useContractFunction("createBountyBoard");
 
-  return ({ name, description, rewardToken }: { name: string; description: string; rewardToken: string }) => {
+  return ({
+    name,
+    description,
+    rewardToken,
+  }: {
+    name: string;
+    description: string;
+    rewardToken: string;
+  }) => {
     if (!rewardToken) {
       rewardToken = zeroAddress;
     }
@@ -48,12 +65,29 @@ export function useCreateBountyBoard() {
 
 // 创建赏金任务
 export function useCreateBounty() {
-  const contractFunction = useContractFunction('createBounty');
+  const contractFunction = useContractFunction("createBounty");
 
-  return ({ boardId, description, deadline, maxCompletions, rewardAmount }:
-    { boardId: number; description: string; deadline: number; maxCompletions: number; rewardAmount: number }) => {
+  return ({
+    boardId,
+    description,
+    deadline,
+    maxCompletions,
+    rewardAmount,
+  }: {
+    boardId: number;
+    description: string;
+    deadline: number;
+    maxCompletions: number;
+    rewardAmount: number;
+  }) => {
     const formatAmount = parseUnits(rewardAmount.toString(), 18);
-    return contractFunction([boardId, description, deadline, maxCompletions, formatAmount]);
+    return contractFunction([
+      boardId,
+      description,
+      deadline,
+      maxCompletions,
+      formatAmount,
+    ]);
   };
 }
 
@@ -65,20 +99,20 @@ export function useApproveTokens(tokenAddress: `0x${string}`) {
   return async (amount: bigint) => {
     try {
       toast({
-        title: 'Notification',
-        description: 'Please confirm the transaction in your wallet.',
+        title: "Notification",
+        description: "Please confirm the transaction in your wallet.",
       });
       const hash = await writeContractAsync({
         address: tokenAddress,
         abi: erc20Abi,
-        functionName: 'approve',
+        functionName: "approve",
         args: [contractAddress, amount],
       });
       return { hash };
     } catch (error: Error | any) {
       toast({
-        variant: 'destructive',
-        title: 'Error',
+        variant: "destructive",
+        title: "Error",
         description: error.message,
       });
       return { error: error.message };
@@ -92,22 +126,28 @@ export function usePledgeTokens(tokenAddress: `0x${string}`) {
   const { data: allowance } = useReadContract({
     address: tokenAddress,
     abi: erc20Abi,
-    functionName: 'allowance',
+    functionName: "allowance",
     args: [address as `0x${string}`, contractAddress],
   });
   const { toast } = useToast();
-  const contractFunction = useContractFunction('pledgeTokens');
+  const contractFunction = useContractFunction("pledgeTokens");
   return async ({ boardId, amount }: { boardId: number; amount: number }) => {
     const formatAmount = parseUnits(amount.toString(), 18);
     const allowanceNumber = allowance ? Number(allowance) : 0;
 
     // 检查授权额度是否足够
     if (allowanceNumber < formatAmount && tokenAddress !== zeroAddress) {
-      toast({ title: "Need Approval", description: "Please approve the contract to spend your tokens." });
-      throw new Error('Need Approval');
-    }
-    else if (tokenAddress === zeroAddress) {
-      toast({ title: "Warning", description: "You are pledging ETH, please confirm the transaction in your wallet." });
+      toast({
+        title: "Need Approval",
+        description: "Please approve the contract to spend your tokens.",
+      });
+      throw new Error("Need Approval");
+    } else if (tokenAddress === zeroAddress) {
+      toast({
+        title: "Warning",
+        description:
+          "You are pledging ETH, please confirm the transaction in your wallet.",
+      });
       return await contractFunction([boardId, formatAmount], formatAmount);
     }
     // 质押代币
@@ -117,7 +157,7 @@ export function usePledgeTokens(tokenAddress: `0x${string}`) {
 
 // 加入赏金板
 export function useJoinBoard() {
-  const contractFunction = useContractFunction('joinBoard');
+  const contractFunction = useContractFunction("joinBoard");
 
   return ({ boardId }: { boardId: number }) => {
     return contractFunction([boardId]);
@@ -126,46 +166,96 @@ export function useJoinBoard() {
 
 // 更新赏金任务
 export function useUpdateBounty() {
-  const contractFunction = useContractFunction('updateBounty');
+  const contractFunction = useContractFunction("updateBounty");
 
-  return ({ boardId, bountyId, description, deadline, maxCompletions, rewardAmount }:
-    { boardId: number; bountyId: number; description: string; deadline: number; maxCompletions: number; rewardAmount: number }) => {
+  return ({
+    boardId,
+    bountyId,
+    description,
+    deadline,
+    maxCompletions,
+    rewardAmount,
+  }: {
+    boardId: number;
+    bountyId: number;
+    description: string;
+    deadline: number;
+    maxCompletions: number;
+    rewardAmount: number;
+  }) => {
     const formatAmount = parseUnits(rewardAmount.toString(), 18);
-    return contractFunction([boardId, bountyId, description, deadline, maxCompletions, formatAmount]);
+    return contractFunction([
+      boardId,
+      bountyId,
+      description,
+      deadline,
+      maxCompletions,
+      formatAmount,
+    ]);
   };
 }
 
 // 提交证明
 export function useSubmitProof() {
-  const contractFunction = useContractFunction('submitProof');
+  const contractFunction = useContractFunction("submitProof");
 
-  return ({ boardId, bountyId, proof }: { boardId: number; bountyId: number; proof: string }) => {
+  return ({
+    boardId,
+    bountyId,
+    proof,
+  }: {
+    boardId: number;
+    bountyId: number;
+    proof: string;
+  }) => {
     return contractFunction([boardId, bountyId, proof]);
   };
 }
 
 // 审核提交
 export function useReviewSubmission() {
-  const contractFunction = useContractFunction('reviewSubmission');
+  const contractFunction = useContractFunction("reviewSubmission");
 
-  return ({ boardId, bountyId, submissionAddress, approved }:
-    { boardId: number; bountyId: number; submissionAddress: `0x${string}`; approved: boolean }) => {
-    return contractFunction([boardId, bountyId, submissionAddress, approved || false]);
+  return ({
+    boardId,
+    bountyId,
+    submissionAddress,
+    approved,
+  }: {
+    boardId: number;
+    bountyId: number;
+    submissionAddress: `0x${string}`;
+    approved: boolean;
+  }) => {
+    return contractFunction([
+      boardId,
+      bountyId,
+      submissionAddress,
+      approved || false,
+    ]);
   };
 }
 
 // 添加审核员
 export function useAddReviewerToBounty() {
-  const contractFunction = useContractFunction('addReviewerToBounty');
+  const contractFunction = useContractFunction("addReviewerToBounty");
 
-  return ({ boardId, bountyId, reviewer }: { boardId: number; bountyId: number; reviewer: string }) => {
+  return ({
+    boardId,
+    bountyId,
+    reviewer,
+  }: {
+    boardId: number;
+    bountyId: number;
+    reviewer: string;
+  }) => {
     return contractFunction([boardId, bountyId, reviewer]);
   };
 }
 
 // 取消赏金任务
 export function useCancelBounty() {
-  const contractFunction = useContractFunction('cancelBounty');
+  const contractFunction = useContractFunction("cancelBounty");
 
   return ({ boardId, bountyId }: { boardId: number; bountyId: number }) => {
     return contractFunction([boardId, bountyId]);
@@ -174,7 +264,7 @@ export function useCancelBounty() {
 
 // 关闭赏金板
 export function useCloseBoard() {
-  const contractFunction = useContractFunction('closeBoard');
+  const contractFunction = useContractFunction("closeBoard");
 
   return ({ boardId }: { boardId: number }) => {
     return contractFunction([boardId]);
@@ -183,7 +273,7 @@ export function useCloseBoard() {
 
 // 提取质押代币
 export function useWithdrawPledgedTokens() {
-  const contractFunction = useContractFunction('withdrawPledgedTokens');
+  const contractFunction = useContractFunction("withdrawPledgedTokens");
 
   return ({ boardId }: { boardId: number }) => {
     return contractFunction([boardId]);
@@ -192,10 +282,22 @@ export function useWithdrawPledgedTokens() {
 
 // 更新赏金板
 export function useUpdateBountyBoard() {
-  const contractFunction = useContractFunction('updateBountyBoard');
+  const contractFunction = useContractFunction("updateBountyBoard");
 
-  return ({ boardId, name, description, rewardToken }:
-    { boardId: number; name: string; description: string; rewardToken: string }) => {
+  return ({
+    boardId,
+    name,
+    description,
+    rewardToken,
+  }: {
+    boardId: number;
+    name: string;
+    description: string;
+    rewardToken: string;
+  }) => {
+    if (!rewardToken) {
+      rewardToken = zeroAddress;
+    }
     return contractFunction([boardId, name, description, rewardToken]);
   };
 }
@@ -204,6 +306,6 @@ export function useTokenSymbol(rewardTokenAddress: `0x${string}`) {
   return useReadContract({
     address: rewardTokenAddress,
     abi: erc20Abi,
-    functionName: 'symbol',
+    functionName: "symbol",
   });
 }
