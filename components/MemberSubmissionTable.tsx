@@ -9,6 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Textarea } from "@/components/ui/textarea";
 import { Check, X, Eye, Circle, CheckCircle } from 'lucide-react'; // 导入新的图标
 import { Board, Bounty, Member, Reviewer, Submission } from '@/types/types';
 import { Address } from './ui/Address';
@@ -41,12 +42,6 @@ export default function MemberSubmissionTable({
     setSelectedSubmission(null);
   };
 
-  const isReviewer = board.bounties.some(bounty =>
-    bounty.reviewers.some((reviewer: Reviewer) =>
-      reviewer.reviewerAddress.toLowerCase() === address?.toLowerCase()
-    )
-  );
-
   return (
     <>
       {/* 符号说明 */}
@@ -63,11 +58,9 @@ export default function MemberSubmissionTable({
         <div>
           <X className="h-4 w-4 text-red-500 inline-block mr-1 align-middle" /> Rejected
         </div>
-        {isReviewer && (
-          <div>
-            <Eye className="h-4 w-4 text-blue-500 inline-block mr-1 align-middle" /> Need Review
-          </div>
-        )}
+        <div>
+          <Eye className="h-4 w-4 text-blue-500 inline-block mr-1 align-middle" /> Need Review
+        </div>
       </div>
       <Table>
         <TableCaption>Member Submission Status</TableCaption>
@@ -92,21 +85,24 @@ export default function MemberSubmissionTable({
                   (submission: Submission) => submission.submitter === member.member
                 );
 
+                const isReviewer = bounty.reviewers.some(
+                  (reviewer: Reviewer) => reviewer.reviewerAddress.toLowerCase() === address?.toLowerCase()
+                );
+
                 let submissionIcon = (
                   <Circle className="h-5 w-5 text-yellow-400 cursor-pointer" onClick={() => handleSubmissionClick(submission)} />
-                ); // 默认显示黄色圆圈
+                );
 
                 if (submission) {
                   submissionIcon = (
                     <CheckCircle className="h-5 w-5 text-green-300 cursor-pointer" onClick={() => handleSubmissionClick(submission)} />
                   )
                 }
-                // 仅当提交存在且用户是审核员时才显示蓝色眼睛
                 if (submission && isReviewer && !submission.reviewed) {
                   submissionIcon = (
                     <Eye className="h-5 w-5 text-blue-500 cursor-pointer" onClick={() => onOpenReviewSubmissionModal(submission, bounty)} />
                   );
-                } else if (submission && submission.reviewed) { // 如果提交已审核，则显示审核结果图标
+                } else if (submission && submission.reviewed) {
                   submissionIcon = submission.approved ? (
                     <Check className="h-5 w-5 text-green-500 cursor-pointer" onClick={() => handleSubmissionClick(submission)} />
                   ) : (
@@ -135,10 +131,15 @@ export default function MemberSubmissionTable({
             </DialogDescription>
           </DialogHeader>
           {selectedSubmission && (
-            <div className="mt-4">
-              <p className="font-bold">Proof:</p>
-              <p>{selectedSubmission.proof}</p>
-            </div>
+              <p className="mt-2">
+              <span className="font-semibold">Proof:</span>
+              <Textarea
+                value={selectedSubmission.proof}
+                readOnly
+                className="mt-1 resize-none bg-gray-50"
+                rows={3}
+              />
+            </p>
           )}
         </DialogContent>
       </Dialog>

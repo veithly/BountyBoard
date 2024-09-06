@@ -44,7 +44,7 @@ export const BOARD_DETAILS_QUERY = gql`
 
 export const BOARDS = gql`
 {
-  boards {
+  boards(orderBy: createdAt, orderDirection: desc) {
     id
     creator
     name

@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAccount, useWaitForTransactionReceipt } from "wagmi";
 import { useEffect, useState } from "react";
-import { format } from "date-fns";
+import { format, set } from "date-fns";
 import { toast } from "@/components/ui/use-toast";
 
 // Components
@@ -256,12 +256,14 @@ function BoardDetails({
         duration: Infinity,
       });
     } else if (isConfirmed) {
-      toast({
-        title: "Success!",
-        description: "Transaction confirmed.",
-      });
-      refetch(); // 重新获取数据
-      setTransactionHash(undefined); // 重置交易哈希值
+      setTimeout(() => {
+        toast({
+          title: "Success!",
+          description: "Transaction confirmed.",
+        });
+        setTransactionHash(undefined); // 重置交易哈希值
+        refetch();
+      }, 3000);
     } else if (error) {
       toast({
         title: "Error!",
@@ -399,14 +401,14 @@ function BoardDetails({
         {/* Add Bounty Button */}
         {isCreator && (
           <Button onClick={() => handleOpenModal("addBounty")}>
-            Add Bounty
+            Create Bounty Task
           </Button>
         )}
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-6">
           <TabsList>
-            <TabsTrigger value="bounties">Bounties</TabsTrigger>
+            <TabsTrigger value="bounties">Tasks</TabsTrigger>
             <TabsTrigger value="submissions">
               Members and Submissions
             </TabsTrigger>
@@ -437,7 +439,6 @@ function BoardDetails({
               board={board}
               address={address}
               onOpenReviewSubmissionModal={(submission, bounty) => {
-                setSelectedBountyId(bounty.id);
                 if (isReviewerForBounty(bounty.id)) {
                   handleOpenModal("reviewSubmission", bounty.id, submission);
                 }

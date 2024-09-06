@@ -1,9 +1,9 @@
 import { http, createConfig } from 'wagmi'
-import { holesky } from 'wagmi/chains'
+import { lineaSepolia } from 'wagmi/chains'
 
 export const config = createConfig({
-  chains: [holesky],
+  chains: [lineaSepolia],
   transports: {
-    [holesky.id]: http(),
+    [lineaSepolia.id]: http(),
   },
 })

@@ -1,36 +1,32 @@
-# Bounty Board: Web3 社区活动利器 & 去中心化组织协作平台
+# Bounty Board: The Web3 Community Engagement Tool & Decentralized Organization Collaboration Platform
 
-Bounty Board 是一个去中心化的平台，致力于简化 Web3 社区活动和去中心化组织协作的流程。国内 Web3 学习社区如 OpenBuild、TinTinLand 和 LxDAO 等，经常举办共学活动、项目合作和空投活动。Bounty Board 为这些活动提供了透明、安全、高效的解决方案，解决了用户信息记录、表格创建、代币支付等繁琐工作，并将所有记录保存在链上，保障活动的公平公正性。
+Bounty Board is a decentralized platform designed to streamline Web3 community activities and decentralized organization collaboration. It offers transparent, secure, and efficient solutions for tasks like airdrops and development missions, eliminating the hassle of user data recording, form creation, and token payments. All records are stored on-chain to ensure fairness and integrity in activities.
 
 ![Bounty Board](./assets/screenshot.jpeg)
 
-## 技术架构
+## Technical Architecture
 
-Bounty Board 采用以下技术架构:
+Bounty Board employs the following technical architecture:
 
-- **智能合约 (Solidity):** 核心逻辑由 Solidity 编写的智能合约实现，管理赏金板、活动任务、提交、审核、奖励发放等功能。
-- **The Graph:** 使用 The Graph 为智能合约数据建立索引，提供高效的数据查询服务，供前端应用使用。
-- **Next.js:** 使用 Next.js 构建前端应用，提供用户友好的界面和交互体验。
-- **Wagmi:** 使用 Wagmi 连接以太坊钱包，方便用户与智能合约进行交互。
-- **Shadcn/UI:** 使用 Shadcn/UI 组件库构建美观的用户界面。
+- **Smart Contracts (Solidity):** The core logic is implemented via smart contracts written in Solidity, managing functions such as bounty boards, activity tasks, submissions, reviews, and reward disbursements.
+- **The Graph:** The Graph is used to index smart contract data, providing efficient data query services for frontend applications.
+- **Next.js:** Next.js is utilized to build the frontend application, delivering a user-friendly interface and interaction experience.
+- **Wagmi:** Wagmi is employed to connect Ethereum wallets, facilitating user interaction with smart contracts.
+- **Shadcn/UI:** The Shadcn/UI component library is used to create an aesthetically pleasing user interface.
 
-## 核心功能
+## Core Features
 
-- **简化活动创建:**  社区可以轻松创建各种任务活动，包括共学活动、项目合作、空投等，并自定义任务内容、奖励和审核人员还有截止日期。
-- **自动记录信息:**  自动记录用户信息、参与情况、完成进度等数据，并能够自动生成全员表格直观展示，无需手动维护表格。
-- **链上代币支付:**  支持使用各种代币进行奖励发放，发起方需要预先质押相应代币到合约中，审核完成后将自动发放代币。
-- **数据永久保存:**  所有活动信息和记录都存储在区块链上，永久保存，不可篡改。
+- **Simplified Activity Creation:** Communities can easily create various tasks, including study groups, project collaborations, airdrops, and more, with customizable task content, rewards, reviewers, and deadlines.
+- **Automated Data Recording:** User information, participation status, and completion progress are automatically recorded, with automatic generation of comprehensive tables for visualization, eliminating the need for manual table maintenance.
+- **On-Chain Token Payments:** Supports reward distribution using various tokens. Initiators must stake the corresponding tokens into the contract, which are automatically distributed upon review completion.
+- **Permanent Data Storage:** All activity information and records are stored on the blockchain, ensuring permanent, tamper-proof preservation.
 
-## 未来发展目标
+## Future Development Goals
 
-- **优化存储结构:**  使用 IPFS 存储复杂的记录，如任务与赏金板描述、提交证明、图片等等，减少链上存储成本，提高数据存储效率。
-- **身份存储与绑定:**  支持用户身份存储与绑定，方便用户参与多个赏金板活动，提高用户体验。
-- **精细化权限控制:** 实现更精细的权限管理，例如不同赏金板或者不同任务对不同用户的可见性控制，用户加入赏金板需要申请验证等等。
-- **多代币奖励系统:**  支持为不同任务发放不同类型的代币奖励，提高活动灵活性。
-- **代币质押收益:**  平台可以通过质押合约上的代币到流动性池子中获取收益，为平台创造可持续的经济模型。
-- **去中心化组织协作:**  扩展平台功能，使其成为去中心化组织进行项目协作、任务分配和薪酬发放的工具。
-- **链上AI审核:**  使用链上的 AI Agent 对提交的任务进行审核，提高审核效率。
-
-## 加入与组队
-
-欢迎联系Email: <veithly@live.com> 或微信: RICKY-SHA0，加入我们的黑客松团队，一起打造更好的 Web3 社区活动利器和去中心化组织协作平台！
+- **Optimize Storage Structure:** Use IPFS to store complex records such as task descriptions, bounty board details, proof of submissions, images, etc., reducing on-chain storage costs and improving data storage efficiency.
+- **Identity Storage and Binding:** Support user identity storage and binding for easier participation in multiple bounty board activities, enhancing the user experience.
+- **Refined Permission Controls:** Implement more granular permission management, such as visibility control for different bounty boards or tasks, and require application verification for joining bounty boards.
+- **Multi-Token Reward System:** Support issuing different types of tokens as rewards for various tasks, increasing the flexibility of activities.
+- **Token Staking Revenue:** The platform can stake tokens from the contract into liquidity pools to generate revenue, creating a sustainable economic model.
+- **Decentralized Organization Collaboration:** Expand platform functionality to serve as a tool for decentralized organizations for project collaboration, task distribution, and compensation management.
+- **On-Chain AI Review:** Utilize on-chain AI Agents to review submitted tasks, enhancing review efficiency.

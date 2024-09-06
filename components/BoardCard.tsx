@@ -14,7 +14,7 @@ export default function BoardCard({ board }: { board: Board }) {
 
   return (
     <Link key={board.id} href={`/board/${board.id}`}>
-      <Card>
+      <Card className="transition-all duration-300 hover:shadow-lg hover:scale-105">
         <CardHeader>
           <CardTitle>{board.name}</CardTitle>
         </CardHeader>
