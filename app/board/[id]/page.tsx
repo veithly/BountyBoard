@@ -110,7 +110,7 @@ export default function BoardPage() {
   const [selectedTask, setSelectedTask] = useState<TaskView>();
 
   // 使用合约读取函数
-  const { data: board, refetch } = useGetBoardDetail(BigInt(id as string));
+  const { data: board , refetch } = useGetBoardDetail(BigInt(id as string));
   const { data: isMember } = useIsBoardMember(id as string, address as `0x${string}`);
 
   if (!board) {

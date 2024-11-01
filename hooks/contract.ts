@@ -317,9 +317,8 @@ export function useGetAllBoards() {
     functionName: "getAllBoards",
   });
 }
-
 export function useGetBoardDetail(boardId: bigint) {
-  return useReadContract<typeof abi, "getBoardDetail", BoardDetailView>({
+  return useReadContract<typeof abi, "getBoardDetail", [BoardDetailView]>({
     address: contractAddress,
     abi,
     functionName: "getBoardDetail",
@@ -335,9 +334,8 @@ export function useGetTasksForBoard(boardId: bigint) {
     args: [boardId],
   });
 }
-
 export function useIsBoardMember(boardId: string, address?: `0x${string}`) {
-  return useReadContract<typeof abi, "isBoardMember", boolean>({
+  return useReadContract<typeof abi, "isBoardMember", [boolean]>({
     address: contractAddress,
     abi,
     functionName: "isBoardMember",
