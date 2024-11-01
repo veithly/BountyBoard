@@ -9,9 +9,10 @@ import { useAccount, useWaitForTransactionReceipt } from "wagmi";
 import { useEffect, useState } from "react";
 import { format, set } from "date-fns";
 import { toast } from "@/components/ui/use-toast";
+import Image from 'next/image';
 
 // Components
-import BountyList from "@/components/BountyList";
+import TaskList from "@/components/TaskList";
 import MemberSubmissionTable from "@/components/MemberSubmissionTable";
 import DynamicModal from "@/components/DynamicModal";
 import BoardActionsDropdown from "@/components/BoardActionsDropdown";
@@ -20,37 +21,38 @@ import { Badge } from '@/components/ui/badge';
 
 // Contract Hooks & ABI
 import {
-  useCreateBounty,
+  useCreateTask,
   useSubmitProof,
   useReviewSubmission,
-  useAddReviewerToBounty,
-  useCancelBounty,
+  useAddReviewerToTask,
+  useCancelTask,
   useCloseBoard,
   useWithdrawPledgedTokens,
   useUpdateBountyBoard,
   useJoinBoard,
   usePledgeTokens,
-  useUpdateBounty,
+  useUpdateTask,
   useTokenSymbol,
   useApproveTokens,
+  useGetTasksForBoard,
+  useIsBoardMember,
+  useGetBoardDetail,
 } from "@/hooks/contract";
 // GraphQL and Contract Addresses
-import { BOARD_DETAILS_QUERY } from "@/graphql/queries";
-import { Board, Bounty, Submission } from "@/types/types";
+import { BoardDetailView, Submission, SubmissionView, TaskView } from "@/types/types";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Address } from "@/components/ui/Address";
 import { formatUnits, zeroAddress } from "viem";
 import { Info, Calendar, Coins, Users } from "lucide-react";
 
-const url = process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT as string;
-
 // Modal Configurations
 const modalConfigs = {
-  addBounty: {
-    title: "Add Bounty",
+  addTask: {
+    title: "Add Task",
     description:
-      "Create a new bounty with a description, deadline, max completions, and reward amount.",
+      "Create a new task with a description, deadline, max completions, and reward amount.",
     fields: [
+      { name: "name", label: "Name", type: "text" },
       { name: "description", label: "Description", type: "text" },
       { name: "deadline", label: "Deadline", type: "date" },
       { name: "maxCompletions", label: "Max Completions", type: "number" },
@@ -59,7 +61,7 @@ const modalConfigs = {
   },
   submitProof: {
     title: "Submit Proof",
-    description: "Submit your proof of completion for this bounty.",
+    description: "Submit your proof of completion for this task.",
     fields: [{ name: "proof", label: "Proof", type: "textarea" }],
   },
   reviewSubmission: {
@@ -70,7 +72,7 @@ const modalConfigs = {
   },
   addReviewer: {
     title: "Add Reviewer",
-    description: "Add a reviewer to this bounty.",
+    description: "Add a reviewer to this task.",
     fields: [{ name: "reviewer", label: "Reviewer Address", type: "text" }],
   },
   updateBoard: {
@@ -82,11 +84,12 @@ const modalConfigs = {
       { name: "rewardToken", label: "Reward Token Address", type: "text" },
     ],
   },
-  updateBounty: {
-    title: "Update Bounty",
+  updateTask: {
+    title: "Update Task",
     description:
-      "Update the bounty description, deadline, max completions, and reward amount.",
+      "Update the task description, deadline, max completions, and reward amount.",
     fields: [
+      { name: "name", label: "Name", type: "text" },
       { name: "description", label: "Description", type: "text" },
       { name: "deadline", label: "Deadline", type: "date" },
       { name: "maxCompletions", label: "Max Completions", type: "number" },
@@ -102,49 +105,36 @@ const modalConfigs = {
 
 // Main Board Page Component
 export default function BoardPage() {
-  const params = useParams();
-  const boardId = params.id as string;
+  const { id } = useParams();
   const { address } = useAccount();
-  const [selectedBounty, setSelectedBounty] = useState<any>(null);
+  const [selectedTask, setSelectedTask] = useState<TaskView>();
 
-  const { data: boardData, refetch } = useQuery({
-    queryKey: ["board", boardId],
-    queryFn: async () => {
-      // Fetch data from The Graph
-      const boardData: { board: Board } = await request(
-        url,
-        BOARD_DETAILS_QUERY,
-        { boardId }
-      );
-      return boardData.board;
-    },
-  });
+  // 使用合约读取函数
+  const { data: board, refetch } = useGetBoardDetail(BigInt(id as string));
+  const { data: isMember } = useIsBoardMember(id as string, address as `0x${string}`);
 
-  if (!boardData) {
+  if (!board) {
     return <LoadingSpinner />;
   }
 
-  const isCreator = address?.toLowerCase() === boardData.creator;
-  const isMember = boardData.members.some(
-    (member) => member.member === address?.toLowerCase()
-  );
-  const isReviewerForBounty = (bountyId: string) => {
-    const bounty = boardData.bounties.find((b) => b.id === bountyId);
-    return bounty?.reviewers.some(
-      (reviewer) => reviewer.reviewerAddress === address?.toLowerCase()
-    );
+  const isCreator = board.creator.toLowerCase() === address?.toLowerCase();
+
+  const isReviewerForTask = (taskId: bigint) => {
+    const TaskView = board.tasks.find(t => t.id === taskId);
+    return TaskView?.reviewers?.includes(address as `0x${string}`);
   };
 
   return (
     <div className="container mx-auto p-4">
       <BoardDetails
-        board={boardData}
+        board={board}
+        tasks={board.tasks}
         address={address}
-        onBountySelect={setSelectedBounty}
+        onTaskSelect={setSelectedTask}
         refetch={refetch}
         isCreator={isCreator}
         isMember={isMember}
-        isReviewerForBounty={isReviewerForBounty}
+        isReviewerForTask={isReviewerForTask}
       />
     </div>
   );
@@ -153,29 +143,31 @@ export default function BoardPage() {
 // Board Details Component
 function BoardDetails({
   board,
+  tasks,
   address,
-  onBountySelect,
+  onTaskSelect,
   refetch,
   isCreator,
   isMember,
-  isReviewerForBounty,
+  isReviewerForTask,
 }: {
-  board: Board;
+  board: BoardDetailView;
+  tasks: TaskView[];
   address: string | undefined;
-  onBountySelect: (bounty: Bounty) => void;
+  onTaskSelect: (TaskView: TaskView) => void;
   refetch: () => void;
   isCreator: boolean;
   isMember: boolean;
-  isReviewerForBounty: (bountyId: string) => boolean | undefined;
+  isReviewerForTask: (taskId: number) => boolean;
 }) {
   // Contract Hooks
-  const createBounty = useCreateBounty();
+  const createTask = useCreateTask();
   const submitProof = useSubmitProof();
   const reviewSubmission = useReviewSubmission();
-  const addReviewerToBounty = useAddReviewerToBounty();
+  const addReviewerToTask = useAddReviewerToTask();
   const updateBountyBoard = useUpdateBountyBoard();
-  const updateBounty = useUpdateBounty();
-  const cancelBounty = useCancelBounty();
+  const updateTask = useUpdateTask();
+  const cancelTask = useCancelTask();
   const closeBoard = useCloseBoard();
   const withdrawPledgedTokens = useWithdrawPledgedTokens();
   const joinBoard = useJoinBoard();
@@ -186,32 +178,60 @@ function BoardDetails({
   const [modalType, setModalType] = useState<keyof typeof modalConfigs | null>(
     null
   );
-  const [selectedBountyId, setSelectedBountyId] = useState<string | null>(null);
+  const [selectedTaskId, setSelectedTaskId] = useState<bigint>();
   const [selectedSubmission, setSelectedSubmission] = useState<Submission>();
   const [transactionHash, setTransactionHash] = useState<`0x${string}`>();
   const [activeTab, setActiveTab] = useState("bounties");
+  const [initialFormData, setInitialFormData] = useState<Record<string, any>>();
 
   // Modal Handlers
   const handleOpenModal = (
     type: keyof typeof modalConfigs,
-    bountyId?: string,
+    taskId?: bigint,
     submission?: Submission
   ) => {
     setModalType(type);
-    setSelectedBountyId(bountyId || null);
+    setSelectedTaskId(taskId);
     setSelectedSubmission(submission);
     setIsModalOpen(true);
+
+    // 预填充更新表单
+    if (type === "updateBoard") {
+      // 预填充 board 更新表单
+      const initialBoardData = {
+        name: board.name,
+        description: board.description,
+        rewardToken: board.rewardToken === zeroAddress ? '' : board.rewardToken,
+      };
+      setInitialFormData(initialBoardData);
+    } else if (type === "updateTask" && typeof taskId === 'bigint') {
+      const task = board.tasks.find(t => t.id === taskId);
+
+      if (task) {
+        const initialTaskData = {
+          name: task.name,
+          description: task.description,
+          deadline: Number(task.deadline),
+          maxCompletions: Number(task.maxCompletions),
+          rewardAmount: formatUnits(task.rewardAmount, 18),
+        };
+        setInitialFormData(initialTaskData);
+      }
+    } else {
+      // 其他类型的 modal 不需要预填充
+      setInitialFormData(undefined);
+    }
   };
 
   const handleCloseModal = () => {
     setModalType(null);
-    setSelectedBountyId(null);
+    setSelectedTaskId(undefined);
     setIsModalOpen(false);
   };
 
   // Contract Action Handlers
-  const handleAction = async (action: string, bountyId?: string) => {
-    const boardIdNum = parseInt(board.id);
+  const handleAction = async (action: string, taskId?: bigint) => {
+    const boardIdNum = board.id;
     let res: {
       hash?: `0x${string}`;
       error?: string;
@@ -224,9 +244,9 @@ function BoardDetails({
         res = await joinBoard({ boardId: boardIdNum });
         break;
       case "cancelBounty":
-        res = await cancelBounty({
+        res = await cancelTask({
           boardId: boardIdNum,
-          bountyId: parseInt(bountyId!),
+          taskId: taskId,
         });
         break;
       case "closeBoard":
@@ -256,14 +276,12 @@ function BoardDetails({
         duration: Infinity,
       });
     } else if (isConfirmed) {
-      setTimeout(() => {
-        toast({
-          title: "Success!",
-          description: "Transaction confirmed.",
-        });
-        setTransactionHash(undefined); // 重置交易哈希值
-        refetch();
-      }, 3000);
+      toast({
+        title: "Success!",
+        description: "Transaction confirmed.",
+      });
+      setTransactionHash(undefined); // 重置交易哈希值
+      refetch();
     } else if (error) {
       toast({
         title: "Error!",
@@ -276,15 +294,16 @@ function BoardDetails({
 
   // Modal Submission Handler
   const handleModalSubmit = async (data: any) => {
-    const boardIdNum = parseInt(board.id);
-    const bountyIdNum = parseInt(selectedBountyId?.split("-")[1]!);
+    const boardIdNum = board.id;
+    const taskIdNum = selectedTaskId ?? 0;
     let result: {
       hash?: string;
     };
     switch (modalType) {
-      case "addBounty":
-        result = await createBounty({
+      case "addTask":
+        result = await createTask({
           boardId: boardIdNum,
+          name: data.name,
           description: data.description,
           deadline: data.deadline,
           maxCompletions: data.maxCompletions,
@@ -294,7 +313,7 @@ function BoardDetails({
       case "submitProof":
         result = await submitProof({
           boardId: boardIdNum,
-          bountyId: bountyIdNum,
+          taskId: taskIdNum,
           proof: data.proof,
         });
         break;
@@ -302,15 +321,15 @@ function BoardDetails({
         if (!selectedSubmission) return;
         result = await reviewSubmission({
           boardId: boardIdNum,
-          bountyId: bountyIdNum,
+          taskId: taskIdNum,
           submissionAddress: selectedSubmission.submitter,
           approved: data.approved,
         });
         break;
       case "addReviewer":
-        result = await addReviewerToBounty({
+        result = await addReviewerToTask({
           boardId: boardIdNum,
-          bountyId: bountyIdNum,
+          taskId: taskIdNum,
           reviewer: data.reviewer,
         });
         break;
@@ -322,10 +341,11 @@ function BoardDetails({
           rewardToken: data.rewardToken,
         });
         break;
-      case "updateBounty":
-        result = await updateBounty({
+      case "updateTask":
+        result = await updateTask({
           boardId: boardIdNum,
-          bountyId: bountyIdNum,
+          taskId: taskIdNum,
+          name: data.name,
           description: data.description,
           deadline: data.deadline,
           maxCompletions: data.maxCompletions,
@@ -349,9 +369,34 @@ function BoardDetails({
 
   return (
     <Card>
+      {board.img && (
+        <div className="relative w-full h-64 overflow-hidden rounded-t-lg">
+          <Image
+            src={board.img}
+            alt={board.name}
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.src = '/placeholder.png';
+            }}
+          />
+        </div>
+      )}
+
       <CardHeader>
-        <div className="flex justify-between items-center">
-          <CardTitle>{board.name}{ board.closed && (<Badge variant="destructive" className="ml-5">Closed</Badge>)}</CardTitle>
+        <div className="flex justify-between items-start">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              {board.name}
+              {board.closed && (
+                <Badge variant="destructive" className="ml-2">
+                  Closed
+                </Badge>
+              )}
+            </CardTitle>
+          </div>
           {isCreator && (
             <BoardActionsDropdown
               isCreator={isCreator}
@@ -360,9 +405,7 @@ function BoardDetails({
               onApproveTokens={() => handleAction("approveTokens")}
               onOpenUpdateBoardModal={() => handleOpenModal("updateBoard")}
               onCloseBoard={() => handleAction("closeBoard")}
-              onWithdrawPledgedTokens={() =>
-                handleAction("withdrawPledgedTokens")
-              }
+              onWithdrawPledgedTokens={() => handleAction("withdrawPledgedTokens")}
               onOpenPledgeTokensModal={() => handleOpenModal("pledgeTokens")}
             />
           )}
@@ -376,17 +419,17 @@ function BoardDetails({
         <div className="flex items-center gap-2 text-muted-foreground mb-2">
           <Calendar className="h-4 w-4" />
           <strong>Created:</strong>{" "}
-          {format(new Date(parseInt(board.createdAt) * 1000), "PPP")}
+          {format(new Date(Number(board.createdAt) * 1000), "PPP")}
         </div>
         <div className="flex items-center gap-2 text-muted-foreground mb-2">
           <Coins className="h-4 w-4" />
-          <strong>Reward Token:</strong> {tokenSymbol.data  ?? ((board.rewardToken === zeroAddress && 'ETH') || '')}
+          <strong>Reward Token:</strong> {tokenSymbol.data  ?? ((board.rewardToken === zeroAddress && 'AIA') || '')}
           {!(board.rewardToken === zeroAddress) && <Address address={board.rewardToken} />}
         </div>
         <div className="flex items-center gap-2 text-muted-foreground mb-4">
           <Coins className="h-4 w-4" />
           <strong>Total Pledged:</strong>{" "}
-          {formatUnits(BigInt(board.totalPledged), 18)} {tokenSymbol.data  ?? ((board.rewardToken === zeroAddress && 'ETH') || '')}
+          {formatUnits(BigInt(board.totalPledged), 18)} {tokenSymbol.data  ?? ((board.rewardToken === zeroAddress && 'AIA') || '')}
         </div>
         <div className="flex items-center gap-2 text-muted-foreground mb-4">
           <Users className="h-4 w-4" />
@@ -400,7 +443,7 @@ function BoardDetails({
 
         {/* Add Bounty Button */}
         {isCreator && (
-          <Button onClick={() => handleOpenModal("addBounty")}>
+          <Button onClick={() => handleOpenModal("addTask")}>
             Create Bounty Task
           </Button>
         )}
@@ -414,22 +457,22 @@ function BoardDetails({
             </TabsTrigger>
           </TabsList>
           <TabsContent value="bounties">
-            {/* Bounty List */}
-            <BountyList
-              bounties={board.bounties}
+            {/* Task List */}
+            <TaskList
+              tasks={board.tasks}
               address={address}
-              onBountySelect={onBountySelect}
-              onOpenSubmitProofModal={(bountyId) =>
-                handleOpenModal("submitProof", bountyId)
+              onTaskSelect={onTaskSelect}
+              onOpenSubmitProofModal={(taskId) =>
+                handleOpenModal("submitProof", taskId)
               }
-              onOpenAddReviewerModal={(bountyId) =>
-                isCreator && handleOpenModal("addReviewer", bountyId)
+              onOpenAddReviewerModal={(taskId) =>
+                isCreator && handleOpenModal("addReviewer", taskId)
               }
-              onOpenUpdateBountyModal={(bountyId) =>
-                isCreator && handleOpenModal("updateBounty", bountyId)
+              onOpenUpdateTaskModal={(taskId) =>
+                isCreator && handleOpenModal("updateTask", taskId)
               }
-              onCancelBounty={(bountyId) =>
-                isCreator && handleAction("cancelBounty", bountyId)
+              onCancelTask={(taskId) =>
+                isCreator && handleAction("cancelTask", taskId)
               }
             />
           </TabsContent>
@@ -438,9 +481,9 @@ function BoardDetails({
             <MemberSubmissionTable
               board={board}
               address={address}
-              onOpenReviewSubmissionModal={(submission, bounty) => {
-                if (isReviewerForBounty(bounty.id)) {
-                  handleOpenModal("reviewSubmission", bounty.id, submission);
+              onOpenReviewSubmissionModal={(submission, task) => {
+                if (isReviewerForTask(task.id)) {
+                  handleOpenModal("reviewSubmission", task.id, submission);
                 }
               }}
             />
@@ -454,6 +497,7 @@ function BoardDetails({
             onClose={handleCloseModal}
             config={modalConfigs[modalType]}
             selectedSubmission={selectedSubmission}
+            initialData={initialFormData}
             onSubmit={handleModalSubmit}
             onConfirmed={refetch}
           />

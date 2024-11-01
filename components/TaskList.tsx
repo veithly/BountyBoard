@@ -1,79 +1,78 @@
-// components/BountyList.tsx
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu"
-import { 
-  Calendar, 
-  Clock, 
-  Coins, 
-  MoreHorizontal, 
-  User2, 
-  UserPlus 
+import {
+  Calendar,
+  Clock,
+  Coins,
+  MoreHorizontal,
+  User2,
+  UserPlus
 } from 'lucide-react'
 import { format } from 'date-fns';
 import { Address } from './ui/Address';
 import { formatUnits } from 'viem';
-import { Bounty } from '@/types/types';
+import { TaskView } from '@/types/types';
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Badge } from './ui/badge';
 
-interface BountyListProps {
-  bounties: Bounty[];
-  address: string | undefined;
-  onBountySelect: (bounty: Bounty) => void;
-  onOpenSubmitProofModal: (bountyId: string) => void;
-  onOpenAddReviewerModal: (bountyId: string) => void;
-  onOpenUpdateBountyModal: (bountyId: string) => void;
-  onCancelBounty: (bountyId: string) => void;
+interface TaskListProps {
+  tasks: TaskView[];
+  address: `0x${string}` | undefined;
+  onTaskSelect: (task: TaskView) => void;
+  onOpenSubmitProofModal: (taskId: bigint) => void;
+  onOpenAddReviewerModal: (taskId: bigint) => void;
+  onOpenUpdateTaskModal: (taskId: bigint) => void;
+  onCancelTask: (taskId: bigint) => void;
 }
 
-export default function BountyList({
-  bounties,
+export default function TaskList({
+  tasks,
   address,
-  onBountySelect,
+  onTaskSelect,
   onOpenSubmitProofModal,
   onOpenAddReviewerModal,
-  onOpenUpdateBountyModal,
-  onCancelBounty
-}: BountyListProps) {
+  onOpenUpdateTaskModal,
+  onCancelTask
+}: TaskListProps) {
 
-  const isCreator = bounties.some(bounty => bounty.creator === address?.toLowerCase());
-  const [remainingTimes, setRemainingTimes] = useState<Record<string, number>>(
-    bounties.reduce((acc, bounty) => ({ ...acc, [bounty.id]: Number(bounty.deadline) - Date.now() }), {})
+  const isCreator = tasks.some(task => task.creator.toLowerCase() === address?.toLowerCase());
+  const [remainingTimes, setRemainingTimes] = useState<Record<number, number>>(
+    tasks.reduce((acc, task) => ({ ...acc, [Number(task.id)]: Number(task.deadline) - Date.now() }), {})
   );
 
   useEffect(() => {
     const intervalId = setInterval(() => {
       setRemainingTimes(prevTimes =>
-        bounties.reduce((acc, bounty) => ({
+        tasks.reduce((acc, task) => ({
           ...acc,
-          [bounty.id]: prevTimes[bounty.id] > 0 ? prevTimes[bounty.id] - 1000 : 0
+          [Number(task.id)]: prevTimes[Number(task.id)] > 0 ? prevTimes[Number(task.id)] - 1000 : 0
         }), {})
       );
     }, 1000);
     return () => clearInterval(intervalId);
-  }, [bounties]);
+  }, [tasks]);
 
   return (
     <ul className="space-y-4">
-      {bounties.map((bounty) => {
-        const isExpired = Date.now() > Number(bounty.deadline);
-        const remainingTime = Number(bounty.deadline) - Date.now(); 
+      {tasks.map((task) => {
+        const isExpired = Date.now() > Number(task.deadline);
+        const remainingTime = Number(task.deadline) - Date.now();
         const days = Math.floor(remainingTime / (1000 * 60 * 60 * 24));
         const hours = Math.floor((remainingTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
         const minutes = Math.floor((remainingTime % (1000 * 60 * 60)) / (1000 * 60));
         const seconds = Math.floor((remainingTime % (1000 * 60)) / 1000);
 
         return (
-          <li key={bounty.id} className="relative card mb-4 p-4 shadow-lg rounded-lg border border-gray-200">
-            {/* Actions Dropdown (Top Right) */}
+          <li key={task.id} className="relative card mb-4 p-4 shadow-lg rounded-lg border border-gray-200">
+            {/* Actions Dropdown */}
             {address && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -82,9 +81,9 @@ export default function BountyList({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  {/* Submit Proof (available to all logged-in users) */}
+                  {/* Submit Proof */}
                   {address && (
-                    <DropdownMenuItem onClick={() => onOpenSubmitProofModal(bounty.id)}>
+                    <DropdownMenuItem onClick={() => onOpenSubmitProofModal(task.id)}>
                       Submit Proof
                     </DropdownMenuItem>
                   )}
@@ -92,14 +91,14 @@ export default function BountyList({
                   {/* Creator Actions */}
                   {isCreator && (
                     <>
-                      <DropdownMenuItem onClick={() => onOpenAddReviewerModal(bounty.id)}>
+                      <DropdownMenuItem onClick={() => onOpenAddReviewerModal(task.id)}>
                         Add Reviewer
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onOpenUpdateBountyModal(bounty.id)}>
-                        Update Bounty
+                      <DropdownMenuItem onClick={() => onOpenUpdateTaskModal(task.id)}>
+                        Update Task
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onCancelBounty(bounty.id)}>
-                        Cancel Bounty
+                      <DropdownMenuItem onClick={() => onCancelTask(task.id)}>
+                        Cancel Task
                       </DropdownMenuItem>
                     </>
                   )}
@@ -107,40 +106,36 @@ export default function BountyList({
               </DropdownMenu>
             )}
 
-            {/* Bounty Details (Left) */}
-            <div className="flex items-start cursor-pointer" onClick={() => onBountySelect(bounty)}>
+            {/* Task Details */}
+            <div className="flex items-start cursor-pointer" onClick={() => onTaskSelect(task)}>
               <div>
-                <h3 className="font-bold">{bounty.description}</h3>
+                <h3 className="font-bold">{task.name}</h3>
+                <p className="text-sm text-muted-foreground">{task.description}</p>
                 <div className="flex items-center gap-2 mt-2 text-muted-foreground">
                   <User2 className="h-4 w-4" />
-                  <Address address={bounty.creator} size="sm" />
+                  <Address address={task.creator} size="sm" />
                 </div>
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Coins className="h-4 w-4" />
-                  Reward: {formatUnits(BigInt(bounty.rewardAmount), 18)}
+                  Reward: {formatUnits(task.rewardAmount, 18)}
                 </div>
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <UserPlus className="h-4 w-4" />
-                  Max Submissions: {bounty.maxCompletions}
+                  Completions: {Number(task.numCompletions)}/{Number(task.maxCompletions)}
                 </div>
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Calendar className="h-4 w-4" />
-                  Created: {format(
-                    new Date(Number(bounty.createdAt) * 1000),
-                    'PPP',
-                  )}
+                  Created: {format(new Date(Number(task.createdAt) * 1000), 'PPP')}
                 </div>
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Clock className="h-4 w-4" />
-                  Deadline:{' '}
-                  {format(new Date(Number(bounty.deadline)), 'PPP')} 
+                  Deadline: {format(new Date(Number(task.deadline)), 'PPP')}
                 </div>
               </div>
 
-              {/* Countdown and Status (Right Bottom) */}
+              {/* Countdown and Status */}
               <div className="absolute bottom-4 right-4 flex flex-col items-end text-xs text-muted-foreground">
-                {/* 显示倒计时或徽章 */}
-                {!bounty.cancelled && !bounty.completed && (
+                {!task.cancelled && !task.completed && (
                   isExpired ? (
                     <Badge variant="destructive">Expired</Badge>
                   ) : (
@@ -153,13 +148,13 @@ export default function BountyList({
                     </motion.div>
                   )
                 )}
-                
-                {/* Bounty Status */}
+
+                {/* Task Status */}
                 <div className="mt-2">
-                  {bounty.cancelled && (
+                  {task.cancelled && (
                     <Badge variant="destructive">Cancelled</Badge>
                   )}
-                  {bounty.completed && (
+                  {task.completed && (
                     <Badge>Completed</Badge>
                   )}
                 </div>

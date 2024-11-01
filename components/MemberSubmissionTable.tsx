@@ -10,16 +10,16 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Textarea } from "@/components/ui/textarea";
-import { Check, X, Eye, Circle, CheckCircle } from 'lucide-react'; // 导入新的图标
-import { Board, Bounty, Member, Reviewer, Submission } from '@/types/types';
+import { Check, X, Eye, Circle, CheckCircle } from 'lucide-react';
+import { BoardDetailView, TaskView, SubmissionView } from '@/types/types';
 import { Address } from './ui/Address';
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 
 interface MemberSubmissionTableProps {
-  board: Board;
-  address: string | undefined;
-  onOpenReviewSubmissionModal: (submission: Submission, bounty: Bounty) => void;
+  board: BoardDetailView;
+  address: `0x${string}` | undefined;
+  onOpenReviewSubmissionModal: (submission: SubmissionView, task: TaskView) => void;
 }
 
 export default function MemberSubmissionTable({
@@ -27,10 +27,10 @@ export default function MemberSubmissionTable({
   address,
   onOpenReviewSubmissionModal,
 }: MemberSubmissionTableProps) {
-  const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
+  const [selectedSubmission, setSelectedSubmission] = useState<SubmissionView | null>(null);
   const [isSubmissionModalOpen, setIsSubmissionModalOpen] = useState(false);
 
-  const handleSubmissionClick = (submission: Submission | undefined) => {
+  const handleSubmissionClick = (submission: SubmissionView | undefined) => {
     if (submission) {
       setSelectedSubmission(submission);
       setIsSubmissionModalOpen(true);
@@ -67,30 +67,30 @@ export default function MemberSubmissionTable({
         <TableHeader>
           <TableRow>
             <TableCell className="font-bold">Member</TableCell>
-            {board.bounties.map((bounty) => (
-              <TableCell key={bounty.id} className="font-bold">
-                {bounty.description}
+            {board.tasks.map((task) => (
+              <TableCell key={task.id} className="font-bold">
+                {task.name}
               </TableCell>
             ))}
           </TableRow>
         </TableHeader>
         <TableBody>
-          {board.members.map((member: Member) => (
-            <TableRow key={member.member}>
+          {board.members.map((member) => (
+            <TableRow key={member}>
               <TableCell className="font-medium">
-                <Address address={member.member} size='lg' />
+                <Address address={member} size='lg' />
               </TableCell>
-              {board.bounties.map((bounty: Bounty) => {
-                const submission = bounty.submissions.find(
-                  (submission: Submission) => submission.submitter === member.member
-                );
-
-                const isReviewer = bounty.reviewers.some(
-                  (reviewer: Reviewer) => reviewer.reviewerAddress.toLowerCase() === address?.toLowerCase()
+              {board.tasks.map((task: TaskView) => {
+                const submission = board.submissions.find(
+                  (sub: SubmissionView) =>
+                    sub.submitter === member &&
+                    sub.taskId === task.id
                 );
 
                 let submissionIcon = (
-                  <Circle className="h-5 w-5 text-yellow-400 cursor-pointer" onClick={() => handleSubmissionClick(submission)} />
+                  <Circle className="h-5 w-5 text-yellow-400 cursor-pointer"
+                    onClick={() => handleSubmissionClick(submission)}
+                  />
                 );
 
                 if (submission) {
@@ -98,9 +98,12 @@ export default function MemberSubmissionTable({
                     <CheckCircle className="h-5 w-5 text-green-300 cursor-pointer" onClick={() => handleSubmissionClick(submission)} />
                   )
                 }
+                const isReviewer = task.reviewers.some(
+                  (reviewer: `0x${string}`) => reviewer.toLowerCase() === address?.toLowerCase()
+                );
                 if (submission && isReviewer && !submission.reviewed) {
                   submissionIcon = (
-                    <Eye className="h-5 w-5 text-blue-500 cursor-pointer" onClick={() => onOpenReviewSubmissionModal(submission, bounty)} />
+                    <Eye className="h-5 w-5 text-blue-500 cursor-pointer" onClick={() => onOpenReviewSubmissionModal(submission, task)} />
                   );
                 } else if (submission && submission.reviewed) {
                   submissionIcon = submission.approved ? (
@@ -111,7 +114,7 @@ export default function MemberSubmissionTable({
                 }
 
                 return (
-                  <TableCell key={bounty.id}>
+                  <TableCell key={task.id}>
                     {submissionIcon}
                   </TableCell>
                 );
@@ -131,7 +134,7 @@ export default function MemberSubmissionTable({
             </DialogDescription>
           </DialogHeader>
           {selectedSubmission && (
-              <p className="mt-2">
+            <p className="mt-2">
               <span className="font-semibold">Proof:</span>
               <Textarea
                 value={selectedSubmission.proof}

@@ -1,9 +1,10 @@
 import { http, createConfig } from 'wagmi'
-import { holesky } from 'wagmi/chains'
+import { aiaTestnet } from './aiachain'
 
+// 更新配置
 export const config = createConfig({
-  chains: [holesky],
+  chains: [aiaTestnet],
   transports: {
-    [holesky.id]: http(),
+    [aiaTestnet.id]: http(),
   },
 })

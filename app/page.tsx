@@ -3,22 +3,18 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import DynamicModal from "@/components/DynamicModal";
-import { useCreateBountyBoard } from "@/hooks/contract";
-import { BOARDS } from "@/graphql/queries";
-import { Board } from "@/types/types";
-import { request } from 'graphql-request';
-import { useQuery } from "@tanstack/react-query";
+import { useCreateBoard, useGetAllBoards } from "@/hooks/contract";
+import { type BoardView } from "@/types/types";
 import BoardCard from "@/components/BoardCard";
-
-const url = process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT as string;
 
 const modalConfigs = {
   addBoard: {
     title: 'Add New Board',
-    description: 'Create a new bounty board with a name, description, and reward token(blank for ETH).',
+    description: 'Create a new bounty board with a name, description, and reward token(blank for AIA).',
     fields: [
       { name: 'name', label: 'Board Name', type: 'text' },
       { name: 'description', label: 'Description', type: 'text' },
+      { name: 'img', label: 'Image', type: 'image' },
       { name: 'rewardToken', label: 'Reward Token Address', type: 'text' },
     ],
   },
@@ -26,15 +22,9 @@ const modalConfigs = {
 
 export default function HomePage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const createBountyBoard = useCreateBountyBoard();
+  const createBoard = useCreateBoard();
 
-  const { data: boardsData, refetch } = useQuery({
-    queryKey: ['boards'],
-    async queryFn() {
-      const result = await request(url, BOARDS) as { boards: Board[] };
-      return result.boards as Board[];
-    },
-  });
+  const { data: boardsData, refetch } = useGetAllBoards();
 
   const handleOpenModal = () => {
     setIsModalOpen(true);
@@ -45,7 +35,7 @@ export default function HomePage() {
   };
 
   const handleSubmit = async (data: any) => {
-    return await createBountyBoard(data);
+    return await createBoard(data);
   };
 
   return (
@@ -54,7 +44,7 @@ export default function HomePage() {
         Create Bounty Board
       </Button>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {boardsData?.map((board: Board) => (
+        {boardsData && boardsData.map((board: BoardView) => (
           !board.closed && <BoardCard key={board.id} board={board} />
         ))}
       </div>

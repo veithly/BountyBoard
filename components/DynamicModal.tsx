@@ -23,11 +23,14 @@ import { cn } from "@/lib/utils";
 import { format, set } from "date-fns";
 import { Submission } from "@/types/types";
 import { useWaitForTransactionReceipt } from "wagmi";
+import { Upload } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
+import Image from "next/image";
 
 interface ModalField {
   name: string;
   label: string;
-  type: "text" | "number" | "date" | "checkbox" | "textarea";
+  type: "text" | "number" | "date" | "checkbox" | "textarea" | "image";
 }
 
 interface DynamicModalProps {
@@ -35,6 +38,7 @@ interface DynamicModalProps {
   onClose: () => void;
   config: any;
   selectedSubmission?: Submission | null;
+  initialData?: Record<string, any>;
   onSubmit: (data: any) => Promise<
     | {
         hash?: string;
@@ -50,14 +54,17 @@ export default function DynamicModal({
   onClose,
   config,
   selectedSubmission,
+  initialData,
   onSubmit,
   onConfirmed,
 }: DynamicModalProps) {
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [transactionHash, setTransactionHash] = useState<`0x${string}` | null>(
     null
   );
+  const { toast } = useToast();
 
   const handleChange = (event: any) => {
     const { name, value, type, checked } = event.target;
@@ -91,15 +98,64 @@ export default function DynamicModal({
   // 在确认或错误发生时关闭模态框
   useEffect(() => {
     if (isConfirmed || error) {
-      console.log("Transaction confirmed:", isConfirmed, new Date());
-      setTimeout(() => {
-        console.log("Closing modal...", new Date());
-        setIsSubmitting(false);
-        onConfirmed();
-        onClose();
-      }, 3000);
+      setIsSubmitting(false);
+      onConfirmed();
+      onClose();
     }
   }, [isConfirmed, error, onClose, onConfirmed]);
+
+  // 处理图片上传
+  const handleImageUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+    fieldName: string
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await fetch("https://api.img2ipfs.org/api/v0/add", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error("Upload failed");
+      }
+
+      const data = await response.json();
+      setFormData((prev) => ({
+        ...prev,
+        [fieldName]: data.Url,
+      }));
+
+      toast({
+        title: "Success",
+        description: "Image uploaded successfully",
+      });
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to upload image",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  // 当 modal 打开或 initialData 变化时，更新表单数据
+  useEffect(() => {
+    if (isOpen && initialData) {
+      setFormData(initialData);
+    } else if (!isOpen) {
+      setFormData({}); // 关闭时清空表单
+    }
+  }, [isOpen, initialData]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -131,7 +187,38 @@ export default function DynamicModal({
               >
                 {field.label}
               </label>
-              {field.type === "date" ? (
+              {field.type === "image" ? (
+                <div className="mt-2">
+                  <div className="flex items-center gap-4">
+                    {formData[field.name] && (
+                      <Image
+                        src={formData[field.name]}
+                        alt={field.label}
+                        width={100}
+                        height={100}
+                      />
+                    )}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={isUploading}
+                      onClick={() =>
+                        document.getElementById(`file-${field.name}`)?.click()
+                      }
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      {isUploading ? "Uploading..." : "Upload Image"}
+                    </Button>
+                  </div>
+                  <input
+                    id={`file-${field.name}`}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => handleImageUpload(e, field.name)}
+                  />
+                </div>
+              ) : field.type === "date" ? (
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
@@ -189,6 +276,7 @@ export default function DynamicModal({
                   type={field.type}
                   placeholder={field.label}
                   name={field.name}
+                  value={formData[field.name] || ''}
                   onChange={handleChange}
                   className="mt-2"
                 />
@@ -197,7 +285,11 @@ export default function DynamicModal({
           ))}
         </div>
         <DialogFooter>
-          <Button type="submit" onClick={handleSubmit} disabled={isSubmitting}>
+          <Button
+            type="submit"
+            onClick={handleSubmit}
+            disabled={isSubmitting || isUploading}
+          >
             {isSubmitting ? "Submitting..." : "Submit"}
           </Button>
         </DialogFooter>
