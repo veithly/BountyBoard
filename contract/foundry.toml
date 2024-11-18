@@ -3,4 +3,6 @@ src = "src"
 out = "out"
 libs = ["lib"]
 
+optimizer_details = { yul = true, yulDetails = { stackAllocation = true } }
+
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options

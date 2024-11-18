@@ -1,7 +1,5 @@
 [
   { "type": "constructor", "inputs": [], "stateMutability": "nonpayable" },
-  { "type": "fallback", "stateMutability": "payable" },
-  { "type": "receive", "stateMutability": "payable" },
   {
     "type": "function",
     "name": "DEFAULT_ADMIN_ROLE",
@@ -14,6 +12,13 @@
     "name": "REVIEWER_ROLE",
     "inputs": [],
     "outputs": [{ "name": "", "type": "bytes32", "internalType": "bytes32" }],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "UPGRADE_INTERFACE_VERSION",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "string", "internalType": "string" }],
     "stateMutability": "view"
   },
   {
@@ -66,9 +71,9 @@
     "outputs": [
       { "name": "submitter", "type": "address", "internalType": "address" },
       { "name": "proof", "type": "string", "internalType": "string" },
-      { "name": "reviewed", "type": "bool", "internalType": "bool" },
-      { "name": "approved", "type": "bool", "internalType": "bool" },
-      { "name": "submittedAt", "type": "uint256", "internalType": "uint256" }
+      { "name": "status", "type": "int8", "internalType": "int8" },
+      { "name": "submittedAt", "type": "uint256", "internalType": "uint256" },
+      { "name": "reviewComment", "type": "string", "internalType": "string" }
     ],
     "stateMutability": "view"
   },
@@ -116,7 +121,9 @@
         "type": "uint256",
         "internalType": "uint256"
       },
-      { "name": "_rewardAmount", "type": "uint256", "internalType": "uint256" }
+      { "name": "_rewardAmount", "type": "uint256", "internalType": "uint256" },
+      { "name": "_config", "type": "string", "internalType": "string" },
+      { "name": "_allowSelfCheck", "type": "bool", "internalType": "bool" }
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
@@ -165,6 +172,11 @@
         "type": "tuple",
         "internalType": "struct BountyBoard.BoardDetailView",
         "components": [
+          {
+            "name": "currentUser",
+            "type": "address",
+            "internalType": "address"
+          },
           { "name": "id", "type": "uint256", "internalType": "uint256" },
           { "name": "creator", "type": "address", "internalType": "address" },
           { "name": "name", "type": "string", "internalType": "string" },
@@ -230,6 +242,12 @@
                 "name": "reviewers",
                 "type": "address[]",
                 "internalType": "address[]"
+              },
+              { "name": "config", "type": "string", "internalType": "string" },
+              {
+                "name": "allowSelfCheck",
+                "type": "bool",
+                "internalType": "bool"
               }
             ]
           },
@@ -249,12 +267,16 @@
                 "internalType": "address"
               },
               { "name": "proof", "type": "string", "internalType": "string" },
-              { "name": "reviewed", "type": "bool", "internalType": "bool" },
-              { "name": "approved", "type": "bool", "internalType": "bool" },
+              { "name": "status", "type": "int8", "internalType": "int8" },
               {
                 "name": "submittedAt",
                 "type": "uint256",
                 "internalType": "uint256"
+              },
+              {
+                "name": "reviewComment",
+                "type": "string",
+                "internalType": "string"
               }
             ]
           },
@@ -262,7 +284,70 @@
             "name": "members",
             "type": "address[]",
             "internalType": "address[]"
+          },
+          {
+            "name": "userTaskStatuses",
+            "type": "tuple[]",
+            "internalType": "struct BountyBoard.UserTaskStatus[]",
+            "components": [
+              {
+                "name": "taskId",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              { "name": "submitted", "type": "bool", "internalType": "bool" },
+              { "name": "status", "type": "int8", "internalType": "int8" },
+              {
+                "name": "submittedAt",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "submitProof",
+                "type": "string",
+                "internalType": "string"
+              },
+              {
+                "name": "reviewComment",
+                "type": "string",
+                "internalType": "string"
+              }
+            ]
           }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getBoardsByMember",
+    "inputs": [
+      { "name": "_member", "type": "address", "internalType": "address" }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple[]",
+        "internalType": "struct BountyBoard.BoardView[]",
+        "components": [
+          { "name": "id", "type": "uint256", "internalType": "uint256" },
+          { "name": "creator", "type": "address", "internalType": "address" },
+          { "name": "name", "type": "string", "internalType": "string" },
+          { "name": "description", "type": "string", "internalType": "string" },
+          { "name": "img", "type": "string", "internalType": "string" },
+          {
+            "name": "totalPledged",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          { "name": "createdAt", "type": "uint256", "internalType": "uint256" },
+          {
+            "name": "rewardToken",
+            "type": "address",
+            "internalType": "address"
+          },
+          { "name": "closed", "type": "bool", "internalType": "bool" }
         ]
       }
     ],
@@ -275,6 +360,49 @@
       { "name": "role", "type": "bytes32", "internalType": "bytes32" }
     ],
     "outputs": [{ "name": "", "type": "bytes32", "internalType": "bytes32" }],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getTaskDetail",
+    "inputs": [
+      { "name": "_boardId", "type": "uint256", "internalType": "uint256" },
+      { "name": "_taskId", "type": "uint256", "internalType": "uint256" }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple",
+        "internalType": "struct BountyBoard.TaskDetailView",
+        "components": [
+          { "name": "id", "type": "uint256", "internalType": "uint256" },
+          { "name": "name", "type": "string", "internalType": "string" },
+          { "name": "creator", "type": "address", "internalType": "address" },
+          { "name": "description", "type": "string", "internalType": "string" },
+          { "name": "deadline", "type": "uint256", "internalType": "uint256" },
+          {
+            "name": "maxCompletions",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "numCompletions",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          { "name": "completed", "type": "bool", "internalType": "bool" },
+          {
+            "name": "rewardAmount",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          { "name": "createdAt", "type": "uint256", "internalType": "uint256" },
+          { "name": "cancelled", "type": "bool", "internalType": "bool" },
+          { "name": "config", "type": "string", "internalType": "string" },
+          { "name": "allowSelfCheck", "type": "bool", "internalType": "bool" }
+        ]
+      }
+    ],
     "stateMutability": "view"
   },
   {
@@ -316,7 +444,9 @@
             "name": "reviewers",
             "type": "address[]",
             "internalType": "address[]"
-          }
+          },
+          { "name": "config", "type": "string", "internalType": "string" },
+          { "name": "allowSelfCheck", "type": "bool", "internalType": "bool" }
         ]
       }
     ],
@@ -345,7 +475,9 @@
   {
     "type": "function",
     "name": "initialize",
-    "inputs": [],
+    "inputs": [
+      { "name": "_signerAddress", "type": "address", "internalType": "address" }
+    ],
     "outputs": [],
     "stateMutability": "nonpayable"
   },
@@ -380,6 +512,13 @@
   },
   {
     "type": "function",
+    "name": "proxiableUUID",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "bytes32", "internalType": "bytes32" }],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "renounceRole",
     "inputs": [
       { "name": "role", "type": "bytes32", "internalType": "bytes32" },
@@ -399,7 +538,8 @@
       { "name": "_boardId", "type": "uint256", "internalType": "uint256" },
       { "name": "_taskId", "type": "uint256", "internalType": "uint256" },
       { "name": "_submitter", "type": "address", "internalType": "address" },
-      { "name": "_approved", "type": "bool", "internalType": "bool" }
+      { "name": "_status", "type": "int8", "internalType": "int8" },
+      { "name": "_reviewComment", "type": "string", "internalType": "string" }
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
@@ -413,6 +553,38 @@
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "selfCheckSubmission",
+    "inputs": [
+      { "name": "_boardId", "type": "uint256", "internalType": "uint256" },
+      { "name": "_taskId", "type": "uint256", "internalType": "uint256" },
+      { "name": "_signature", "type": "bytes", "internalType": "bytes" },
+      { "name": "_checkData", "type": "string", "internalType": "string" }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setSignerAddress",
+    "inputs": [
+      {
+        "name": "_newSignerAddress",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "signerAddress",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "address", "internalType": "address" }],
+    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -460,23 +632,26 @@
         "type": "uint256",
         "internalType": "uint256"
       },
-      { "name": "_rewardAmount", "type": "uint256", "internalType": "uint256" }
+      { "name": "_rewardAmount", "type": "uint256", "internalType": "uint256" },
+      { "name": "_config", "type": "string", "internalType": "string" },
+      { "name": "_allowSelfCheck", "type": "bool", "internalType": "bool" }
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
   },
   {
     "type": "function",
-    "name": "upgradeTo",
+    "name": "upgradeToAndCall",
     "inputs": [
       {
         "name": "newImplementation",
         "type": "address",
         "internalType": "address"
-      }
+      },
+      { "name": "data", "type": "bytes", "internalType": "bytes" }
     ],
     "outputs": [],
-    "stateMutability": "nonpayable"
+    "stateMutability": "payable"
   },
   {
     "type": "function",
@@ -632,6 +807,25 @@
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "ContractUpgraded",
+    "inputs": [
+      {
+        "name": "oldImplementation",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "newImplementation",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
       }
     ],
     "anonymous": false
@@ -834,10 +1028,16 @@
         "internalType": "address"
       },
       {
-        "name": "approved",
-        "type": "bool",
+        "name": "status",
+        "type": "int8",
         "indexed": false,
-        "internalType": "bool"
+        "internalType": "int8"
+      },
+      {
+        "name": "reviewComment",
+        "type": "string",
+        "indexed": false,
+        "internalType": "string"
       }
     ],
     "anonymous": false
@@ -998,6 +1198,18 @@
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
+      },
+      {
+        "name": "config",
+        "type": "string",
+        "indexed": false,
+        "internalType": "string"
+      },
+      {
+        "name": "allowSelfCheck",
+        "type": "bool",
+        "indexed": false,
+        "internalType": "bool"
       }
     ],
     "anonymous": false
@@ -1054,6 +1266,19 @@
   },
   {
     "type": "event",
+    "name": "Upgraded",
+    "inputs": [
+      {
+        "name": "implementation",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
     "name": "UserJoinedBoard",
     "inputs": [
       {
@@ -1080,6 +1305,41 @@
       { "name": "neededRole", "type": "bytes32", "internalType": "bytes32" }
     ]
   },
+  {
+    "type": "error",
+    "name": "AddressEmptyCode",
+    "inputs": [
+      { "name": "target", "type": "address", "internalType": "address" }
+    ]
+  },
+  { "type": "error", "name": "ECDSAInvalidSignature", "inputs": [] },
+  {
+    "type": "error",
+    "name": "ECDSAInvalidSignatureLength",
+    "inputs": [
+      { "name": "length", "type": "uint256", "internalType": "uint256" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ECDSAInvalidSignatureS",
+    "inputs": [{ "name": "s", "type": "bytes32", "internalType": "bytes32" }]
+  },
+  {
+    "type": "error",
+    "name": "ERC1967InvalidImplementation",
+    "inputs": [
+      { "name": "implementation", "type": "address", "internalType": "address" }
+    ]
+  },
+  { "type": "error", "name": "ERC1967NonPayable", "inputs": [] },
+  { "type": "error", "name": "FailedCall", "inputs": [] },
   { "type": "error", "name": "InvalidInitialization", "inputs": [] },
-  { "type": "error", "name": "NotInitializing", "inputs": [] }
+  { "type": "error", "name": "NotInitializing", "inputs": [] },
+  { "type": "error", "name": "UUPSUnauthorizedCallContext", "inputs": [] },
+  {
+    "type": "error",
+    "name": "UUPSUnsupportedProxiableUUID",
+    "inputs": [{ "name": "slot", "type": "bytes32", "internalType": "bytes32" }]
+  }
 ]

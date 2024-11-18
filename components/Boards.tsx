@@ -6,7 +6,7 @@ import { request } from 'graphql-request';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { format } from 'date-fns';
-import { useTokenSymbol } from '@/hooks/contract';
+import { useTokenSymbol } from '@/hooks/useContract';
 import { Board } from '@/types/types';
 import { formatUnits } from 'viem';
 import { Address } from './ui/Address';

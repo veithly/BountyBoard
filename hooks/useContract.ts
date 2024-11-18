@@ -5,7 +5,7 @@ import {
   type BaseError,
 } from "wagmi";
 import { useToast } from "@/components/ui/use-toast";
-import abi from "@/abis/BountyBoard.json";
+import abi from "@/constants/BountyBoard.json";
 import { erc20Abi, parseUnits, zeroAddress } from "viem";
 import type {
   BoardView,
@@ -18,16 +18,15 @@ import type {
   ReviewSubmissionParams,
   AddReviewerParams,
   PledgeTokensParams,
+  SelfCheckParams,
 } from "@/types/types";
-
-const contractAddress = process.env
-  .NEXT_PUBLIC_BOUNTY_BOARD_CONTRACT_ADDRESS as `0x${string}`;
+import contractAddress from "@/constants/contract-address";
 
 // 通用合约函数调用 hook
 export function useContractFunction(functionName: string) {
   const { writeContractAsync } = useWriteContract();
   const { toast } = useToast();
-
+  const { chain } = useAccount();
   return async (args: any[], value?: bigint) => {
     console.log("Contract Function:", functionName, args);
     try {
@@ -35,10 +34,12 @@ export function useContractFunction(functionName: string) {
         title: "Notification",
         description: "Please confirm the transaction in your wallet.",
       });
+
+      const bountyBoardAddress = contractAddress.BountyBoard[chain?.name as keyof typeof contractAddress.BountyBoard] as `0x${string}`;
       const hash = await writeContractAsync({
         functionName,
         abi,
-        address: contractAddress,
+        address: bountyBoardAddress,
         args,
         value,
       });
@@ -78,6 +79,8 @@ export function useCreateTask() {
     deadline,
     maxCompletions,
     rewardAmount,
+    config,
+    allowSelfCheck,
   }: CreateTaskParams) => {
     const formatAmount = parseUnits(rewardAmount.toString(), 18);
     return contractFunction([
@@ -87,6 +90,8 @@ export function useCreateTask() {
       deadline,
       maxCompletions,
       formatAmount,
+      config,
+      allowSelfCheck,
     ]);
   };
 }
@@ -103,6 +108,8 @@ export function useUpdateTask() {
     deadline,
     maxCompletions,
     rewardAmount,
+    config,
+    allowSelfCheck,
   }: UpdateTaskParams) => {
     const formatAmount = parseUnits(rewardAmount.toString(), 18);
     return contractFunction([
@@ -113,6 +120,8 @@ export function useUpdateTask() {
       deadline,
       maxCompletions,
       formatAmount,
+      config,
+      allowSelfCheck,
     ]);
   };
 }
@@ -143,12 +152,41 @@ export function useReviewSubmission() {
   };
 }
 
+// 自检提交
+export function useSelfCheckSubmission() {
+  const contractFunction = useContractFunction('selfCheckSubmission');
+
+  return async ({
+    boardId,
+    taskId,
+    signature,
+    checkData
+  }: {
+    boardId: bigint;
+    taskId: bigint;
+    signature: `0x${string}`;
+    checkData: string;
+  }) => {
+    return contractFunction([boardId, taskId, signature, checkData]);
+  };
+}
+
+
 // 添加审核员
 export function useAddReviewerToTask() {
   const contractFunction = useContractFunction("addReviewerToTask");
 
   return ({ boardId, taskId, reviewer }: AddReviewerParams) => {
     return contractFunction([boardId, taskId, reviewer]);
+  };
+}
+
+// 自行检查
+export function useSelfCheck() {
+  const contractFunction = useContractFunction("selfCheck");
+
+  return ({ boardId, taskId, checkResult, signer }: SelfCheckParams) => {
+    return contractFunction([boardId, taskId, checkResult, signer]);
   };
 }
 
@@ -165,6 +203,8 @@ export function useCancelTask() {
 export function useApproveTokens(tokenAddress: `0x${string}`) {
   const { writeContractAsync } = useWriteContract();
   const { toast } = useToast();
+  const { chain } = useAccount();
+  const bountyBoardAddress = contractAddress.BountyBoard[chain?.name as keyof typeof contractAddress.BountyBoard] as `0x${string}`;
 
   return async (amount: bigint) => {
     try {
@@ -176,7 +216,7 @@ export function useApproveTokens(tokenAddress: `0x${string}`) {
         address: tokenAddress,
         abi: erc20Abi,
         functionName: "approve",
-        args: [contractAddress, amount],
+        args: [bountyBoardAddress, amount],
       });
       return { hash };
     } catch (error: Error | any) {
@@ -192,12 +232,13 @@ export function useApproveTokens(tokenAddress: `0x${string}`) {
 
 // 质押代币
 export function usePledgeTokens(tokenAddress: `0x${string}`) {
-  const { address } = useAccount();
+  const { address, chain } = useAccount();
+  const bountyBoardAddress = contractAddress.BountyBoard[chain?.name as keyof typeof contractAddress.BountyBoard] as `0x${string}`;
   const { data: allowance, refetch } = useReadContract({
     address: tokenAddress,
     abi: erc20Abi,
     functionName: "allowance",
-    args: [address as `0x${string}`, contractAddress],
+    args: [address as `0x${string}`, bountyBoardAddress],
   });
   const { toast } = useToast();
   const contractFunction = useContractFunction("pledgeTokens");
@@ -217,7 +258,7 @@ export function usePledgeTokens(tokenAddress: `0x${string}`) {
       toast({
         title: "Warning",
         description:
-          "You are pledging AIA, please confirm the transaction in your wallet.",
+          "You are pledging ETH, please confirm the transaction in your wallet.",
       });
       return await contractFunction([boardId, formatAmount], formatAmount);
     }
@@ -311,32 +352,41 @@ export function useTokenSymbol(rewardTokenAddress: `0x${string}`) {
 
 // 读取函数
 export function useGetAllBoards() {
+  const { chain } = useAccount();
+  const bountyBoardAddress = contractAddress.BountyBoard[chain?.name as keyof typeof contractAddress.BountyBoard] as `0x${string}`;
   return useReadContract<typeof abi, "getAllBoards", BoardView[]>({
-    address: contractAddress,
+    address: bountyBoardAddress,
     abi,
     functionName: "getAllBoards",
   });
 }
 export function useGetBoardDetail(boardId: bigint) {
+  const { chain, address } = useAccount();
+  const bountyBoardAddress = contractAddress.BountyBoard[chain?.name as keyof typeof contractAddress.BountyBoard] as `0x${string}`;
   return useReadContract<typeof abi, "getBoardDetail", [BoardDetailView]>({
-    address: contractAddress,
+    address: bountyBoardAddress,
     abi,
     functionName: "getBoardDetail",
     args: [boardId],
+    account: address,
   });
 }
 
 export function useGetTasksForBoard(boardId: bigint) {
+  const { chain } = useAccount();
+  const bountyBoardAddress = contractAddress.BountyBoard[chain?.name as keyof typeof contractAddress.BountyBoard] as `0x${string}`;
   return useReadContract<typeof abi, "getTasksForBoard", TaskView[]>({
-    address: contractAddress,
+    address: bountyBoardAddress,
     abi,
     functionName: "getTasksForBoard",
     args: [boardId],
   });
 }
 export function useIsBoardMember(boardId: string, address?: `0x${string}`) {
+  const { chain } = useAccount();
+  const bountyBoardAddress = contractAddress.BountyBoard[chain?.name as keyof typeof contractAddress.BountyBoard] as `0x${string}`;
   return useReadContract<typeof abi, "isBoardMember", [boolean]>({
-    address: contractAddress,
+    address: bountyBoardAddress,
     abi,
     functionName: "isBoardMember",
     args: [boardId, address],

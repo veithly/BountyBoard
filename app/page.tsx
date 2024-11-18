@@ -3,14 +3,14 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import DynamicModal from "@/components/DynamicModal";
-import { useCreateBoard, useGetAllBoards } from "@/hooks/contract";
+import { useCreateBoard, useGetAllBoards } from "@/hooks/useContract";
 import { type BoardView } from "@/types/types";
 import BoardCard from "@/components/BoardCard";
 
 const modalConfigs = {
   addBoard: {
     title: 'Add New Board',
-    description: 'Create a new bounty board with a name, description, and reward token(blank for AIA).',
+    description: 'Create a new bounty board with a name, description, and reward token(blank for ETH).',
     fields: [
       { name: 'name', label: 'Board Name', type: 'text' },
       { name: 'description', label: 'Description', type: 'text' },

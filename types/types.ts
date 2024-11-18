@@ -55,9 +55,10 @@ export interface TaskView {
   numCompletions: bigint;
   completed: boolean;
   rewardAmount: bigint;
-  reviewers: `0x${string}`[];
   createdAt: bigint;
   cancelled: boolean;
+  config: string;
+  allowSelfCheck: boolean;
 }
 
 // Submission 相关接口
@@ -65,9 +66,9 @@ export interface SubmissionView {
   taskId: bigint;
   submitter: `0x${string}`;
   proof: string;
-  reviewed: boolean;
-  approved: boolean;
+  status: number;
   submittedAt: bigint;
+  reviewComment: string;
 }
 
 // Board 详情视图接口
@@ -84,6 +85,7 @@ export interface BoardDetailView {
   tasks: TaskView[];
   submissions: SubmissionView[];
   members: `0x${string}`[];
+  userTaskStatuses: UserTaskStatus[];
 }
 
 // 创建 Board 的参数接口
@@ -94,6 +96,18 @@ export interface CreateBoardParams {
   rewardToken: string;
 }
 
+export interface TaskConfig {
+  taskType: ['Plain Text' | 'Image' | 'Github Pull Request' | 'Contract Verification' | 'X Post' | 'X Follow' | 'X Retweet' | 'X Like' | 'Join Discord'];
+  aiReview?: boolean;
+  aiReviewPrompt?: string;
+  contractNetwork?: 'Linea' | 'Linea Seploia' | 'Ethereum' | 'Sepolia';
+  XPostContent?: string;
+  XFollowUsername?: string;
+  XRetweetId?: string;
+  XLikeId?: string;
+  DiscordChannelId?: string;
+}
+
 // 创建 Task 的参数接口
 export interface CreateTaskParams {
   boardId: bigint;
@@ -102,32 +116,52 @@ export interface CreateTaskParams {
   deadline: number;
   maxCompletions: number;
   rewardAmount: number;
+  config: TaskConfig;
+  allowSelfCheck: boolean;
 }
 
 // 更新 Task 的参数接口
 export interface UpdateTaskParams extends CreateTaskParams {
-  taskId: number;
+  taskId: bigint;
+}
+
+export interface SubmissionProof {
+  text?: string;
+  image?: string;
+  github?: string;
+  contract?: string;
+  xId?: string;
+  xPost?: string;
+  discordId?: string;
+}
+
+export interface SelfCheckParams {
+  boardId: bigint;
+  taskId: bigint;
+  signature: `0x${string}`;
+  checkData: string;
 }
 
 // 提交 Proof 的参数接口
 export interface SubmitProofParams {
   boardId: bigint;
-  taskId: number;
+  taskId: bigint;
   proof: string;
 }
 
 // 审核提交的参数接口
 export interface ReviewSubmissionParams {
   boardId: bigint;
-  taskId: number;
+  taskId: bigint;
   submissionAddress: `0x${string}`;
   approved: boolean;
+  reviewComment: string;
 }
 
 // 添加审核员的参数接口
 export interface AddReviewerParams {
   boardId: bigint;
-  taskId: number;
+  taskId: bigint;
   reviewer: string;
 }
 
@@ -143,4 +177,31 @@ export interface UpdateBoardParams {
   name: string;
   description: string;
   rewardToken: string;
+}
+
+// TaskDetailView
+export interface TaskDetailView {
+  id: bigint;
+  name: string;
+  creator: `0x${string}`;
+  description: string;
+  deadline: bigint;
+  maxCompletions: bigint;
+  numCompletions: bigint;
+  completed: boolean;
+  rewardAmount: bigint;
+  createdAt: bigint;
+  cancelled: boolean;
+  config: string;
+  allowSelfCheck: boolean;
+}
+
+// 用户任务状态接口
+export interface UserTaskStatus {
+  taskId: bigint;
+  submitted: boolean;
+  status: number;
+  submittedAt: bigint;
+  submitProof: string;
+  reviewComment: string;
 }

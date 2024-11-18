@@ -23,7 +23,7 @@ import { cn } from "@/lib/utils";
 import { format, set } from "date-fns";
 import { Submission } from "@/types/types";
 import { useWaitForTransactionReceipt } from "wagmi";
-import { Upload } from "lucide-react";
+import { Upload, CheckCircle, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import Image from "next/image";
 
@@ -66,6 +66,9 @@ export default function DynamicModal({
   );
   const { toast } = useToast();
 
+  // 添加新的状态
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'submitting' | 'confirming' | 'confirmed'>('idle');
+
   const handleChange = (event: any) => {
     const { name, value, type, checked } = event.target;
     setFormData((prevData) => ({
@@ -75,13 +78,31 @@ export default function DynamicModal({
   };
 
   const handleSubmit = async () => {
-    setIsSubmitting(true);
+    setSubmitStatus('submitting');
     try {
-      const result: any = await onSubmit(formData);
-      result?.hash && setTransactionHash(result.hash); // 保存交易哈希值
-      result?.error && setIsSubmitting(false);
+      const result = await onSubmit(formData);
+      if (result?.hash) {
+        setTransactionHash(result.hash);
+        setSubmitStatus('confirming');
+        toast({
+          title: "Transaction Submitted",
+          description: "Please wait for confirmation...",
+        });
+      } else if (result?.error) {
+        setSubmitStatus('idle');
+        toast({
+          title: "Error",
+          description: result.error,
+          variant: "destructive",
+        });
+      }
     } catch (error) {
-      setIsSubmitting(false);
+      setSubmitStatus('idle');
+      toast({
+        title: "Error",
+        description: "Failed to submit transaction",
+        variant: "destructive",
+      });
       console.error("Error submitting form:", error);
     }
   };
@@ -95,12 +116,23 @@ export default function DynamicModal({
     hash: transactionHash as `0x${string}`,
   });
 
-  // 在确认或错误发生时关闭模态框
+  // 修改 useEffect 处理确认状态
   useEffect(() => {
-    if (isConfirmed || error) {
-      setIsSubmitting(false);
+    if (isConfirmed) {
+      setSubmitStatus('confirmed');
+      toast({
+        title: "Success",
+        description: "Transaction confirmed successfully!",
+      });
       onConfirmed();
       onClose();
+    } else if (error) {
+      setSubmitStatus('idle');
+      toast({
+        title: "Error",
+        description: "Transaction failed",
+        variant: "destructive",
+      });
     }
   }, [isConfirmed, error, onClose, onConfirmed]);
 
@@ -156,6 +188,38 @@ export default function DynamicModal({
       setFormData({}); // 关闭时清空表单
     }
   }, [isOpen, initialData]);
+
+  // 获取按钮文本和状态
+  const getButtonState = () => {
+    switch (submitStatus) {
+      case 'submitting':
+        return {
+          text: "Submitting...",
+          disabled: true,
+          icon: <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        };
+      case 'confirming':
+        return {
+          text: "Confirming...",
+          disabled: true,
+          icon: <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        };
+      case 'confirmed':
+        return {
+          text: "Confirmed",
+          disabled: true,
+          icon: <CheckCircle className="mr-2 h-4 w-4" />
+        };
+      default:
+        return {
+          text: "Submit",
+          disabled: isUploading,
+          icon: null
+        };
+    }
+  };
+
+  const buttonState = getButtonState();
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -288,9 +352,13 @@ export default function DynamicModal({
           <Button
             type="submit"
             onClick={handleSubmit}
-            disabled={isSubmitting || isUploading}
+            disabled={buttonState.disabled}
+            className="min-w-[120px]" // 确保按钮宽度一致
           >
-            {isSubmitting ? "Submitting..." : "Submit"}
+            <div className="flex items-center">
+              {buttonState.icon}
+              {buttonState.text}
+            </div>
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { format } from 'date-fns';
-import { useTokenSymbol } from '@/hooks/contract';
+import { useTokenSymbol } from '@/hooks/useContract';
 import { BoardView } from '@/types/types';
 import { formatUnits, zeroAddress } from 'viem';
 import { Address } from './ui/Address';
@@ -48,7 +48,7 @@ export default function BoardCard({ board }: { board: BoardView }) {
             </div>
             <div className="flex items-center gap-1">
               <Coins className="h-4 w-4" />
-              {formatUnits(board.totalPledged, 18)} {tokenSymbol ?? ((board.rewardToken === zeroAddress && 'AIA') || '')}
+              {formatUnits(board.totalPledged, 18)} {tokenSymbol ?? ((board.rewardToken === zeroAddress && 'ETH') || '')}
             </div>
           </div>
         </CardContent>

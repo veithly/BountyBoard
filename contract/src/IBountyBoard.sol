@@ -14,5 +14,7 @@ interface IBountyBoard {
         uint256 rewardAmount;
         uint256 createdAt;
         bool cancelled;
+        uint256 config;
+        bool allowSelfCheck;
     }
 }

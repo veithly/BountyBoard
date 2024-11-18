@@ -1,10 +1,12 @@
 import { http, createConfig } from 'wagmi'
-import { aiaTestnet } from './aiachain'
+import { lineaSepolia } from 'wagmi/chains'
+import anvil from './my-anvil'
 
 // 更新配置
 export const config = createConfig({
-  chains: [aiaTestnet],
+  chains: [anvil, lineaSepolia],
   transports: {
-    [aiaTestnet.id]: http(),
+    [anvil.id]: http(),
+    [lineaSepolia.id]: http(),
   },
 })

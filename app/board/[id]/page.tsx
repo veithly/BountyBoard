@@ -9,7 +9,7 @@ import { useAccount, useWaitForTransactionReceipt } from "wagmi";
 import { useEffect, useState } from "react";
 import { format, set } from "date-fns";
 import { toast } from "@/components/ui/use-toast";
-import Image from 'next/image';
+import Image from "next/image";
 
 // Components
 import TaskList from "@/components/TaskList";
@@ -17,7 +17,8 @@ import MemberSubmissionTable from "@/components/MemberSubmissionTable";
 import DynamicModal from "@/components/DynamicModal";
 import BoardActionsDropdown from "@/components/BoardActionsDropdown";
 import LoadingSpinner from "@/components/ui/loading";
-import { Badge } from '@/components/ui/badge';
+import { Badge } from "@/components/ui/badge";
+import CreateTaskModal from "@/components/CreateTaskModal";
 
 // Contract Hooks & ABI
 import {
@@ -37,28 +38,21 @@ import {
   useGetTasksForBoard,
   useIsBoardMember,
   useGetBoardDetail,
-} from "@/hooks/contract";
+} from "@/hooks/useContract";
 // GraphQL and Contract Addresses
-import { BoardDetailView, Submission, SubmissionView, TaskView } from "@/types/types";
+import {
+  BoardDetailView,
+  Submission,
+  SubmissionView,
+  TaskView,
+} from "@/types/types";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Address } from "@/components/ui/Address";
-import { formatUnits, zeroAddress } from "viem";
+import { Chain, formatUnits, zeroAddress } from "viem";
 import { Info, Calendar, Coins, Users } from "lucide-react";
 
 // Modal Configurations
 const modalConfigs = {
-  addTask: {
-    title: "Add Task",
-    description:
-      "Create a new task with a description, deadline, max completions, and reward amount.",
-    fields: [
-      { name: "name", label: "Name", type: "text" },
-      { name: "description", label: "Description", type: "text" },
-      { name: "deadline", label: "Deadline", type: "date" },
-      { name: "maxCompletions", label: "Max Completions", type: "number" },
-      { name: "rewardAmount", label: "Reward Amount", type: "number" },
-    ],
-  },
   submitProof: {
     title: "Submit Proof",
     description: "Submit your proof of completion for this task.",
@@ -84,18 +78,6 @@ const modalConfigs = {
       { name: "rewardToken", label: "Reward Token Address", type: "text" },
     ],
   },
-  updateTask: {
-    title: "Update Task",
-    description:
-      "Update the task description, deadline, max completions, and reward amount.",
-    fields: [
-      { name: "name", label: "Name", type: "text" },
-      { name: "description", label: "Description", type: "text" },
-      { name: "deadline", label: "Deadline", type: "date" },
-      { name: "maxCompletions", label: "Max Completions", type: "number" },
-      { name: "rewardAmount", label: "Reward Amount", type: "number" },
-    ],
-  },
   pledgeTokens: {
     title: "Pledge Tokens",
     description: "Pledge tokens to the board.",
@@ -106,12 +88,16 @@ const modalConfigs = {
 // Main Board Page Component
 export default function BoardPage() {
   const { id } = useParams();
-  const { address } = useAccount();
+  const { address, chain } = useAccount();
   const [selectedTask, setSelectedTask] = useState<TaskView>();
 
   // 使用合约读取函数
-  const { data: board , refetch } = useGetBoardDetail(BigInt(id as string));
-  const { data: isMember } = useIsBoardMember(id as string, address as `0x${string}`);
+  const { data: board, refetch } = useGetBoardDetail(BigInt(id as string));
+  console.log("Board:", board);
+  const { data: isMember } = useIsBoardMember(
+    id as string,
+    address as `0x${string}`
+  );
 
   if (!board) {
     return <LoadingSpinner />;
@@ -120,7 +106,7 @@ export default function BoardPage() {
   const isCreator = board.creator.toLowerCase() === address?.toLowerCase();
 
   const isReviewerForTask = (taskId: bigint) => {
-    const TaskView = board.tasks.find(t => t.id === taskId);
+    const TaskView = board.tasks.find((t) => t.id === taskId);
     return TaskView?.reviewers?.includes(address as `0x${string}`);
   };
 
@@ -130,6 +116,7 @@ export default function BoardPage() {
         board={board}
         tasks={board.tasks}
         address={address}
+        chain={chain}
         onTaskSelect={setSelectedTask}
         refetch={refetch}
         isCreator={isCreator}
@@ -145,6 +132,7 @@ function BoardDetails({
   board,
   tasks,
   address,
+  chain,
   onTaskSelect,
   refetch,
   isCreator,
@@ -153,7 +141,8 @@ function BoardDetails({
 }: {
   board: BoardDetailView;
   tasks: TaskView[];
-  address: string | undefined;
+  address: `0x${string}` | undefined;
+  chain: Chain;
   onTaskSelect: (TaskView: TaskView) => void;
   refetch: () => void;
   isCreator: boolean;
@@ -183,6 +172,10 @@ function BoardDetails({
   const [transactionHash, setTransactionHash] = useState<`0x${string}`>();
   const [activeTab, setActiveTab] = useState("bounties");
   const [initialFormData, setInitialFormData] = useState<Record<string, any>>();
+  const [isCreateTaskModalOpen, setIsCreateTaskModalOpen] = useState(false);
+  const [isUpdateTaskModalOpen, setIsUpdateTaskModalOpen] = useState(false);
+  const [selectedTaskForUpdate, setSelectedTaskForUpdate] =
+    useState<TaskView>();
 
   // Modal Handlers
   const handleOpenModal = (
@@ -201,22 +194,9 @@ function BoardDetails({
       const initialBoardData = {
         name: board.name,
         description: board.description,
-        rewardToken: board.rewardToken === zeroAddress ? '' : board.rewardToken,
+        rewardToken: board.rewardToken === zeroAddress ? "" : board.rewardToken,
       };
       setInitialFormData(initialBoardData);
-    } else if (type === "updateTask" && typeof taskId === 'bigint') {
-      const task = board.tasks.find(t => t.id === taskId);
-
-      if (task) {
-        const initialTaskData = {
-          name: task.name,
-          description: task.description,
-          deadline: Number(task.deadline),
-          maxCompletions: Number(task.maxCompletions),
-          rewardAmount: formatUnits(task.rewardAmount, 18),
-        };
-        setInitialFormData(initialTaskData);
-      }
     } else {
       // 其他类型的 modal 不需要预填充
       setInitialFormData(undefined);
@@ -238,7 +218,7 @@ function BoardDetails({
     };
     switch (action) {
       case "approveTokens":
-        res = await approveTokens(BigInt(10^53));
+        res = await approveTokens(BigInt(10 ^ 53));
         break;
       case "joinBoard":
         res = await joinBoard({ boardId: boardIdNum });
@@ -263,7 +243,11 @@ function BoardDetails({
     return res;
   };
 
-  const { isLoading: isConfirming, isSuccess: isConfirmed, error } = useWaitForTransactionReceipt({
+  const {
+    isLoading: isConfirming,
+    isSuccess: isConfirmed,
+    error,
+  } = useWaitForTransactionReceipt({
     hash: transactionHash,
   });
 
@@ -300,21 +284,11 @@ function BoardDetails({
       hash?: string;
     };
     switch (modalType) {
-      case "addTask":
-        result = await createTask({
-          boardId: boardIdNum,
-          name: data.name,
-          description: data.description,
-          deadline: data.deadline,
-          maxCompletions: data.maxCompletions,
-          rewardAmount: data.rewardAmount,
-        });
-        break;
       case "submitProof":
         result = await submitProof({
           boardId: boardIdNum,
           taskId: taskIdNum,
-          proof: data.proof,
+          proof: JSON.stringify(data.proof),
         });
         break;
       case "reviewSubmission":
@@ -341,17 +315,6 @@ function BoardDetails({
           rewardToken: data.rewardToken,
         });
         break;
-      case "updateTask":
-        result = await updateTask({
-          boardId: boardIdNum,
-          taskId: taskIdNum,
-          name: data.name,
-          description: data.description,
-          deadline: data.deadline,
-          maxCompletions: data.maxCompletions,
-          rewardAmount: data.rewardAmount,
-        });
-        break;
       case "pledgeTokens":
         result = await pledgeTokens({
           boardId: boardIdNum,
@@ -367,6 +330,44 @@ function BoardDetails({
 
   const tokenSymbol = useTokenSymbol(board.rewardToken);
 
+  // 处理创建任务
+  const handleCreateTask = async (data: any) => {
+    const result = await createTask({
+      boardId: board.id,
+      name: data.name,
+      description: data.description,
+      deadline: data.deadline,
+      maxCompletions: data.maxCompletions,
+      rewardAmount: data.rewardAmount,
+      config: data.config,
+      allowSelfCheck: data.allowSelfCheck,
+    });
+    return result;
+  };
+
+  // 处理更新任务
+  const handleUpdateTask = async (data: any) => {
+    if (!selectedTaskForUpdate) return;
+    const result = await updateTask({
+      boardId: board.id,
+      taskId: selectedTaskForUpdate.id,
+      name: data.name,
+      description: data.description,
+      deadline: data.deadline,
+      maxCompletions: data.maxCompletions,
+      rewardAmount: data.rewardAmount,
+      config: data.config,
+      allowSelfCheck: data.allowSelfCheck,
+    });
+    return result;
+  };
+
+  // 打开更新任务模态框
+  const handleOpenUpdateTaskModal = (task: TaskView) => {
+    setSelectedTaskForUpdate(task);
+    setIsUpdateTaskModalOpen(true);
+  };
+
   return (
     <Card>
       {board.img && (
@@ -379,7 +380,7 @@ function BoardDetails({
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             onError={(e) => {
               const target = e.target as HTMLImageElement;
-              target.src = '/placeholder.png';
+              target.src = "/placeholder.png";
             }}
           />
         </div>
@@ -405,7 +406,9 @@ function BoardDetails({
               onApproveTokens={() => handleAction("approveTokens")}
               onOpenUpdateBoardModal={() => handleOpenModal("updateBoard")}
               onCloseBoard={() => handleAction("closeBoard")}
-              onWithdrawPledgedTokens={() => handleAction("withdrawPledgedTokens")}
+              onWithdrawPledgedTokens={() =>
+                handleAction("withdrawPledgedTokens")
+              }
               onOpenPledgeTokensModal={() => handleOpenModal("pledgeTokens")}
             />
           )}
@@ -423,13 +426,19 @@ function BoardDetails({
         </div>
         <div className="flex items-center gap-2 text-muted-foreground mb-2">
           <Coins className="h-4 w-4" />
-          <strong>Reward Token:</strong> {tokenSymbol.data  ?? ((board.rewardToken === zeroAddress && 'AIA') || '')}
-          {!(board.rewardToken === zeroAddress) && <Address address={board.rewardToken} />}
+          <strong>Reward Token:</strong>{" "}
+          {tokenSymbol.data ??
+            ((board.rewardToken === zeroAddress && "ETH") || "")}
+          {!(board.rewardToken === zeroAddress) && (
+            <Address address={board.rewardToken} />
+          )}
         </div>
         <div className="flex items-center gap-2 text-muted-foreground mb-4">
           <Coins className="h-4 w-4" />
           <strong>Total Pledged:</strong>{" "}
-          {formatUnits(BigInt(board.totalPledged), 18)} {tokenSymbol.data  ?? ((board.rewardToken === zeroAddress && 'AIA') || '')}
+          {formatUnits(BigInt(board.totalPledged), 18)}{" "}
+          {tokenSymbol.data ??
+            ((board.rewardToken === zeroAddress && "ETH") || "")}
         </div>
         <div className="flex items-center gap-2 text-muted-foreground mb-4">
           <Users className="h-4 w-4" />
@@ -437,13 +446,13 @@ function BoardDetails({
         </div>
 
         {/* Join Board Button */}
-        {(address && !isMember) && (
+        {address && !isMember && (
           <Button onClick={() => handleAction("joinBoard")}>Join Board</Button>
         )}
 
         {/* Add Bounty Button */}
         {isCreator && (
-          <Button onClick={() => handleOpenModal("addTask")}>
+          <Button onClick={() => setIsCreateTaskModalOpen(true)}>
             Create Bounty Task
           </Button>
         )}
@@ -459,8 +468,11 @@ function BoardDetails({
           <TabsContent value="bounties">
             {/* Task List */}
             <TaskList
+              boardId={board.id}
               tasks={board.tasks}
+              userTaskStatuses={board.userTaskStatuses}
               address={address}
+              chain={chain}
               onTaskSelect={onTaskSelect}
               onOpenSubmitProofModal={(taskId) =>
                 handleOpenModal("submitProof", taskId)
@@ -468,12 +480,16 @@ function BoardDetails({
               onOpenAddReviewerModal={(taskId) =>
                 isCreator && handleOpenModal("addReviewer", taskId)
               }
-              onOpenUpdateTaskModal={(taskId) =>
-                isCreator && handleOpenModal("updateTask", taskId)
-              }
+              onOpenUpdateTaskModal={(taskId) => {
+                const task = board.tasks.find((t) => t.id === taskId);
+                if (task && isCreator) {
+                  handleOpenUpdateTaskModal(task);
+                }
+              }}
               onCancelTask={(taskId) =>
                 isCreator && handleAction("cancelTask", taskId)
               }
+              refetch={refetch}
             />
           </TabsContent>
           <TabsContent value="submissions">
@@ -490,8 +506,54 @@ function BoardDetails({
           </TabsContent>
         </Tabs>
 
-        {/* Dynamic Modal */}
-        {modalType && (
+        {/* Create Task Modal */}
+        <CreateTaskModal
+          isOpen={isCreateTaskModalOpen}
+          onClose={() => setIsCreateTaskModalOpen(false)}
+          onSubmit={handleCreateTask}
+          onConfirmed={refetch}
+        />
+
+        {/* Update Task Modal */}
+        {selectedTaskForUpdate && (
+          <CreateTaskModal
+            isOpen={isUpdateTaskModalOpen}
+            onClose={() => {
+              setIsUpdateTaskModalOpen(false);
+              setSelectedTaskForUpdate(undefined);
+            }}
+            onSubmit={handleUpdateTask}
+            onConfirmed={refetch}
+            initialData={{
+              taskBasicInfo: {
+                name: selectedTaskForUpdate.name,
+                description: selectedTaskForUpdate.description,
+              },
+              taskDetails: {
+                deadline: new Date(
+                  Number(selectedTaskForUpdate.deadline) * 1000
+                ),
+                maxCompletions: Number(selectedTaskForUpdate.maxCompletions),
+                rewardAmount: Number(
+                  formatUnits(selectedTaskForUpdate.rewardAmount, 18)
+                ),
+              },
+              taskConfig: selectedTaskForUpdate.config
+                ? {
+                    ...JSON.parse(selectedTaskForUpdate.config),
+                    taskType:
+                      JSON.parse(selectedTaskForUpdate.config).taskType || [],
+                  }
+                : { taskType: [] },
+              selectedTypes: selectedTaskForUpdate.config
+                ? JSON.parse(selectedTaskForUpdate.config).taskType || []
+                : [],
+            }}
+          />
+        )}
+
+        {/* Other Modals */}
+        {modalType && modalType !== "addTask" && modalType !== "updateTask" && (
           <DynamicModal
             isOpen={isModalOpen}
             onClose={handleCloseModal}
