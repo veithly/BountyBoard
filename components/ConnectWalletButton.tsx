@@ -84,6 +84,16 @@ const ConnectWallet: React.FC = () => {
     });
   };
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const modalType = params.get('modal');
+    if (modalType === 'profile') {
+      setIsProfileModalOpen(true);
+      // 清除 URL 参数
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
+
   return (
     <ConnectButton.Custom>
       {({

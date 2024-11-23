@@ -111,9 +111,9 @@ export interface SubmissionProof {
   image?: string;
   github?: string;
   contract?: string;
-  xId?: string;
+  xUserName?: string;
   xPost?: string;
-  discordId?: string;
+  discordUserName?: string;
 }
 
 export interface SelfCheckParams {

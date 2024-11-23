@@ -1,0 +1,38 @@
+import { NextResponse } from "next/server";
+
+export async function GET(req: Request) {
+  try {
+    const accessToken = req.headers.get('Authorization')?.split('Bearer ')[1];
+    const userId = req.headers.get('X-User-Id');
+
+    if (!accessToken || !userId) {
+      return NextResponse.json(
+        { error: "Missing authentication data" },
+        { status: 401 }
+      );
+    }
+
+    // 使用传入的 token 获取用户信息
+    const response = await fetch(
+      `https://api.twitter.com/2/users/me`, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        next: { revalidate: 0 }
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch Twitter user data');
+    }
+
+    const data = await response.json();
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error("Twitter verification error:", error);
+    return NextResponse.json(
+      { error: "Failed to verify Twitter account" },
+      { status: 500 }
+    );
+  }
+}

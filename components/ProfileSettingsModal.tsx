@@ -4,11 +4,13 @@ import { Input } from "./ui/input";
 import { useState, useEffect } from "react";
 import { useToast } from "./ui/use-toast";
 import { Loader2 } from "lucide-react";
+import { SiGithub, SiX, SiDiscord } from '@icons-pack/react-simple-icons';
 import { VeraxSdk } from "@verax-attestation-registry/verax-sdk";
 import attestationConfig from "@/constants/attestaion";
 import ImageUpload from "./ImageUpload";
 import { add } from "date-fns";
-import { UserProfile } from "@/types/profile";
+import { UserProfile, socialAccount } from "@/types/profile";
+import { signIn, useSession } from "next-auth/react";
 
 interface ProfileSettingsModalProps {
   isOpen: boolean;
@@ -25,33 +27,208 @@ export default function ProfileSettingsModal({
   onSuccess,
   initialData,
 }: ProfileSettingsModalProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const { data: session } = useSession();
+
+  console.log(session);
+
+  // 保存表单数据到 localStorage
+  const saveFormData = (data: any) => {
+    localStorage.setItem('profileFormData', JSON.stringify(data));
+  };
+
+  // 从 localStorage 获取表单数据
+  const loadFormData = () => {
+    const saved = localStorage.getItem('profileFormData');
+    return saved ? JSON.parse(saved) : null;
+  };
+
   const [formData, setFormData] = useState({
     nickname: "",
     avatar: "",
-    socialAccount: "",
+    socialAccounts: {
+      xUserName: "",
+      xName: "",
+      discordUserName: "",
+      discordName: "",
+      githubUserName: "",
+      githubName: "",
+    },
   });
 
   useEffect(() => {
-    if (isOpen && initialData) {
-      setFormData({
-        nickname: initialData.nickname || "",
-        avatar: initialData.avatar || "",
-        socialAccount: initialData.socialAccount || "",
-      });
+    if (isOpen) {
+      const savedData = loadFormData();
+      if (savedData) {
+        setFormData(savedData);
+      } else if (initialData) {
+        let socialAccounts = { xUserName: "", xName: "", discordUserName: "", discordName: "", githubUserName: "", githubName: "" };
+        try {
+          socialAccounts = initialData.socialAccount ?
+            JSON.parse(initialData.socialAccount) as socialAccount :
+            { xUserName: "", xName: "", discordUserName: "", discordName: "", githubUserName: "", githubName: "" };
+        } catch {}
+
+        const newFormData = {
+          nickname: initialData.nickname || "",
+          avatar: initialData.avatar || "",
+          socialAccounts,
+        };
+        setFormData(newFormData);
+        saveFormData(newFormData);
+      }
     }
   }, [isOpen, initialData]);
+
+  // 添加新的 state 来保存验证信息
+  const [verificationInfo, setVerificationInfo] = useState<{
+    modalType: string | null;
+    provider: string | null;
+  } | null>(null);
+
+  // 修改处理社交账号验证的函数
+  const handleSocialVerification = async (provider: 'twitter' | 'discord' | 'github') => {
+    try {
+      setIsVerifying(true);
+      saveFormData(formData);
+
+      // 保存验证信息到 localStorage
+      const verificationInfo = { modalType: 'profile', provider };
+      localStorage.setItem('verificationInfo', JSON.stringify(verificationInfo));
+      localStorage.setItem('profileModalShouldOpen', 'true');
+
+      await signIn(provider, {
+        redirect: true,
+        callbackUrl: `${window.location.origin}?modal=profile&provider=${provider}`
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: `Failed to verify ${provider} account`,
+        variant: "destructive"
+      });
+      setIsVerifying(false);
+    }
+  };
+
+  const getSocialAccountInfo = (provider: 'twitter' | 'discord' | 'github', data: any, accessToken: string) => {
+    switch (provider) {
+      case 'twitter': return {
+        xUserName: data.data.username,
+        xName: data.data.name,
+        xAccessToken: accessToken
+      }
+      case 'discord': return {
+        discordUserName: data.username,
+        discordName: data.global_name,
+        discordAccessToken: accessToken
+      }
+      case 'github': return {
+        githubUserName: data.login,
+        githubName: data.name,
+        githubAccessToken: accessToken
+      }
+    }
+  }
+
+  // 修改验证回调处理
+  useEffect(() => {
+    // 从 localStorage 获取验证信息
+    const savedVerificationInfo = localStorage.getItem('verificationInfo');
+    const verificationInfo = savedVerificationInfo ? JSON.parse(savedVerificationInfo) : null;
+
+    console.log('Verification check:', {
+      session,
+      isOpen,
+      verificationInfo
+    });
+
+    if (session && verificationInfo?.modalType === 'profile' && verificationInfo?.provider && isOpen) {
+      const verifyAccount = async () => {
+        try {
+          const savedData = loadFormData();
+          if (!savedData) {
+            console.error('No saved form data found');
+            return;
+          }
+
+          setFormData(savedData);
+
+          const response = await fetch(`/api/social/${verificationInfo.provider}/verify`, {
+            headers: {
+              'Authorization': `Bearer ${(session as any).accessToken}`,
+              'X-User-Id': (session as any).user.id
+            }
+          });
+
+          const data = await response.json();
+          console.log('Verification response:', data);
+
+          if (data) {
+            const newFormData = {
+              ...savedData,
+              socialAccounts: {
+                ...savedData.socialAccounts,
+                ...getSocialAccountInfo(verificationInfo.provider, data, (session as any).accessToken)
+              }
+            };
+
+            setFormData(newFormData);
+            saveFormData(newFormData);
+
+            // 清除验证信息
+            localStorage.removeItem('verificationInfo');
+
+            toast({
+              title: "Success",
+              description: `${verificationInfo.provider} account verified`
+            });
+          }
+        } catch (error) {
+          console.error('Verification error:', error);
+          toast({
+            title: "Error",
+            description: `Failed to verify ${verificationInfo.provider} account`,
+            variant: "destructive"
+          });
+        } finally {
+          setIsVerifying(false);
+        }
+      };
+
+      verifyAccount();
+    }
+  }, [session, isOpen]);
+
+  // 清理函数
+  useEffect(() => {
+    return () => {
+      if (!isOpen) {
+        localStorage.removeItem('profileFormData');
+        localStorage.removeItem('verificationInfo');
+      }
+    };
+  }, [isOpen]);
 
   const handleSubmit = async () => {
     try {
       setIsSubmitting(true);
 
+      // 将社交账号对象转换为 JSON 字符串
+      const socialAccountJson = JSON.stringify(formData.socialAccounts);
+
       // Get signature from backend
       const response = await fetch("/api/profile/sign", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...formData, subject: address }),
+        body: JSON.stringify({
+          nickname: formData.nickname,
+          avatar: formData.avatar,
+          socialAccount: socialAccountJson,
+          subject: address
+        }),
       });
 
       const data = await response.json();
@@ -73,7 +250,7 @@ export default function ProfileSettingsModal({
             {
               nickname: formData.nickname,
               avatar: formData.avatar,
-              socialAccount: formData.socialAccount,
+              socialAccount: socialAccountJson,
             },
           ],
         },
@@ -111,27 +288,57 @@ export default function ProfileSettingsModal({
             <label className="block text-sm font-medium mb-2">Avatar</label>
             <ImageUpload
               value={formData.avatar}
-              onChange={(url) => setFormData(prev => ({ ...prev, avatar: url }))}
+              onChange={(url) => {
+                const newFormData = { ...formData, avatar: url };
+                setFormData(newFormData);
+                saveFormData(newFormData);
+              }}
               label="Avatar"
             />
           </div>
           <Input
             placeholder="Nickname"
             value={formData.nickname}
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, nickname: e.target.value }))
-            }
+            onChange={(e) => {
+              const newFormData = { ...formData, nickname: e.target.value };
+              setFormData(newFormData);
+              saveFormData(newFormData);
+            }}
           />
-          <Input
-            placeholder="Social Account"
-            value={formData.socialAccount}
-            onChange={(e) =>
-              setFormData((prev) => ({
-                ...prev,
-                socialAccount: e.target.value,
-              }))
-            }
-          />
+          <div className="space-y-4">
+            <label className="block text-sm font-medium">Social Accounts</label>
+            <div className="flex items-center gap-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleSocialVerification('twitter')}
+                disabled={isVerifying || !!formData.socialAccounts.xUserName}
+              >
+                <SiX className="mr-2 h-4 w-4" />
+                {formData.socialAccounts.xUserName ? formData.socialAccounts.xName : "Verify X"}
+              </Button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleSocialVerification('discord')}
+                disabled={isVerifying || !!formData.socialAccounts.discordUserName}
+              >
+                <SiDiscord className="mr-2 h-4 w-4" />
+                {formData.socialAccounts.discordUserName ? formData.socialAccounts.discordName : "Verify Discord"}
+              </Button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleSocialVerification('github')}
+                disabled={isVerifying || !!formData.socialAccounts.githubUserName}
+              >
+                <SiGithub className="mr-2 h-4 w-4" />
+                {formData.socialAccounts.githubUserName ? formData.socialAccounts.githubName : "Verify GitHub"}
+              </Button>
+            </div>
+          </div>
         </div>
         <Button
           onClick={handleSubmit}
