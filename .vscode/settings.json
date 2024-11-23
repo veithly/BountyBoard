@@ -1,0 +1,6 @@
+{
+  "i18n-ally.localesPaths": [
+    "contract/lib/linea-attestation-registry/explorer/src/assets/locales",
+    "contract/lib/linea-attestation-registry/snap/packages/snap/locales"
+  ]
+}
