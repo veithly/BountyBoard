@@ -15,6 +15,7 @@ import { useState, useEffect } from "react";
 import ProfileSettingsModal from "./ProfileSettingsModal";
 import attestationConfig from "@/constants/attestaion";
 import { UserProfile } from "@/types/profile";
+import { useUserStore } from '@/store/userStore';
 
 // GraphQL 查询
 const PROFILE_QUERY = `
@@ -39,6 +40,7 @@ const ConnectWallet: React.FC = () => {
   const { disconnect } = useDisconnect();
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const { setSocialAccounts } = useUserStore();
 
   const fetchProfile = async (address: `0x${string}`) => {
     try {
@@ -62,6 +64,15 @@ const ConnectWallet: React.FC = () => {
 
       if (data.data?.attestations?.length > 0) {
         const [nickname, avatar, socialAccount] = data.data.attestations[0].decodedData;
+
+        // 解析并设置社交账号信息到 store
+        try {
+          const parsedSocialAccount = JSON.parse(socialAccount);
+          setSocialAccounts(parsedSocialAccount);
+        } catch (error) {
+          console.error("Failed to parse social account data:", error);
+        }
+
         setProfile({
           nickname,
           avatar,

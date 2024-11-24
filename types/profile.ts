@@ -15,10 +15,13 @@ export interface socialAccount {
   xAccessToken: string;
   xUserName: string;
   xName: string;
+  xId: string;
   discordAccessToken: string;
   discordUserName: string;
   discordName: string;
+  discordId: string;
   githubAccessToken: string;
   githubUserName: string;
   githubName: string;
+  githubId: string;
 }

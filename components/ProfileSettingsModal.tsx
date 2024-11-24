@@ -11,6 +11,7 @@ import ImageUpload from "./ImageUpload";
 import { add } from "date-fns";
 import { UserProfile, socialAccount } from "@/types/profile";
 import { signIn, useSession } from "next-auth/react";
+import { useUserStore } from '@/store/userStore';
 
 interface ProfileSettingsModalProps {
   isOpen: boolean;
@@ -31,6 +32,7 @@ export default function ProfileSettingsModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const { data: session } = useSession();
+  const { setSocialAccounts, socialAccounts } = useUserStore();
 
   console.log(session);
 
@@ -48,13 +50,16 @@ export default function ProfileSettingsModal({
   const [formData, setFormData] = useState({
     nickname: "",
     avatar: "",
-    socialAccounts: {
+    socialAccounts: socialAccounts || {
       xUserName: "",
       xName: "",
+      xId: "",
       discordUserName: "",
       discordName: "",
+      discordId: "",
       githubUserName: "",
       githubName: "",
+      githubId: "",
     },
   });
 
@@ -64,11 +69,11 @@ export default function ProfileSettingsModal({
       if (savedData) {
         setFormData(savedData);
       } else if (initialData) {
-        let socialAccounts = { xUserName: "", xName: "", discordUserName: "", discordName: "", githubUserName: "", githubName: "" };
+        let socialAccounts = { xUserName: "", xName: "", xId: "", discordUserName: "", discordName: "", discordId: "", githubUserName: "", githubName: "", githubId: "" };
         try {
           socialAccounts = initialData.socialAccount ?
             JSON.parse(initialData.socialAccount) as socialAccount :
-            { xUserName: "", xName: "", discordUserName: "", discordName: "", githubUserName: "", githubName: "" };
+            { xUserName: "", xName: "", xId: "", discordUserName: "", discordName: "", discordId: "", githubUserName: "", githubName: "", githubId: "" };
         } catch {}
 
         const newFormData = {
@@ -118,17 +123,20 @@ export default function ProfileSettingsModal({
       case 'twitter': return {
         xUserName: data.data.username,
         xName: data.data.name,
+        xId: data.data.id,
         xAccessToken: accessToken
       }
       case 'discord': return {
         discordUserName: data.username,
         discordName: data.global_name,
+        discordId: data.id,
         discordAccessToken: accessToken
       }
       case 'github': return {
         githubUserName: data.login,
         githubName: data.name,
-        githubAccessToken: accessToken
+        githubAccessToken: accessToken,
+        githubId: data.id
       }
     }
   }
@@ -167,16 +175,18 @@ export default function ProfileSettingsModal({
           console.log('Verification response:', data);
 
           if (data) {
+            const socialInfo = getSocialAccountInfo(verificationInfo.provider, data, (session as any).accessToken);
             const newFormData = {
               ...savedData,
               socialAccounts: {
                 ...savedData.socialAccounts,
-                ...getSocialAccountInfo(verificationInfo.provider, data, (session as any).accessToken)
+                ...socialInfo
               }
             };
 
             setFormData(newFormData);
             saveFormData(newFormData);
+            setSocialAccounts(newFormData.socialAccounts);
 
             // 清除验证信息
             localStorage.removeItem('verificationInfo');
@@ -296,6 +306,7 @@ export default function ProfileSettingsModal({
               label="Avatar"
             />
           </div>
+          <label className="block text-sm font-medium mb-2">Nickname</label>
           <Input
             placeholder="Nickname"
             value={formData.nickname}
@@ -312,7 +323,6 @@ export default function ProfileSettingsModal({
                 variant="outline"
                 size="sm"
                 onClick={() => handleSocialVerification('twitter')}
-                disabled={isVerifying || !!formData.socialAccounts.xUserName}
               >
                 <SiX className="mr-2 h-4 w-4" />
                 {formData.socialAccounts.xUserName ? formData.socialAccounts.xName : "Verify X"}
@@ -322,7 +332,6 @@ export default function ProfileSettingsModal({
                 variant="outline"
                 size="sm"
                 onClick={() => handleSocialVerification('discord')}
-                disabled={isVerifying || !!formData.socialAccounts.discordUserName}
               >
                 <SiDiscord className="mr-2 h-4 w-4" />
                 {formData.socialAccounts.discordUserName ? formData.socialAccounts.discordName : "Verify Discord"}
@@ -332,7 +341,6 @@ export default function ProfileSettingsModal({
                 variant="outline"
                 size="sm"
                 onClick={() => handleSocialVerification('github')}
-                disabled={isVerifying || !!formData.socialAccounts.githubUserName}
               >
                 <SiGithub className="mr-2 h-4 w-4" />
                 {formData.socialAccounts.githubUserName ? formData.socialAccounts.githubName : "Verify GitHub"}

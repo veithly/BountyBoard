@@ -10,6 +10,7 @@ import { useWaitForTransactionReceipt } from "wagmi";
 import { Loader2, CheckCircle, ExternalLink } from "lucide-react";
 import Image from "next/image";
 import type { SubmissionView, TaskView, SubmissionProof, TaskConfig } from "@/types/types";
+import { SiGithub, SiX, SiDiscord } from '@icons-pack/react-simple-icons';
 
 interface SubmissionDetailsModalProps {
   isOpen: boolean;
@@ -20,6 +21,33 @@ interface SubmissionDetailsModalProps {
   isReviewer: boolean;
   onConfirmed?: () => void;
 }
+
+// 添加一个通用的社交平台按钮组件
+const SocialButton = ({
+  href,
+  icon: Icon,
+  label,
+  username
+}: {
+  href: string;
+  icon: any;
+  label: string;
+  username?: string;
+}) => (
+  <div className="flex items-center gap-2">
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-gray-100 hover:bg-gray-200 transition-colors"
+      title={label}
+    >
+      <Icon className="h-4 w-4" />
+      {username && <span className="text-sm font-medium">{username}</span>}
+      <ExternalLink className="h-3 w-3" />
+    </a>
+  </div>
+);
 
 export default function SubmissionDetailsModal({
   isOpen,
@@ -152,13 +180,14 @@ export default function SubmissionDetailsModal({
 
       return (
         <Tabs defaultValue="text" className="w-full">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7">
             {proofData.text && <TabsTrigger value="text">Text</TabsTrigger>}
             {proofData.image && <TabsTrigger value="image">Image</TabsTrigger>}
             {proofData.github && <TabsTrigger value="github">GitHub</TabsTrigger>}
             {proofData.contract && <TabsTrigger value="contract">Contract</TabsTrigger>}
             {proofData.xPost && <TabsTrigger value="xPost">X Post</TabsTrigger>}
-            {proofData.discordId && <TabsTrigger value="discord">Discord</TabsTrigger>}
+            {proofData.xUserName && <TabsTrigger value="X">X Profile</TabsTrigger>}
+            {proofData.discordUserName && <TabsTrigger value="discord">Discord</TabsTrigger>}
           </TabsList>
 
           <div className="mt-4">
@@ -187,60 +216,78 @@ export default function SubmissionDetailsModal({
 
             {proofData.github && (
               <TabsContent value="github">
-                <div className="flex items-center gap-2">
-                  <span>Repository:</span>
-                  <a
+                <div className="flex flex-col gap-3">
+                  <span className="text-sm text-gray-600">Repository:</span>
+                  <SocialButton
                     href={`https://github.com/${proofData.github}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-500 hover:underline flex items-center gap-1"
-                  >
-                    {proofData.github}
-                    <ExternalLink className="h-4 w-4" />
-                  </a>
+                    icon={SiGithub}
+                    label="View on GitHub"
+                    username={proofData.github}
+                  />
                 </div>
               </TabsContent>
             )}
 
             {proofData.contract && (
               <TabsContent value="contract">
-                <div className="flex items-center gap-2">
-                  <span>Contract Address:</span>
-                  <a
-                    href={getExplorerUrl(proofData.contract, taskConfig.contractNetwork)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-500 hover:underline flex items-center gap-1"
-                  >
-                    {proofData.contract}
-                    <ExternalLink className="h-4 w-4" />
-                  </a>
+                <div className="flex flex-col gap-3">
+                  <span className="text-sm text-gray-600">Contract Address:</span>
+                  <div className="flex items-center gap-2">
+                    <code className="px-2 py-1 bg-gray-100 rounded text-sm font-mono">
+                      {proofData.contract}
+                    </code>
+                    <a
+                      href={getExplorerUrl(proofData.contract, taskConfig.contractNetwork)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-2 rounded-md bg-gray-100 hover:bg-gray-200 transition-colors"
+                      title="View on Explorer"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                    </a>
+                  </div>
+                </div>
+              </TabsContent>
+            )}
+
+            {proofData.xUserName && (
+              <TabsContent value="X">
+                <div className="flex flex-col gap-3">
+                  <span className="text-sm text-gray-600">X Profile:</span>
+                  <SocialButton
+                    href={`https://x.com/${proofData.xUserName}`}
+                    icon={SiX}
+                    label="View X Profile"
+                    username={`@${proofData.xUserName}`}
+                  />
                 </div>
               </TabsContent>
             )}
 
             {proofData.xPost && (
               <TabsContent value="xPost">
-                <div className="flex items-center gap-2">
-                  <span>X Post:</span>
-                  <a
-                    href={`https://x.com/user/status/${proofData.xPost}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-500 hover:underline flex items-center gap-1"
-                  >
-                    View Post
-                    <ExternalLink className="h-4 w-4" />
-                  </a>
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Posted by:</span>
+                    <SocialButton
+                      href={`https://x.com/${proofData.xUserName}/status/${proofData.xPost}`}
+                      icon={SiX}
+                      label="View Post"
+                    />
+                  </div>
+                  <span className="text-sm font-medium">@{proofData.xUserName}</span>
                 </div>
               </TabsContent>
             )}
 
-            {proofData.discordId && (
+            {proofData.discordUserName && (
               <TabsContent value="discord">
-                <div className="flex items-center gap-2">
-                  <span>Discord ID:</span>
-                  <span className="font-mono">{proofData.discordId}</span>
+                <div className="flex flex-col gap-3">
+                  <span className="text-sm text-gray-600">Discord User:</span>
+                  <div className="flex items-center gap-2">
+                    <SiDiscord className="h-4 w-4" />
+                    <span className="font-medium">{proofData.discordUserName}</span>
+                  </div>
                 </div>
               </TabsContent>
             )}

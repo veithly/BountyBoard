@@ -84,8 +84,8 @@ export interface TaskConfig {
   contractNetwork?: 'Linea' | 'Linea Sepolia' | 'Ethereum' | 'Sepolia';
   XPostContent?: string;
   XFollowUsername?: string;
-  XRetweetId?: string;
   XLikeId?: string;
+  XRetweetId?: string;
   DiscordChannelId?: string;
 }
 
@@ -111,9 +111,18 @@ export interface SubmissionProof {
   image?: string;
   github?: string;
   contract?: string;
+  xId?: string;
   xUserName?: string;
+  xName?: string;
   xPost?: string;
+  xFollow?: boolean;
+  xRetweet?: boolean;
+  xLike?: boolean;
+  discordId?: string;
   discordUserName?: string;
+  discordName?: string;
+  discordJoined?: boolean;
+  discordJoinedAt?: string;
 }
 
 export interface SelfCheckParams {

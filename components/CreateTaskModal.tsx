@@ -248,36 +248,103 @@ export default function CreateTaskModal({
         )}
 
         {selectedTypes.includes('X Post') && (
-          <Input
-            placeholder="Required post content"
-            value={taskConfig.XPostContent || ''}
-            onChange={(e) => setTaskConfig(prev => ({
-              ...prev,
-              XPostContent: e.target.value
-            }))}
-          />
+          <div className="space-y-2">
+            <label htmlFor="xPostContent" className="text-sm font-medium">
+              Required Post Content
+            </label>
+            <Input
+              id="xPostContent"
+              placeholder="Enter the required content for the post"
+              value={taskConfig.XPostContent || ''}
+              onChange={(e) => setTaskConfig(prev => ({
+                ...prev,
+                XPostContent: e.target.value
+              }))}
+            />
+          </div>
         )}
 
         {selectedTypes.includes('X Follow') && (
-          <Input
-            placeholder="Username to follow"
-            value={taskConfig.XFollowUsername || ''}
-            onChange={(e) => setTaskConfig(prev => ({
-              ...prev,
-              XFollowUsername: e.target.value
-            }))}
-          />
+          <div className="space-y-2">
+            <label htmlFor="xFollowUsername" className="text-sm font-medium">
+              X Username to Follow
+            </label>
+            <Input
+              id="xFollowUsername"
+              placeholder="Enter username without @ (e.g., elonmusk)"
+              value={taskConfig.XFollowUsername || ''}
+              onChange={(e) => setTaskConfig(prev => ({
+                ...prev,
+                XFollowUsername: e.target.value
+              }))}
+            />
+          </div>
+        )}
+
+        {selectedTypes.includes('X Like') && (
+          <div className="space-y-2">
+            <label htmlFor="xLikeId" className="text-sm font-medium">
+              X ID to Like
+            </label>
+            <div className="space-y-1">
+              <Input
+                id="xLikeId"
+                placeholder="Enter the X ID (e.g., 1234567890)"
+                value={taskConfig.XLikeId || ''}
+                onChange={(e) => setTaskConfig(prev => ({
+                  ...prev,
+                  XLikeId: e.target.value
+                }))}
+              />
+              <p className="text-xs text-muted-foreground">
+                The X ID can be found in the X URL after /status/
+              </p>
+            </div>
+          </div>
+        )}
+
+        {selectedTypes.includes('X Retweet') && (
+          <div className="space-y-2">
+            <label htmlFor="xRetweetId" className="text-sm font-medium">
+              X ID to Retweet
+            </label>
+            <div className="space-y-1">
+              <Input
+                id="xRetweetId"
+                placeholder="Enter the X ID (e.g., 1234567890)"
+                value={taskConfig.XRetweetId || ''}
+                onChange={(e) => setTaskConfig(prev => ({
+                  ...prev,
+                  XRetweetId: e.target.value
+                }))}
+              />
+              <p className="text-xs text-muted-foreground">
+                The X ID can be found in the X URL after /status/
+              </p>
+            </div>
+          </div>
         )}
 
         {selectedTypes.includes('Join Discord') && (
-          <Input
-            placeholder="Discord Channel ID"
-            value={taskConfig.DiscordChannelId || ''}
-            onChange={(e) => setTaskConfig(prev => ({
-              ...prev,
-              DiscordChannelId: e.target.value
-            }))}
-          />
+          <div className="space-y-2">
+            <label htmlFor="discordChannelId" className="text-sm font-medium">
+              Discord Server ID
+            </label>
+            <div className="space-y-1">
+              <Input
+                id="discordChannelId"
+                placeholder="Enter the Discord server ID"
+                value={taskConfig.DiscordChannelId || ''}
+                onChange={(e) => setTaskConfig(prev => ({
+                  ...prev,
+                  DiscordChannelId: e.target.value
+                }))}
+              />
+              <p className="text-xs text-muted-foreground">
+                Enable Developer Mode in Discord to copy server ID
+              </p>
+            </div>
+          </div>
         )}
 
         {shouldShowSelfCheck && (
@@ -377,7 +444,7 @@ export default function CreateTaskModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[60vw] max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {step === 1 ? "Create Task - Basic Info" : "Create Task - Details"}
@@ -391,7 +458,7 @@ export default function CreateTaskModal({
         </DialogHeader>
 
         {step === 1 ? (
-          <div className="space-y-4">
+          <div className="space-y-4 pr-2">
             <div className="space-y-2">
               <label className="text-sm font-medium">Task Name</label>
               <Input

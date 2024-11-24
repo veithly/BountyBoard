@@ -38,6 +38,7 @@ export async function GET(req: Request) {
             next: { revalidate: 0 }
           }
         );
+        console.log(response);
         result.verified = response.status === 200;
         break;
 
