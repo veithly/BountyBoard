@@ -268,6 +268,7 @@ contract BountyBoard is
         uint256 _boardId,
         string memory _name,
         string memory _description,
+        string memory _img,
         address _rewardToken
     ) public {
         Board storage board = boards[_boardId];
@@ -278,7 +279,7 @@ contract BountyBoard is
 
         board.name = _name;
         board.description = _description;
-
+        board.img = _img;
         if (_rewardToken != address(0)) {
             board.rewardToken = IERC20(_rewardToken);
         }

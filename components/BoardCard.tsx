@@ -16,24 +16,26 @@ export default function BoardCard({ board }: { board: BoardView }) {
   return (
     <Link key={board.id} href={`/board/${board.id}`}>
       <Card className="transition-all duration-300 hover:shadow-lg hover:scale-105">
-        {board.img && (
-          <div className="relative w-full h-48 overflow-hidden rounded-t-lg">
-            <Image
-              src={board.img}
-              alt={board.name}
-              fill
-              className="object-cover"
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              priority={false}
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.src = '/placeholder.png';
-              }}
-            />
-          </div>
-        )}
         <CardHeader>
-          <CardTitle>{board.name}</CardTitle>
+          <div className="flex items-center gap-4">
+            {board.img && (
+              <div className="relative w-12 h-12 overflow-hidden rounded-lg flex-shrink-0">
+                <Image
+                  src={board.img}
+                  alt={board.name}
+                  fill
+                  className="object-cover"
+                  sizes="48px"
+                  priority={false}
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = '/placeholder.png';
+                  }}
+                />
+              </div>
+            )}
+            <CardTitle>{board.name}</CardTitle>
+          </div>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground line-clamp-2">{board.description}</p>

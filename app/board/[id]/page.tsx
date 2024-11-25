@@ -75,6 +75,7 @@ const modalConfigs = {
     fields: [
       { name: "name", label: "Name", type: "text" },
       { name: "description", label: "Description", type: "text" },
+      { name: "img", label: "Image", type: "image" },
       { name: "rewardToken", label: "Reward Token Address", type: "text" },
     ],
   },
@@ -191,6 +192,7 @@ function BoardDetails({
       const initialBoardData = {
         name: board.name,
         description: board.description,
+        img: board.img,
         rewardToken: board.rewardToken === zeroAddress ? "" : board.rewardToken,
       };
       setInitialFormData(initialBoardData);
@@ -362,34 +364,40 @@ function BoardDetails({
 
   return (
     <Card>
-      {board.img && (
-        <div className="relative w-full h-64 overflow-hidden rounded-t-lg">
-          <Image
-            src={board.img}
-            alt={board.name}
-            fill
-            className="object-cover"
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              target.src = "/placeholder.png";
-            }}
-          />
-        </div>
-      )}
-
       <CardHeader>
         <div className="flex justify-between items-start">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              {board.name}
-              {board.closed && (
-                <Badge variant="destructive" className="ml-2">
-                  Closed
-                </Badge>
-              )}
-            </CardTitle>
+          <div className="flex items-center gap-4">
+            {/* Logo Image */}
+            {board.img && (
+              <div className="relative w-12 h-12 overflow-hidden rounded-lg flex-shrink-0">
+                <Image
+                  src={board.img}
+                  alt={board.name}
+                  fill
+                  className="object-cover"
+                  sizes="48px"
+                  priority={true}
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = "/placeholder.png";
+                  }}
+                />
+              </div>
+            )}
+
+            {/* Title and Badge */}
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                {board.name}
+                {board.closed && (
+                  <Badge variant="destructive" className="ml-2">
+                    Closed
+                  </Badge>
+                )}
+              </CardTitle>
+            </div>
           </div>
+
           {isCreator && (
             <BoardActionsDropdown
               isCreator={isCreator}
@@ -406,6 +414,7 @@ function BoardDetails({
           )}
         </div>
       </CardHeader>
+
       <CardContent>
         <div className="flex items-center gap-2 text-muted-foreground mb-2">
           <Info className="h-4 w-4" />
