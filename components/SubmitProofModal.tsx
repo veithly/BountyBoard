@@ -212,7 +212,8 @@ export default function SubmissionProofModal({
           ...prev,
           discordUserName: socialAccounts.discordUserName,
           discordName: socialAccounts.discordName,
-          discordId: socialAccounts.discordId
+          discordId: socialAccounts.discordId,
+          discordAccessToken: socialAccounts.discordAccessToken
         }));
         toast({
           title: "Success",
