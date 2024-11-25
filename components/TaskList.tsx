@@ -25,6 +25,7 @@ import { Badge } from './ui/badge';
 import SubmitProofModal from './SubmitProofModal';
 import { useSubmitProof, useSelfCheckSubmission } from '@/hooks/useContract';
 import { useToast } from './ui/use-toast';
+import { cn } from '@/lib/utils';
 
 interface TaskListProps {
   boardId: bigint;
@@ -297,12 +298,27 @@ export default function TaskList({
           const seconds = Math.floor((remainingTime % (1000 * 60)) / 1000);
 
           return (
-            <li key={task.id} className="relative card mb-4 p-4 shadow-lg rounded-lg border border-gray-200">
+            <motion.li
+              key={task.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className={cn(
+                "relative p-6 rounded-xl transition-all duration-200",
+                "border border-purple-500/20 bg-black/40 backdrop-blur-sm",
+                "hover:border-purple-500/30 hover:shadow-lg hover:shadow-purple-500/10",
+                "group cursor-pointer"
+              )}
+            >
               {/* Actions Dropdown */}
               {address && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="absolute top-4 right-4">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="absolute top-4 right-4 text-purple-300/70 hover:text-purple-300 hover:bg-purple-500/10"
+                    >
                       <MoreHorizontal className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -340,71 +356,96 @@ export default function TaskList({
               )}
 
               {/* Task Details */}
-              <div className="flex items-start cursor-pointer" onClick={() => onTaskSelect(task)}>
-                <div>
-                  <h3 className="font-bold">{task.name}</h3>
-                  <p className="text-sm text-muted-foreground">{task.description}</p>
-                  <div className="flex items-center gap-2 mt-2 text-muted-foreground">
-                    <User2 className="h-4 w-4" />
-                    <Address address={task.creator} size="sm" />
+              <div className="flex items-start" onClick={() => onTaskSelect(task)}>
+                <div className="space-y-3 w-full">
+                  <div>
+                    <h3 className="text-lg font-semibold bg-gradient-to-r from-purple-200 to-purple-400 bg-clip-text text-transparent">
+                      {task.name}
+                    </h3>
+                    <p className="mt-1 text-sm text-purple-300/70">
+                      {task.description}
+                    </p>
                   </div>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Coins className="h-4 w-4" />
-                    Reward: {formatUnits(task.rewardAmount, 18)}
-                  </div>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <UserPlus className="h-4 w-4" />
-                    Completions: {Number(task.numCompletions)}/{Number(task.maxCompletions)}
-                  </div>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Calendar className="h-4 w-4" />
-                    Created: {format(new Date(Number(task.createdAt) * 1000), 'PPP')}
-                  </div>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Clock className="h-4 w-4" />
-                    Deadline: {format(new Date(Number(task.deadline) * 1000), 'PPP')}
-                  </div>
-                </div>
 
-                {/* Countdown and Status */}
-                <div className="absolute bottom-4 right-4 flex flex-col items-end text-xs text-muted-foreground">
-                  {!task.cancelled && !task.completed && (
-                    isExpired ? (
-                      <Badge variant="destructive">Expired</Badge>
-                    ) : (
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.5, ease: 'easeInOut' }}
-                      >
-                        {days}d {hours}h {minutes}m {seconds}s
-                      </motion.div>
-                    )
-                  )}
+                  {/* Task Info Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <div className="flex items-center gap-2 text-purple-300/70">
+                      <User2 className="h-4 w-4 text-purple-400" />
+                      <Address address={task.creator} size="sm" />
+                    </div>
+                    <div className="flex items-center gap-2 text-purple-300/70">
+                      <Coins className="h-4 w-4 text-purple-400" />
+                      <span>Reward: {formatUnits(task.rewardAmount, 18)}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-purple-300/70">
+                      <UserPlus className="h-4 w-4 text-purple-400" />
+                      <span>Completions: {Number(task.numCompletions)}/{Number(task.maxCompletions)}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-purple-300/70">
+                      <Calendar className="h-4 w-4 text-purple-400" />
+                      <span>Created: {format(new Date(Number(task.createdAt) * 1000), 'PPP')}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-purple-300/70">
+                      <Clock className="h-4 w-4 text-purple-400" />
+                      <span>Deadline: {format(new Date(Number(task.deadline) * 1000), 'PPP')}</span>
+                    </div>
+                  </div>
 
-                  {/* Task Status */}
-                  <div className="mt-2">
-                    {task.cancelled && (
-                      <Badge variant="destructive">Cancelled</Badge>
-                    )}
-                    {task.completed && (
-                      <Badge>Completed</Badge>
-                    )}
-                    {getTaskStatus(task).isSubmitted && (
-                      <Badge variant={
-                        getTaskStatus(task).status === 1 ? "success" :
-                        getTaskStatus(task).status === -1 ? "destructive" :
-                        "default"
-                      }>
-                        {getTaskStatus(task).status === 1 ? "Approved" :
-                         getTaskStatus(task).status === -1 ? "Rejected" :
-                         "Pending"}
-                      </Badge>
+                  {/* Countdown and Status */}
+                  <div className="flex justify-between items-center mt-4 pt-4 border-t border-purple-500/10">
+                    {/* Status Badges */}
+                    <div className="flex gap-2">
+                      {task.cancelled && (
+                        <Badge variant="destructive" className="bg-red-500/20 text-red-300">
+                          Cancelled
+                        </Badge>
+                      )}
+                      {task.completed && (
+                        <Badge className="bg-purple-500/20 text-purple-300">
+                          Completed
+                        </Badge>
+                      )}
+                      {getTaskStatus(task).isSubmitted && (
+                        <Badge
+                          variant={
+                            getTaskStatus(task).status === 1 ? "success" :
+                            getTaskStatus(task).status === -1 ? "destructive" :
+                            "default"
+                          }
+                          className={cn(
+                            getTaskStatus(task).status === 1 && "bg-green-500/20 text-green-300",
+                            getTaskStatus(task).status === -1 && "bg-red-500/20 text-red-300",
+                            getTaskStatus(task).status === 0 && "bg-purple-500/20 text-purple-300"
+                          )}
+                        >
+                          {getTaskStatus(task).status === 1 ? "Approved" :
+                           getTaskStatus(task).status === -1 ? "Rejected" :
+                           "Pending"}
+                        </Badge>
+                      )}
+                    </div>
+
+                    {/* Countdown Timer */}
+                    {!task.cancelled && !task.completed && (
+                      isExpired ? (
+                        <Badge variant="destructive" className="bg-red-500/20 text-red-300">
+                          Expired
+                        </Badge>
+                      ) : (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ duration: 0.5, ease: 'easeInOut' }}
+                          className="text-sm font-medium text-purple-300/70"
+                        >
+                          {days}d {hours}h {minutes}m {seconds}s
+                        </motion.div>
+                      )
                     )}
                   </div>
                 </div>
               </div>
-            </li>
+            </motion.li>
           );
         })}
       </ul>

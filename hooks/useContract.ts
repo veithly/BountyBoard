@@ -396,3 +396,19 @@ export function useIsBoardMember(boardId: string, address?: `0x${string}`) {
     args: [boardId, address],
   });
 }
+
+// 获取用户加入的所有板块
+export function useGetBoardsByMember(address?: `0x${string}`) {
+  const { chain } = useAccount();
+  const bountyBoardAddress = contractAddress.BountyBoard[chain?.name as keyof typeof contractAddress.BountyBoard] as `0x${string}`;
+
+  return useReadContract<typeof abi, "getBoardsByMember", BoardView[]>({
+    address: bountyBoardAddress,
+    abi,
+    functionName: "getBoardsByMember",
+    args: address ? [address] : undefined,
+    query: {
+      enabled: !!address
+    }
+  });
+}

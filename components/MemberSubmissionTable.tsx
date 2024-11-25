@@ -21,6 +21,7 @@ import { useState } from "react";
 import SubmissionDetailsModal from "./SubmissionDetailsModal";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Image from "next/image";
+import { cn } from "@/lib/utils";
 
 interface MemberSubmissionTableProps {
   board: BoardDetailView;
@@ -51,36 +52,45 @@ export default function MemberSubmissionTable({
 
   return (
     <>
-      {/* 符号说明 */}
-      <div className="mt-4 flex gap-4 text-xs text-muted-foreground">
-        <div>
-          <Circle className="h-4 w-4 text-yellow-400 inline-block mr-1 align-middle" />{" "}
-          Not Submitted
-        </div>
-        <div>
-          <CheckCircle className="h-4 w-4 text-green-300 inline-block mr-1 align-middle" />{" "}
-          Submitted
-        </div>
-        <div>
-          <Check className="h-4 w-4 text-green-500 inline-block mr-1 align-middle" />{" "}
-          Approved
-        </div>
-        <div>
-          <X className="h-4 w-4 text-red-500 inline-block mr-1 align-middle" />{" "}
-          Rejected
-        </div>
-        <div>
-          <Eye className="h-4 w-4 text-blue-500 inline-block mr-1 align-middle" />{" "}
-          Need Review
+      {/* Legend */}
+      <div className="mb-6 p-4 rounded-xl border border-purple-500/20 bg-black/40 backdrop-blur-sm">
+        <h4 className="text-sm font-medium text-purple-200 mb-3">Status Legend</h4>
+        <div className="flex flex-wrap gap-4 text-xs text-purple-300/70">
+          <div className="flex items-center gap-2">
+            <Circle className="h-4 w-4 text-yellow-400/80" />
+            <span>Not Submitted</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <CheckCircle className="h-4 w-4 text-green-400/80" />
+            <span>Submitted</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Check className="h-4 w-4 text-green-500/80" />
+            <span>Approved</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <X className="h-4 w-4 text-red-400/80" />
+            <span>Rejected</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Eye className="h-4 w-4 text-blue-400/80" />
+            <span>Need Review</span>
+          </div>
         </div>
       </div>
+
       <Table>
-        <TableCaption>Member Submission Status</TableCaption>
+        <TableCaption className="text-purple-300/60">
+          Member Submission Status
+        </TableCaption>
         <TableHeader>
           <TableRow>
-            <TableCell className="font-bold">Member</TableCell>
+            <TableCell className="font-medium text-purple-100">Member</TableCell>
             {board.tasks.map((task) => (
-              <TableCell key={task.id} className="font-bold">
+              <TableCell
+                key={task.id}
+                className="font-medium text-purple-100"
+              >
                 {task.name}
               </TableCell>
             ))}
@@ -88,8 +98,11 @@ export default function MemberSubmissionTable({
         </TableHeader>
         <TableBody>
           {board.members.map((member) => (
-            <TableRow key={member}>
-              <TableCell className="font-medium">
+            <TableRow
+              key={member}
+              className="hover:bg-purple-500/5 transition-colors duration-200"
+            >
+              <TableCell className="font-medium text-purple-200">
                 <Address address={member} size="lg" />
               </TableCell>
               {board.tasks.map((task: TaskView) => {
@@ -98,77 +111,63 @@ export default function MemberSubmissionTable({
                     sub.submitter === member && sub.taskId === task.id
                 );
 
-                let submissionIcon = (
-                  <Circle
-                    className="h-5 w-5 text-yellow-400 cursor-pointer"
-                    onClick={() => handleSubmissionClick(submission)}
-                  />
-                );
+                let icon = {
+                  component: Circle,
+                  className: "text-yellow-400/80 hover:text-yellow-400"
+                };
 
                 if (submission) {
-                  submissionIcon = (
-                    <CheckCircle
-                      className="h-5 w-5 text-green-300 cursor-pointer"
-                      onClick={() => handleSubmissionClick(submission)}
-                    />
-                  );
-                }
-                const isReviewer = task.reviewers.some(
-                  (reviewer: `0x${string}`) =>
-                    reviewer.toLowerCase() === address?.toLowerCase()
-                );
-                if (submission && isReviewer && submission.status === 0) {
-                  submissionIcon = (
-                    <Eye
-                      className="h-5 w-5 text-blue-500 cursor-pointer"
-                      onClick={() => handleSubmissionClick(submission)}
-                    />
-                  );
-                } else if (submission && submission.status === 1) {
-                  submissionIcon = (
-                    <Check
-                      className="h-5 w-5 text-green-500 cursor-pointer"
-                      onClick={() => handleSubmissionClick(submission)}
-                    />
-                  );
-                } else if (submission && submission.status === -1) {
-                  submissionIcon = (
-                    <X
-                      className="h-5 w-5 text-red-500 cursor-pointer"
-                      onClick={() => handleSubmissionClick(submission)}
-                    />
-                  );
+                  if (submission.status === 1) {
+                    icon = {
+                      component: Check,
+                      className: "text-green-500/80 hover:text-green-500"
+                    };
+                  } else if (submission.status === -1) {
+                    icon = {
+                      component: X,
+                      className: "text-red-400/80 hover:text-red-400"
+                    };
+                  } else if (isReviewer && submission.status === 0) {
+                    icon = {
+                      component: Eye,
+                      className: "text-blue-400/80 hover:text-blue-400"
+                    };
+                  } else {
+                    icon = {
+                      component: CheckCircle,
+                      className: "text-green-400/80 hover:text-green-400"
+                    };
+                  }
                 }
 
-                return <TableCell key={task.id}>{submissionIcon}</TableCell>;
+                const IconComponent = icon.component;
+
+                return (
+                  <TableCell key={task.id}>
+                    <IconComponent
+                      className={cn(
+                        "h-5 w-5 cursor-pointer transition-colors duration-200",
+                        icon.className
+                      )}
+                      onClick={() => handleSubmissionClick(submission)}
+                    />
+                  </TableCell>
+                );
               })}
             </TableRow>
           ))}
         </TableBody>
       </Table>
 
-      {/* 替换原有的 Dialog 为新的 SubmissionDetailsModal */}
       <SubmissionDetailsModal
         isOpen={isSubmissionModalOpen}
         onClose={closeSubmissionModal}
         submission={selectedSubmission}
         boardId={board.id}
-        task={
-          selectedSubmission
-            ? board.tasks.find((t) => t.id === selectedSubmission.taskId) ||
-              null
-            : null
-        }
-        isReviewer={
-          selectedSubmission
-            ? board.tasks
-                .find((t) => t.id === selectedSubmission.taskId)
-                ?.reviewers.some(
-                  (reviewer: `0x${string}`) =>
-                    reviewer.toLowerCase() === address?.toLowerCase()
-                ) || false
-            : false
-        }
+        task={selectedSubmission ? board.tasks.find((t) => t.id === selectedSubmission.taskId) || null : null}
+        isReviewer={selectedSubmission ? board.tasks.find((t) => t.id === selectedSubmission.taskId)?.reviewers.some(
+          (reviewer: `0x${string}`) => reviewer.toLowerCase() === address?.toLowerCase()
+        ) || false : false}
         onConfirmed={refetch}
       />
     </>

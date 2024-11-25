@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import { format, set } from "date-fns";
 import { toast } from "@/components/ui/use-toast";
 import Image from "next/image";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // Components
 import TaskList from "@/components/TaskList";
@@ -101,7 +102,7 @@ export default function BoardPage() {
   );
 
   if (!board) {
-    return <LoadingSpinner />;
+    return <BoardSkeleton />;
   }
 
   const isCreator = board.creator.toLowerCase() === address?.toLowerCase();
@@ -561,5 +562,80 @@ function BoardDetails({
         )}
       </CardContent>
     </Card>
+  );
+}
+
+function BoardSkeleton() {
+  return (
+    <div className="container mx-auto p-4">
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-start">
+            <div className="flex items-center gap-4">
+              {/* Logo Skeleton */}
+              <Skeleton className="w-12 h-12 rounded-lg" />
+
+              {/* Title Skeleton */}
+              <div className="space-y-2">
+                <Skeleton className="h-6 w-[200px]" />
+              </div>
+            </div>
+
+            {/* Action Button Skeleton */}
+            <Skeleton className="h-10 w-[120px]" />
+          </div>
+        </CardHeader>
+
+        <CardContent className="space-y-6">
+          {/* Description Skeleton */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-4 w-4" />
+              <Skeleton className="h-4 w-[100px]" />
+            </div>
+            <Skeleton className="h-4 w-full" />
+          </div>
+
+          {/* Info Items Skeleton */}
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex items-center gap-2">
+                <Skeleton className="h-4 w-4" />
+                <Skeleton className="h-4 w-[150px]" />
+              </div>
+            ))}
+          </div>
+
+          {/* Tabs Skeleton */}
+          <div className="space-y-4">
+            <div className="flex gap-2">
+              {[1, 2].map((i) => (
+                <Skeleton key={i} className="h-10 w-[100px]" />
+              ))}
+            </div>
+
+            {/* Tasks List Skeleton */}
+            <div className="grid gap-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="border rounded-xl p-6">
+                  <div className="flex justify-between items-start">
+                    <div className="space-y-2">
+                      <Skeleton className="h-5 w-[200px]" />
+                      <Skeleton className="h-4 w-[300px]" />
+                    </div>
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                  </div>
+                  <div className="mt-4 flex gap-2">
+                    {[1, 2, 3].map((j) => (
+                      <Skeleton key={j} className="h-6 w-[80px]" />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
