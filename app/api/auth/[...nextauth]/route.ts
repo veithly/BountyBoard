@@ -18,7 +18,10 @@ export const authOptions: NextAuthOptions = {
             "like.read"
           ].join(" ")
         }
-      }
+      },
+      httpOptions: {
+        timeout: 1000000,
+      },
     }),
     DiscordProvider({
       clientId: process.env.DISCORD_CLIENT_ID!,

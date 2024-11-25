@@ -136,6 +136,24 @@ export default function SubmissionProofModal({
         } as HeadersInit
       });
 
+      if (response.status === 403) {
+        const data = await response.json();
+        if (data.error?.includes("client-not-enrolled")) {
+          toast({
+            title: "Error",
+            description: "Twitter API access not properly configured. Please contact support.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Error",
+            description: "Authorization failed. Please reconnect your X account.",
+            variant: "destructive",
+          });
+        }
+        return;
+      }
+
       const data = await response.json();
 
       if (data.verified) {
@@ -143,6 +161,7 @@ export default function SubmissionProofModal({
           ...prev,
           xUserName: socialAccounts.xUserName,
           xName: socialAccounts.xName,
+          xId: socialAccounts.xId,
           [`x${action.charAt(0).toUpperCase() + action.slice(1)}`]: true
         }));
         toast({
@@ -193,8 +212,7 @@ export default function SubmissionProofModal({
           ...prev,
           discordUserName: socialAccounts.discordUserName,
           discordName: socialAccounts.discordName,
-          discordJoined: true,
-          discordJoinedAt: data.joinedAt
+          discordId: socialAccounts.discordId
         }));
         toast({
           title: "Success",
@@ -456,7 +474,7 @@ export default function SubmissionProofModal({
                       </label>
                       {taskConfig.DiscordChannelId && (
                         <SocialLinkButton
-                          href={`https://discord.gg/${taskConfig.DiscordChannelId}`}
+                          href={taskConfig.DiscordInviteLink || ''}
                           icon={SiDiscord}
                           label="Join Server"
                         />

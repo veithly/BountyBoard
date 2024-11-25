@@ -87,6 +87,7 @@ export interface TaskConfig {
   XLikeId?: string;
   XRetweetId?: string;
   DiscordChannelId?: string;
+  DiscordInviteLink?: string;
 }
 
 // 创建 Task 的参数接口

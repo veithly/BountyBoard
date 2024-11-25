@@ -62,6 +62,8 @@ const ConnectWallet: React.FC = () => {
 
       const data = await response.json();
 
+      console.log(data);
+
       if (data.data?.attestations?.length > 0) {
         const [nickname, avatar, socialAccount] = data.data.attestations[0].decodedData;
 

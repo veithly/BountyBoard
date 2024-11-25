@@ -34,33 +34,11 @@ export async function GET(req: Request) {
     const isInGuild = guilds.some((guild: any) => guild.id === guildId);
 
     if (!isInGuild) {
-      return NextResponse.json(
-        { error: "User is not in the specified guild" },
-        { status: 404 }
-      );
-    }
-
-    // 3. 获取用户在该公会中的具体成员信息
-    const memberResponse = await fetch(
-      `https://discord.com/api/guilds/${guildId}/members/${userId}`,
-      {
-        headers: {
-          'Authorization': `Bot ${process.env.DISCORD_BOT_TOKEN}`, // 需要使用 Bot Token
-        },
-        next: { revalidate: 0 }
-      }
-    );
-
-    if (!memberResponse.ok) {
       throw new Error('Failed to fetch member data');
     }
 
-    const memberData = await memberResponse.json();
-
     return NextResponse.json({
       inGuild: true,
-      joinedAt: memberData.joined_at,
-      roles: memberData.roles
     });
 
   } catch (error) {

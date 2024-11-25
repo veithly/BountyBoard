@@ -42,6 +42,7 @@
     "shadcn-ui": "^0.8.0",
     "tailwind-merge": "^2.4.0",
     "tailwindcss-animate": "^1.0.7",
+    "twitter-api-sdk": "^1.2.1",
     "viem": "2.x",
     "wagmi": "^2.12.4",
     "zustand": "^5.0.1"

@@ -500,6 +500,7 @@ function BoardDetails({
           onClose={() => setIsCreateTaskModalOpen(false)}
           onSubmit={handleCreateTask}
           onConfirmed={refetch}
+          mode="create"
         />
 
         {/* Update Task Modal */}
@@ -512,25 +513,22 @@ function BoardDetails({
             }}
             onSubmit={handleUpdateTask}
             onConfirmed={refetch}
+            mode="update"
             initialData={{
               taskBasicInfo: {
                 name: selectedTaskForUpdate.name,
                 description: selectedTaskForUpdate.description,
               },
               taskDetails: {
-                deadline: new Date(
-                  Number(selectedTaskForUpdate.deadline) * 1000
-                ),
+                deadline: new Date(Number(selectedTaskForUpdate.deadline) * 1000),
                 maxCompletions: Number(selectedTaskForUpdate.maxCompletions),
-                rewardAmount: Number(
-                  formatUnits(selectedTaskForUpdate.rewardAmount, 18)
-                ),
+                rewardAmount: Number(formatUnits(selectedTaskForUpdate.rewardAmount, 18)),
+                allowSelfCheck: selectedTaskForUpdate.allowSelfCheck,
               },
               taskConfig: selectedTaskForUpdate.config
                 ? {
                     ...JSON.parse(selectedTaskForUpdate.config),
-                    taskType:
-                      JSON.parse(selectedTaskForUpdate.config).taskType || [],
+                    taskType: JSON.parse(selectedTaskForUpdate.config).taskType || [],
                   }
                 : { taskType: [] },
               selectedTypes: selectedTaskForUpdate.config

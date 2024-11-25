@@ -107,6 +107,9 @@ importers:
       tailwindcss-animate:
         specifier: ^1.0.7
         version: 1.0.7(tailwindcss@3.4.14)
+      twitter-api-sdk:
+        specifier: ^1.2.1
+        version: 1.2.1
       viem:
         specifier: 2.x
         version: 2.21.44(bufferutil@4.0.8)(typescript@5.6.3)(utf-8-validate@5.0.10)(zod@3.23.8)
@@ -6175,6 +6178,10 @@ packages:
 
   tslib@2.8.1:
     resolution: {integrity: sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==}
+
+  twitter-api-sdk@1.2.1:
+    resolution: {integrity: sha512-tNQ6DGYucFk94JlnUMsHCkHg5o1wnCdHh71Y2ukygNVssOdD1gNVjOpaojJrdwbEAhoZvcWdGHerCa55F8HKxQ==}
+    engines: {node: '>=14'}
 
   type-check@0.4.0:
     resolution: {integrity: sha512-XleUoc9uwGXqjWwXaUTZAmzMcFZ5858QA2vvx1Ur5xIcixXIP+8LnFDgRplU30us6teqdlskFfu+ae4K79Ooew==}
@@ -13988,6 +13995,13 @@ snapshots:
   tslib@2.6.0: {}
 
   tslib@2.8.1: {}
+
+  twitter-api-sdk@1.2.1:
+    dependencies:
+      abort-controller: 3.0.0
+      node-fetch: 2.7.0
+    transitivePeerDependencies:
+      - encoding
 
   type-check@0.4.0:
     dependencies:

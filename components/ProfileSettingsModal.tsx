@@ -34,8 +34,6 @@ export default function ProfileSettingsModal({
   const { data: session } = useSession();
   const { setSocialAccounts, socialAccounts } = useUserStore();
 
-  console.log(session);
-
   // 保存表单数据到 localStorage
   const saveFormData = (data: any) => {
     localStorage.setItem('profileFormData', JSON.stringify(data));

@@ -20,9 +20,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { TaskConfig } from '@/types/types';
+import { CreateTaskParams, TaskConfig } from '@/types/types';
 import { Calendar } from "@/components/ui/calendar";
-import { format } from "date-fns";
+import { add, format } from "date-fns";
 import {
   Popover,
   PopoverContent,
@@ -37,8 +37,8 @@ import { Badge } from "@/components/ui/badge";
 interface CreateTaskModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: any) => Promise<{ hash?: `0x${string}` }>;
-  onConfirmed: () => void;
+  onSubmit: (data: any) => Promise<any>;
+  onConfirmed?: () => void;
   initialData?: {
     taskBasicInfo: {
       name: string;
@@ -48,11 +48,12 @@ interface CreateTaskModalProps {
       deadline: Date;
       maxCompletions: number;
       rewardAmount: number;
-      allowSelfCheck: boolean;
+      allowSelfCheck?: boolean;
     };
-    taskConfig?: Partial<TaskConfig>;
-    selectedTypes?: string[];
+    taskConfig: any;
+    selectedTypes: string[];
   };
+  mode?: 'create' | 'update';
 }
 
 const AI_REVIEWABLE_TYPES = [
@@ -68,6 +69,7 @@ export default function CreateTaskModal({
   onSubmit,
   onConfirmed,
   initialData,
+  mode = 'create',
 }: CreateTaskModalProps) {
   const [step, setStep] = useState(1);
   const [taskConfig, setTaskConfig] = useState<Partial<TaskConfig>>({});
@@ -77,11 +79,11 @@ export default function CreateTaskModal({
     name: '',
     description: '',
   });
-  const [taskDetails, setTaskDetails] = useState({
-    deadline: new Date(),
-    maxCompletions: 1,
-    rewardAmount: 0,
-    allowSelfCheck: false,
+  const [taskDetails, setTaskDetails] = useState<CreateTaskParams>({
+    deadline: initialData?.taskDetails.deadline || add(new Date(), { days: 7 }),
+    maxCompletions: initialData?.taskDetails.maxCompletions || 1,
+    rewardAmount: initialData?.taskDetails.rewardAmount || 0,
+    allowSelfCheck: initialData?.taskDetails.allowSelfCheck || false,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [transactionHash, setTransactionHash] = useState<`0x${string}` | undefined>();
@@ -147,7 +149,7 @@ export default function CreateTaskModal({
         description: "Task created successfully.",
       });
       setTransactionHash(undefined);
-      onConfirmed();
+      onConfirmed && onConfirmed();
       handleClose();
     } else if (transactionError) {
       toast({
@@ -328,21 +330,38 @@ export default function CreateTaskModal({
         {selectedTypes.includes('Join Discord') && (
           <div className="space-y-2">
             <label htmlFor="discordChannelId" className="text-sm font-medium">
-              Discord Server ID
+              Discord Server Settings
             </label>
-            <div className="space-y-1">
-              <Input
-                id="discordChannelId"
-                placeholder="Enter the Discord server ID"
-                value={taskConfig.DiscordChannelId || ''}
-                onChange={(e) => setTaskConfig(prev => ({
-                  ...prev,
-                  DiscordChannelId: e.target.value
-                }))}
-              />
-              <p className="text-xs text-muted-foreground">
-                Enable Developer Mode in Discord to copy server ID
-              </p>
+            <div className="space-y-4">
+              <div className="space-y-1">
+                <Input
+                  id="discordChannelId"
+                  placeholder="Enter the Discord server ID"
+                  value={taskConfig.DiscordChannelId || ''}
+                  onChange={(e) => setTaskConfig(prev => ({
+                    ...prev,
+                    DiscordChannelId: e.target.value
+                  }))}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Enable Developer Mode in Discord to copy server ID
+                </p>
+              </div>
+
+              <div className="space-y-1">
+                <Input
+                  id="discordInviteLink"
+                  placeholder="Enter the Discord invite link"
+                  value={taskConfig.DiscordInviteLink || ''}
+                  onChange={(e) => setTaskConfig(prev => ({
+                    ...prev,
+                    DiscordInviteLink: e.target.value
+                  }))}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Create an invite link in Discord server settings
+                </p>
+              </div>
             </div>
           </div>
         )}
@@ -391,6 +410,16 @@ export default function CreateTaskModal({
         toast({
           title: "Error",
           description: "Please fill in all required fields",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (selectedTypes.includes('Join Discord') &&
+          (!taskConfig.DiscordChannelId || !taskConfig.DiscordInviteLink)) {
+        toast({
+          title: "Error",
+          description: "Please fill in all Discord server information",
           variant: "destructive",
         });
         return;
@@ -447,13 +476,14 @@ export default function CreateTaskModal({
       <DialogContent className="sm:max-w-[60vw] max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {step === 1 ? "Create Task - Basic Info" : "Create Task - Details"}
+            {step === 1
+              ? `${mode === 'update' ? 'Update' : 'Create'} Task - Basic Info`
+              : `${mode === 'update' ? 'Update' : 'Create'} Task - Details`}
           </DialogTitle>
           <DialogDescription>
             {step === 1
-              ? "Enter the basic task information and configuration"
-              : "Set the task deadline, completions, and reward"
-            }
+              ? `Enter the basic task information and configuration`
+              : `Set the task deadline, completions, and reward`}
           </DialogDescription>
         </DialogHeader>
 
