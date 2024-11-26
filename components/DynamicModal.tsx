@@ -82,7 +82,7 @@ export default function DynamicModal({
     try {
       const result = await onSubmit(formData);
       if (result?.hash) {
-        setTransactionHash(result.hash);
+        setTransactionHash(result.hash as `0x${string}`);
         setSubmitStatus('confirming');
         toast({
           title: "Transaction Submitted",

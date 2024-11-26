@@ -189,8 +189,8 @@ export function useAddReviewerToTask() {
 export function useSelfCheck() {
   const contractFunction = useContractFunction("selfCheck");
 
-  return ({ boardId, taskId, checkResult, signer }: SelfCheckParams) => {
-    return contractFunction([boardId, taskId, checkResult, signer]);
+  return ({ boardId, taskId, checkData, signature }: SelfCheckParams) => {
+    return contractFunction([boardId, taskId, checkData, signature]);
   };
 }
 

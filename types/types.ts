@@ -98,7 +98,7 @@ export interface CreateTaskParams {
   deadline: number;
   maxCompletions: number;
   rewardAmount: number;
-  config: TaskConfig;
+  config: TaskConfig | string;
   allowSelfCheck: boolean;
 }
 

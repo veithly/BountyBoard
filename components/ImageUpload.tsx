@@ -21,7 +21,7 @@ export default function ImageUpload({ value, onChange, label, className }: Image
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const img = new Image();
+    const img = document.createElement('img');
     const objectUrl = URL.createObjectURL(file);
 
     img.onload = async () => {

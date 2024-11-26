@@ -92,43 +92,52 @@ export default function BoardPage() {
   const { address, chain } = useAccount();
   const [selectedTask, setSelectedTask] = useState<TaskView>();
 
-  // 使用合约读取函数
-  const { data: board, refetch } = useGetBoardDetail(BigInt(id as string));
+  // Add type assertion for board data
+  const { data: board, refetch } = useGetBoardDetail(BigInt(id as string)) as {
+    data: BoardDetailView | undefined;
+    refetch: () => void;
+  };
 
-  // 获取所有需要查询资料的地址
+  // Get all addresses to fetch profiles for
   const addressesToFetch = useMemo(() => {
     if (!board) return [];
 
-    const addresses = new Set<string>();
-    // 添加创建者地址
-    addresses.add(board.creator.toLowerCase());
+    const addresses = new Set<`0x${string}`>();
 
-    // 添加所有成员地址
-    board.members?.forEach(member => {
-      addresses.add(member.toLowerCase());
-    });
+    // Type guard to ensure board has required properties
+    if ('creator' in board && board.creator) {
+      addresses.add(board.creator.toLowerCase() as `0x${string}`);
+    }
 
-    // 添加所有任务的创建者地址
-    board.tasks?.forEach(task => {
-      addresses.add(task.creator.toLowerCase());
-      // 添加任务的审核者地址
-      task.reviewers?.forEach(reviewer => {
-        addresses.add(reviewer.toLowerCase());
+    // Add member addresses with type checking
+    if ('members' in board && Array.isArray(board.members)) {
+      board.members.forEach((member: `0x${string}`) => {
+        addresses.add(member.toLowerCase() as `0x${string}`);
       });
-    });
+    }
 
-    return Array.from(addresses) as `0x${string}`[];
+    // Add task-related addresses with type checking
+    if ('tasks' in board && Array.isArray(board.tasks)) {
+      board.tasks.forEach((task: TaskView) => {
+        addresses.add(task.creator.toLowerCase() as `0x${string}`);
+        task.reviewers?.forEach((reviewer: `0x${string}`) => {
+          addresses.add(reviewer.toLowerCase() as `0x${string}`);
+        });
+      });
+    }
+
+    return Array.from(addresses);
   }, [board]);
 
-  // 批量获取用户资料
-  const userProfiles = useAddressProfiles(addressesToFetch);
-
-  const { data: isMember } = useIsBoardMember(
+  // Add type assertion for isMember with explicit typing
+  const { data: isMember = false } = useIsBoardMember(
     id as string,
     address as `0x${string}`
-  );
+  ) as { data: boolean };
+  // Add useAddressProfiles hook and type the result
+  const userProfiles = useAddressProfiles(addressesToFetch) as Record<string, { nickname: string; avatar: string }>;
 
-  if (!board) {
+  if (!board || !chain) {
     return <BoardSkeleton />;
   }
 
@@ -249,9 +258,10 @@ function BoardDetails({
         res = await joinBoard({ boardId: boardIdNum });
         break;
       case "cancelBounty":
+        if (!taskId) return { error: "Task ID is required" };
         res = await cancelTask({
           boardId: boardIdNum,
-          taskId: taskId,
+          taskId: BigInt(taskId), // Convert to BigInt
         });
         break;
       case "closeBoard":
@@ -308,22 +318,28 @@ function BoardDetails({
   // Modal Submission Handler
   const handleModalSubmit = async (data: any) => {
     const boardIdNum = board.id;
-    const taskIdNum = selectedTaskId ?? 0;
+    const taskIdNum = selectedTaskId;
+
+    if (!taskIdNum && (modalType === "submitProof" || modalType === "addReviewer")) {
+      throw new Error("Task ID is required");
+    }
+
     let result: {
       hash?: string;
     };
+
     switch (modalType) {
       case "submitProof":
         result = await submitProof({
           boardId: boardIdNum,
-          taskId: taskIdNum,
+          taskId: BigInt(taskIdNum!), // Convert to BigInt with non-null assertion
           proof: JSON.stringify(data.proof),
         });
         break;
       case "addReviewer":
         result = await addReviewerToTask({
           boardId: boardIdNum,
-          taskId: taskIdNum,
+          taskId: BigInt(taskIdNum!), // Convert to BigInt with non-null assertion
           reviewer: data.reviewer,
         });
         break;
@@ -583,6 +599,7 @@ function BoardDetails({
                 maxCompletions: Number(selectedTaskForUpdate.maxCompletions),
                 rewardAmount: Number(formatUnits(selectedTaskForUpdate.rewardAmount, 18)),
                 allowSelfCheck: selectedTaskForUpdate.allowSelfCheck,
+                boardId: board.id,
               },
               taskConfig: selectedTaskForUpdate.config
                 ? {

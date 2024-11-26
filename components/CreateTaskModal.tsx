@@ -49,6 +49,7 @@ interface CreateTaskModalProps {
       maxCompletions: number;
       rewardAmount: number;
       allowSelfCheck?: boolean;
+      boardId: bigint;
     };
     taskConfig: any;
     selectedTypes: string[];
@@ -62,6 +63,13 @@ const AI_REVIEWABLE_TYPES = [
   'Github Pull Request',
   'Contract Verification'
 ];
+
+interface TaskDetailsState {
+  deadline: Date;
+  maxCompletions: number;
+  rewardAmount: number;
+  allowSelfCheck: boolean;
+}
 
 export default function CreateTaskModal({
   isOpen,
@@ -79,11 +87,13 @@ export default function CreateTaskModal({
     name: '',
     description: '',
   });
-  const [taskDetails, setTaskDetails] = useState<CreateTaskParams>({
-    deadline: initialData?.taskDetails.deadline || add(new Date(), { days: 7 }),
+  const [taskDetails, setTaskDetails] = useState<TaskDetailsState>({
+    deadline: initialData?.taskDetails.deadline
+      ? new Date(Number(initialData.taskDetails.deadline) * 1000)
+      : add(new Date(), { days: 7 }),
     maxCompletions: initialData?.taskDetails.maxCompletions || 1,
     rewardAmount: initialData?.taskDetails.rewardAmount || 0,
-    allowSelfCheck: initialData?.taskDetails.allowSelfCheck || false,
+    allowSelfCheck: initialData?.taskDetails.allowSelfCheck ?? false,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [transactionHash, setTransactionHash] = useState<`0x${string}` | undefined>();
@@ -107,7 +117,7 @@ export default function CreateTaskModal({
       description: '',
     });
     setTaskDetails({
-      deadline: new Date(),
+      deadline: add(new Date(), { days: 7 }),
       maxCompletions: 1,
       rewardAmount: 0,
       allowSelfCheck: false,
@@ -124,7 +134,12 @@ export default function CreateTaskModal({
   useEffect(() => {
     if (isOpen && initialData) {
       setTaskBasicInfo(initialData.taskBasicInfo);
-      setTaskDetails(initialData.taskDetails);
+      setTaskDetails({
+        deadline: new Date(Number(initialData.taskDetails.deadline) * 1000),
+        maxCompletions: initialData.taskDetails.maxCompletions,
+        rewardAmount: initialData.taskDetails.rewardAmount,
+        allowSelfCheck: initialData.taskDetails.allowSelfCheck ?? false,
+      });
       setTaskConfig(initialData.taskConfig || {});
       setSelectedTypes(initialData.selectedTypes || []);
     } else if (!isOpen) {
@@ -445,13 +460,14 @@ export default function CreateTaskModal({
 
       setIsSubmitting(true);
       try {
-        const finalData = {
+        const finalData: CreateTaskParams = {
           ...taskBasicInfo,
           deadline: Math.floor(taskDetails.deadline.getTime() / 1000),
           maxCompletions: taskDetails.maxCompletions,
           rewardAmount: taskDetails.rewardAmount,
           allowSelfCheck: shouldShowSelfCheck ? taskDetails.allowSelfCheck : false,
           config: JSON.stringify(taskConfig),
+          boardId: initialData?.taskDetails.boardId || BigInt(0),
         };
 
         const result = await onSubmit(finalData);
@@ -599,10 +615,12 @@ export default function CreateTaskModal({
                   <Calendar
                     mode="single"
                     selected={taskDetails.deadline}
-                    onSelect={(date) => setTaskDetails(prev => ({
-                      ...prev,
-                      deadline: date || new Date()
-                    }))}
+                    onSelect={(date) =>
+                      setTaskDetails(prev => ({
+                        ...prev,
+                        deadline: date || new Date()
+                      }))
+                    }
                     initialFocus
                   />
                 </PopoverContent>

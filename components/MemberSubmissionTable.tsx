@@ -134,6 +134,10 @@ export default function MemberSubmissionTable({
                     sub.submitter === member && sub.taskId === task.id
                 );
 
+                const isReviewer = task.reviewers.some(
+                  (reviewer: `0x${string}`) => reviewer.toLowerCase() === address?.toLowerCase()
+                );
+
                 let icon = {
                   component: Circle,
                   className: "text-yellow-400/80 hover:text-yellow-400"

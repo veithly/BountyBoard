@@ -14,12 +14,12 @@ import { useMemo } from 'react';
 export default function JoinedBoardsPage() {
   const router = useRouter();
   const { address } = useAccount();
-  const { data: boardsData, isLoading } = useGetBoardsByMember(address);
+  const { data: boardsData = [], isLoading } = useGetBoardsByMember(address);
 
   // 获取所有创建者地址
   const creatorAddresses = useMemo(() => {
-    if (!boardsData) return [];
-    return boardsData.map(board => board.creator as `0x${string}`);
+    if (!boardsData || !Array.isArray(boardsData)) return [];
+    return boardsData.map((board: BoardView) => board.creator);
   }, [boardsData]);
 
   // 批量获取创建者资料
@@ -45,9 +45,9 @@ export default function JoinedBoardsPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {boardsData?.map((board: BoardView) => (
+        {Array.isArray(boardsData) && boardsData.map((board: BoardView) => (
           <BoardCard
-            key={board.id}
+            key={board.id.toString()}
             board={board}
             creatorProfile={creatorProfiles[board.creator.toLowerCase()]}
           />

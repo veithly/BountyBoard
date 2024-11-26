@@ -15,7 +15,9 @@ export function useAddressProfiles(addresses: `0x${string}`[]) {
       if (!addresses.length) return;
 
       try {
-        const uniqueAddresses = [...new Set(addresses.map(addr => addr.toLowerCase()))];
+        const uniqueAddresses = Array.from(
+          new Set(addresses.map(addr => addr.toLowerCase()))
+        );
 
         const response = await fetch(
           "https://api.studio.thegraph.com/query/67521/verax-v2-linea-sepolia/v0.0.2",
