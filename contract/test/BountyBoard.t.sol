@@ -124,9 +124,10 @@ contract BountyBoardTest is Test {
         // Update the board
         string memory newName = "Updated Board";
         string memory newDescription = "Updated description";
+        string memory newImg = "http://example.com/image2.png";
         address newRewardToken = address(1); // Example address
 
-        bountyBoard.updateBountyBoard(0, newName, newDescription, newRewardToken);
+        bountyBoard.updateBountyBoard(0, newName, newDescription, newImg, newRewardToken);
 
         // Get board details using tuple destructuring
         (
@@ -569,5 +570,91 @@ contract BountyBoardTest is Test {
             assertEq(status.status, reviewStatuses[i], "Status should match review status");
             assertEq(status.reviewComment, comments[i], "Review comment should match");
         }
+    }
+
+    function testBoardViews() public {
+        // 1. 创建板块
+        string memory boardName = "Test Board";
+        string memory boardDesc = "Test Description";
+        string memory img = "http://example.com/image.png";
+        bountyBoard.createBountyBoard(boardName, boardDesc, img, address(rewardToken));
+
+        // 2. 创建任务
+        bountyBoard.createTask(
+            0,                              // boardId
+            "Task 1",                       // name
+            "Task 1 Description",           // description
+            block.timestamp + 1 days,       // deadline
+            5,                             // maxCompletions
+            100,                           // rewardAmount
+            "{}",                          // config
+            true                           // allowSelfCheck
+        );
+
+        // 3. 添加成员
+        address member = makeAddr("member");
+        vm.prank(member);
+        bountyBoard.joinBoard(0);
+
+        // 4. 提交任务
+        vm.prank(member);
+        bountyBoard.submitProof(0, 0, "Test proof");
+
+        // 5. 测试 getAllBoards
+        console.log("Testing getAllBoards:");
+        BountyBoard.BoardView[] memory allBoards = bountyBoard.getAllBoards();
+        for(uint i = 0; i < allBoards.length; i++) {
+            console.log("Board", i);
+            console.log("- Name:", allBoards[i].name);
+            console.log("- Description:", allBoards[i].description);
+            console.log("- Creator:", allBoards[i].creator);
+            console.log("- Total Pledged:", allBoards[i].totalPledged);
+        }
+
+        // 6. 测试 getTasksForBoard
+        console.log("\nTesting getTasksForBoard:");
+        BountyBoard.TaskView[] memory tasks = bountyBoard.getTasksForBoard(0);
+        for(uint i = 0; i < tasks.length; i++) {
+            console.log("Task", i);
+            console.log("- Name:", tasks[i].name);
+            console.log("- Description:", tasks[i].description);
+            console.log("- Reward:", tasks[i].rewardAmount);
+            console.log("- Completions:", tasks[i].numCompletions);
+        }
+
+        // 7. 测试 getBoardDetail
+        console.log("\nTesting getBoardDetail:");
+        vm.prank(member);  // 使用成员身份查看
+        BountyBoard.BoardDetailView memory detail = bountyBoard.getBoardDetail(0);
+
+        console.log("Board Detail:");
+        console.log("- Name:", detail.name);
+        console.log("- Description:", detail.description);
+        console.log("- Total Tasks:", detail.tasks.length);
+        console.log("- Total Submissions:", detail.submissions.length);
+        console.log("- Total Members:", detail.members.length);
+
+        console.log("\nUser Task Statuses:");
+        for(uint i = 0; i < detail.userTaskStatuses.length; i++) {
+            console.log("Task", i);
+            console.log("- Submitted:", detail.userTaskStatuses[i].submitted);
+            console.log("- Status:", detail.userTaskStatuses[i].status);
+            console.log("- Proof:", detail.userTaskStatuses[i].submitProof);
+        }
+
+        // 8. 测试 getBoardsByMember
+        console.log("\nTesting getBoardsByMember:");
+        BountyBoard.BoardView[] memory memberBoards = bountyBoard.getBoardsByMember(member);
+        for(uint i = 0; i < memberBoards.length; i++) {
+            console.log("Board", i);
+            console.log("- Name:", memberBoards[i].name);
+            console.log("- Description:", memberBoards[i].description);
+        }
+
+        // 9. 验证数据正确性
+        assertEq(allBoards.length, 1, "Should have one board");
+        assertEq(tasks.length, 1, "Should have one task");
+        assertEq(detail.members.length, 2, "Should have two members");
+        assertEq(memberBoards.length, 1, "Member should be in one board");
     }
 }

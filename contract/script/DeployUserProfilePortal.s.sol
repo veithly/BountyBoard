@@ -2,7 +2,7 @@
 pragma solidity 0.8.21;
 
 import {Script, console} from "forge-std/Script.sol";
-import {SocialBindingPortal} from "../src/SocialBindingPortal.sol";
+import {UserProfilePortal} from "../src/UserProfilePortal.sol";
 
 contract DeploySocialBinding is Script {
     function setUp() public {}
@@ -23,7 +23,7 @@ contract DeploySocialBinding is Script {
 
         bytes memory constructorArgs = abi.encode(modules, router, signerAddress);
         bytes memory bytecode = abi.encodePacked(
-            type(SocialBindingPortal).creationCode,
+            type(UserProfilePortal).creationCode,
             constructorArgs
         );
 
@@ -34,7 +34,7 @@ contract DeploySocialBinding is Script {
 
         require(deployedAddress != address(0), "Deploy failed");
 
-        console.log("SocialBindingPortal deployed at:", deployedAddress);
-        console.log("Signer address set to:", SocialBindingPortal(deployedAddress).signerAddress());
+        console.log("UserProfilePortal deployed at:", deployedAddress);
+        console.log("Signer address set to:", UserProfilePortal(deployedAddress).signerAddress());
     }
 }

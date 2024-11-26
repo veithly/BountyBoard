@@ -730,8 +730,8 @@ contract BountyBoard is
         BoardView[] memory allBoards = new BoardView[](activeCount);
         uint256 currentIndex = 0;
 
-        for (uint256 i = boardCount - 1; i >= 0; i--) {
-            Board storage board = boards[i];
+        for (uint256 i = 0; i < boardCount; i++) {
+            Board storage board = boards[boardCount - i - 1];
             if (!board.closed) {
                 allBoards[currentIndex++] = BoardView(
                     board.id,
@@ -981,7 +981,7 @@ contract BountyBoard is
     function getBoardsByMember(address _member) public view returns (BoardView[] memory) {
         uint256 count = 0;
         for(uint256 i = 0; i < boardCount; i++) {
-            if(isBoardMember(i, _member)) {
+            if(isBoardMember(boardCount - i - 1, _member)) {
                 count++;
             }
         }
@@ -990,8 +990,8 @@ contract BountyBoard is
         uint256 currentIndex = 0;
 
         for(uint256 i = 0; i < boardCount; i++) {
-            if(isBoardMember(i, _member)) {
-                Board storage board = boards[i];
+            if(isBoardMember(boardCount - i - 1, _member)) {
+                Board storage board = boards[boardCount - i - 1];
                 userBoards[currentIndex] = BoardView({
                     id: board.id,
                     creator: board.creator,

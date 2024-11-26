@@ -613,6 +613,7 @@
       { "name": "_boardId", "type": "uint256", "internalType": "uint256" },
       { "name": "_name", "type": "string", "internalType": "string" },
       { "name": "_description", "type": "string", "internalType": "string" },
+      { "name": "_img", "type": "string", "internalType": "string" },
       { "name": "_rewardToken", "type": "address", "internalType": "address" }
     ],
     "outputs": [],
