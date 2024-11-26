@@ -55,3 +55,20 @@ export const BOARDS = gql`
     closed
   }
 }`;
+
+export const PROFILES_QUERY = gql`
+  query GetProfiles($addresses: [Bytes!]!, $schemaId: String!) {
+    attestations(
+      where: {
+        subject_in: $addresses,
+        schema: $schemaId,
+        revoked: false
+      },
+      orderBy: attestedDate,
+      orderDirection: desc
+    ) {
+      subject
+      decodedData
+    }
+  }
+`;

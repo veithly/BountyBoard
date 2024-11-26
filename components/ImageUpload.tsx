@@ -170,6 +170,8 @@ export default function ImageUpload({ value, onChange, label, className }: Image
         type="file"
         accept="image/*"
         className="hidden"
+        title="Upload your image"
+        placeholder="Choose an image file"
         onChange={handleImageUpload}
       />
     </div>

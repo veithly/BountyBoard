@@ -1,12 +1,11 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
-import { request } from "graphql-request";
+import { useAddressProfiles } from "@/hooks/useAddressProfiles";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAccount, useWaitForTransactionReceipt } from "wagmi";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { format, set } from "date-fns";
 import { toast } from "@/components/ui/use-toast";
 import Image from "next/image";
@@ -50,7 +49,7 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Address } from "@/components/ui/Address";
 import { Chain, formatUnits, zeroAddress } from "viem";
-import { Info, Calendar, Coins, Users } from "lucide-react";
+import { Info, Calendar, Coins, Users, User2 } from "lucide-react";
 
 // Modal Configurations
 const modalConfigs = {
@@ -95,7 +94,35 @@ export default function BoardPage() {
 
   // 使用合约读取函数
   const { data: board, refetch } = useGetBoardDetail(BigInt(id as string));
-  console.log("Board:", board);
+
+  // 获取所有需要查询资料的地址
+  const addressesToFetch = useMemo(() => {
+    if (!board) return [];
+
+    const addresses = new Set<string>();
+    // 添加创建者地址
+    addresses.add(board.creator.toLowerCase());
+
+    // 添加所有成员地址
+    board.members?.forEach(member => {
+      addresses.add(member.toLowerCase());
+    });
+
+    // 添加所有任务的创建者地址
+    board.tasks?.forEach(task => {
+      addresses.add(task.creator.toLowerCase());
+      // 添加任务的审核者地址
+      task.reviewers?.forEach(reviewer => {
+        addresses.add(reviewer.toLowerCase());
+      });
+    });
+
+    return Array.from(addresses) as `0x${string}`[];
+  }, [board]);
+
+  // 批量获取用户资料
+  const userProfiles = useAddressProfiles(addressesToFetch);
+
   const { data: isMember } = useIsBoardMember(
     id as string,
     address as `0x${string}`
@@ -106,11 +133,6 @@ export default function BoardPage() {
   }
 
   const isCreator = board.creator.toLowerCase() === address?.toLowerCase();
-
-  const isReviewerForTask = (taskId: bigint) => {
-    const TaskView = board.tasks.find((t) => t.id === taskId);
-    return TaskView?.reviewers?.includes(address as `0x${string}`);
-  };
 
   return (
     <div className="container mx-auto p-4">
@@ -123,6 +145,7 @@ export default function BoardPage() {
         refetch={refetch}
         isCreator={isCreator}
         isMember={isMember}
+        userProfiles={userProfiles}
       />
     </div>
   );
@@ -138,6 +161,7 @@ function BoardDetails({
   refetch,
   isCreator,
   isMember,
+  userProfiles,
 }: {
   board: BoardDetailView;
   tasks: TaskView[];
@@ -147,6 +171,7 @@ function BoardDetails({
   refetch: () => void;
   isCreator: boolean;
   isMember: boolean;
+  userProfiles: Record<string, { nickname: string; avatar: string; }>;
 }) {
   // Contract Hooks
   const createTask = useCreateTask();
@@ -444,7 +469,29 @@ function BoardDetails({
         </div>
         <div className="flex items-center gap-2 text-muted-foreground mb-4">
           <Users className="h-4 w-4" />
-          <strong>Creator:</strong> <Address address={board.creator} />
+          <strong>Creator:</strong>
+          <div className="flex items-center gap-2">
+            {userProfiles[board.creator.toLowerCase()]?.avatar ? (
+              <Image
+                src={userProfiles[board.creator.toLowerCase()].avatar}
+                alt="Creator"
+                width={16}
+                height={16}
+                className="w-4 h-4 rounded-full"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = "/placeholder.png";
+                }}
+              />
+            ) : (
+              <User2 className="h-4 w-4" />
+            )}
+            <span>
+              {userProfiles[board.creator.toLowerCase()]?.nickname || (
+                <Address address={board.creator} />
+              )}
+            </span>
+          </div>
         </div>
 
         {/* Join Board Button */}
@@ -492,6 +539,7 @@ function BoardDetails({
                 isCreator && handleAction("cancelTask", taskId)
               }
               refetch={refetch}
+              userProfiles={userProfiles}
             />
           </TabsContent>
           <TabsContent value="submissions">
@@ -500,6 +548,7 @@ function BoardDetails({
               board={board}
               address={address}
               refetch={refetch}
+              userProfiles={userProfiles}
             />
           </TabsContent>
         </Tabs>

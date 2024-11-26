@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { useGetAllBoards } from "@/hooks/useContract";
 import { type BoardView } from "@/types/types";
@@ -8,10 +8,22 @@ import BoardCard from "@/components/BoardCard";
 import BoardsPageSkeleton from "@/components/BoardsPageSkeleton";
 import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useAddressProfiles } from "@/hooks/useAddressProfiles";
 
 export default function HomePage() {
   const router = useRouter();
   const { data: boardsData, isLoading } = useGetAllBoards();
+
+  // 获取所有创建者地址
+  const creatorAddresses = useMemo(() => {
+    if (!boardsData) return [];
+    return boardsData
+      .filter(board => !board.closed)
+      .map(board => board.creator as `0x${string}`);
+  }, [boardsData]);
+
+  // 批量获取创建者资料
+  const creatorProfiles = useAddressProfiles(creatorAddresses);
 
   if (isLoading) {
     return <BoardsPageSkeleton />;
@@ -34,7 +46,13 @@ export default function HomePage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {boardsData?.map((board: BoardView) => (
-          !board.closed && <BoardCard key={board.id} board={board} />
+          !board.closed && (
+            <BoardCard
+              key={board.id}
+              board={board}
+              creatorProfile={creatorProfiles[board.creator.toLowerCase()]}
+            />
+          )
         ))}
       </div>
     </div>

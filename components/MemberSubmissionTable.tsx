@@ -10,7 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { Check, X, Eye, Circle, CheckCircle, ExternalLink } from "lucide-react";
+import { Check, X, Eye, Circle, CheckCircle, ExternalLink, User2 } from "lucide-react";
 import {
   BoardDetailView,
   TaskView,
@@ -27,12 +27,14 @@ interface MemberSubmissionTableProps {
   board: BoardDetailView;
   address: `0x${string}` | undefined;
   refetch: () => void;
+  userProfiles: Record<string, { nickname: string; avatar: string; }>;
 }
 
 export default function MemberSubmissionTable({
   board,
   address,
   refetch,
+  userProfiles,
 }: MemberSubmissionTableProps) {
   const [selectedSubmission, setSelectedSubmission] =
     useState<SubmissionView | null>(null);
@@ -103,7 +105,28 @@ export default function MemberSubmissionTable({
               className="hover:bg-purple-500/5 transition-colors duration-200"
             >
               <TableCell className="font-medium text-purple-200">
-                <Address address={member} size="lg" />
+                <div className="flex items-center gap-2">
+                  {userProfiles[member.toLowerCase()]?.avatar ? (
+                    <Image
+                      src={userProfiles[member.toLowerCase()].avatar}
+                      alt="Member"
+                      width={16}
+                      height={16}
+                      className="w-4 h-4 rounded-full"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = "/placeholder.png";
+                      }}
+                    />
+                  ) : (
+                    <User2 className="h-4 w-4" />
+                  )}
+                  <span>
+                    {userProfiles[member.toLowerCase()]?.nickname || (
+                      <Address address={member} size="lg" />
+                    )}
+                  </span>
+                </div>
               </TableCell>
               {board.tasks.map((task: TaskView) => {
                 const submission = board.submissions.find(

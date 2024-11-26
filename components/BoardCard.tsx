@@ -10,7 +10,16 @@ import { formatUnits, zeroAddress } from 'viem';
 import { Address } from './ui/Address';
 import { User2, Calendar, Coins } from 'lucide-react';
 
-export default function BoardCard({ board }: { board: BoardView }) {
+export default function BoardCard({
+  board,
+  creatorProfile
+}: {
+  board: BoardView;
+  creatorProfile?: {
+    nickname: string;
+    avatar: string;
+  }
+}) {
   const { data: tokenSymbol } = useTokenSymbol(board.rewardToken);
 
   return (
@@ -40,9 +49,21 @@ export default function BoardCard({ board }: { board: BoardView }) {
         <CardContent>
           <p className="text-sm text-muted-foreground line-clamp-2">{board.description}</p>
           <div className="flex justify-between items-center text-xs mt-4 text-muted-foreground">
-            <div className="flex items-center gap-1">
-              <User2 className="h-4 w-4" />
-              <Address address={board.creator} />
+            <div className="flex items-center gap-2">
+              {creatorProfile?.avatar ? (
+                <Image
+                  src={creatorProfile.avatar}
+                  alt="Creator"
+                  width={16}
+                  height={16}
+                  className="w-4 h-4 rounded-full"
+                />
+              ) : (
+                <User2 className="h-4 w-4" />
+              )}
+              <span>
+                {creatorProfile?.nickname || <Address address={board.creator} />}
+              </span>
             </div>
             <div className="flex items-center gap-1">
               <Calendar className="h-4 w-4" />

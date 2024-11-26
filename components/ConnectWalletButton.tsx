@@ -1,5 +1,6 @@
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -165,10 +166,17 @@ const ConnectWallet: React.FC = () => {
                       {chain.hasIcon && (
                         <div className="mr-2 h-4 w-4 relative">
                           {chain.iconUrl && (
-                            <img
-                              alt={chain.name ?? "Chain icon"}
+                            <Image
                               src={chain.iconUrl}
-                              className="h-4 w-4"
+                              alt={chain.name ?? "Chain icon"}
+                              fill
+                              className="object-cover"
+                              sizes="20px"
+                              priority={false}
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.src = "/placeholder.png";
+                              }}
                             />
                           )}
                         </div>
@@ -180,10 +188,12 @@ const ConnectWallet: React.FC = () => {
                       <DropdownMenuTrigger asChild>
                         <Button className="bg-gradient-to-r from-purple-500/10 to-purple-700/10 hover:from-purple-500/20 hover:to-purple-700/20 border border-purple-500/30 hover:border-purple-500/50 text-purple-300 shadow-lg hover:shadow-purple-500/20 transition-all duration-300">
                           {profile?.avatar ? (
-                            <img
+                            <Image
                               src={profile.avatar}
                               alt="Profile"
                               className="w-5 h-5 rounded-full mr-2 ring-2 ring-purple-500/30"
+                              width={20}
+                              height={20}
                             />
                           ) : (
                             <User className="mr-2 h-4 w-4" />
