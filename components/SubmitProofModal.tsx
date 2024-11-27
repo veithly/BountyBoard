@@ -48,7 +48,6 @@ export default function SubmissionProofModal({
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'submitting' | 'confirming' | 'confirmed'>('idle');
   const { toast } = useToast();
 
-  // 使用 useWaitForTransactionReceipt
   const {
     isLoading: isConfirming,
     isSuccess: isConfirmed,
@@ -57,7 +56,6 @@ export default function SubmissionProofModal({
     hash: transactionHash as `0x${string}`,
   });
 
-  // 监听交易状态
   useEffect(() => {
     if (isConfirmed) {
       setSubmitStatus('confirmed');
@@ -79,7 +77,6 @@ export default function SubmissionProofModal({
     }
   }, [isConfirmed, error, onClose, onConfirmed]);
 
-  // 处理图片上传
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -111,7 +108,6 @@ export default function SubmissionProofModal({
     }
   };
 
-  // 验证 X (Twitter) 操作
   const verifyXAction = async (action: 'follow' | 'retweet' | 'like') => {
     if (!socialAccounts?.xAccessToken) {
       toast({
@@ -183,7 +179,6 @@ export default function SubmissionProofModal({
     }
   };
 
-  // 验证 Discord 加入
   const verifyDiscordJoin = async () => {
     if (!socialAccounts?.discordAccessToken) {
       toast({
@@ -269,7 +264,6 @@ export default function SubmissionProofModal({
     }
   };
 
-  // 获取按钮状态
   const getButtonState = () => {
     switch (submitStatus) {
       case 'submitting':
@@ -301,7 +295,6 @@ export default function SubmissionProofModal({
 
   const buttonState = getButtonState();
 
-  // 添加一个通用的社交平台链接按钮组件
   const SocialLinkButton = ({
     href,
     icon: Icon,
@@ -316,7 +309,7 @@ export default function SubmissionProofModal({
       variant="outline"
       size="sm"
       asChild
-      className="h-9"
+      className="h-9 hover:bg-accent hover:text-accent-foreground"
     >
       <a
         href={href}
@@ -332,10 +325,10 @@ export default function SubmissionProofModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px] bg-background border-border">
         <DialogHeader>
-          <DialogTitle>Submit Proof</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-foreground">Submit Proof</DialogTitle>
+          <DialogDescription className="text-muted-foreground">
             Please provide the required proof for this task.
           </DialogDescription>
         </DialogHeader>
@@ -345,39 +338,47 @@ export default function SubmissionProofModal({
             switch (type) {
               case 'Plain Text':
                 return (
-                  <div key="text">
-                    <label className="block text-sm font-medium mb-2">Text Proof</label>
+                  <div key="text" className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Text Proof</label>
                     <Textarea
                       placeholder="Enter your proof..."
                       value={proofData.text || ''}
                       onChange={(e) => setProofData(prev => ({ ...prev, text: e.target.value }))}
+                      className="bg-background border-input"
                     />
                   </div>
                 );
 
               case 'Image':
                 return (
-                  <div key="image">
-                    <label className="block text-sm font-medium mb-2">Image Proof</label>
+                  <div key="image" className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Image Proof</label>
                     <div className="flex items-center gap-4">
                       {proofData.image && (
-                        <Image src={proofData.image} alt="Proof" width={100} height={100} />
+                        <div className="relative w-24 h-24 rounded-md overflow-hidden border border-border">
+                          <Image
+                            src={proofData.image}
+                            alt="Proof"
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
                       )}
                       <Button
                         type="button"
                         variant="outline"
                         disabled={isUploading}
                         onClick={() => document.getElementById('image-upload')?.click()}
+                        className="hover:bg-accent hover:text-accent-foreground"
                       >
                         <Upload className="h-4 w-4 mr-2" />
                         {isUploading ? "Uploading..." : "Upload Image"}
                       </Button>
-                      <input
+                      <Input
                         id="image-upload"
                         type="file"
                         accept="image/*"
                         className="hidden"
-                        aria-label="Upload image"
                         onChange={handleImageUpload}
                       />
                     </div>
@@ -386,30 +387,32 @@ export default function SubmissionProofModal({
 
               case 'Github Pull Request':
                 return (
-                  <div key="github">
-                    <label className="block text-sm font-medium mb-2">
-                      <SiGithub className="inline h-4 w-4 mr-2" />
+                  <div key="github" className="space-y-2">
+                    <label className="flex items-center text-sm font-medium text-foreground">
+                      <SiGithub className="h-4 w-4 mr-2" />
                       GitHub PR URL
                     </label>
                     <Input
                       placeholder="https://github.com/name/repo/pull/123"
                       value={proofData.github || ''}
                       onChange={(e) => setProofData(prev => ({ ...prev, github: e.target.value }))}
+                      className="bg-background border-input"
                     />
                   </div>
                 );
 
               case 'Contract Verification':
                 return (
-                  <div key="contract">
-                    <label className="block text-sm font-medium mb-2">
-                      <SiEthereum className="inline h-4 w-4 mr-2" />
+                  <div key="contract" className="space-y-2">
+                    <label className="flex items-center text-sm font-medium text-foreground">
+                      <SiEthereum className="h-4 w-4 mr-2" />
                       Contract Address
                     </label>
                     <Input
                       placeholder="0x..."
                       value={proofData.contract || ''}
                       onChange={(e) => setProofData(prev => ({ ...prev, contract: e.target.value }))}
+                      className="bg-background border-input"
                     />
                   </div>
                 );
@@ -419,10 +422,10 @@ export default function SubmissionProofModal({
               case 'X Retweet':
               case 'X Like':
                 return (
-                  <div key="twitter">
-                    <div className="flex justify-between items-center mb-2">
-                      <label className="block text-sm font-medium">
-                        <SiX className="inline h-4 w-4 mr-2" />
+                  <div key="twitter" className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <label className="flex items-center text-sm font-medium text-foreground">
+                        <SiX className="h-4 w-4 mr-2" />
                         {type.replace('X ', '')} Verification
                       </label>
                       {type === 'X Follow' && taskConfig.XFollowUsername && (
@@ -443,8 +446,8 @@ export default function SubmissionProofModal({
                         />
                       )}
                     </div>
-                    <div className="flex items-center justify-between gap-4 p-4 rounded-lg bg-muted">
-                      <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-between gap-4 p-4 rounded-lg bg-muted/50 border border-border">
+                      <div className="flex items-center gap-2 text-foreground">
                         <SiX className="h-4 w-4" />
                         <span className="text-sm font-medium">
                           {socialAccounts?.xUserName ?
@@ -458,6 +461,7 @@ export default function SubmissionProofModal({
                         variant="outline"
                         disabled={isVerifying || !socialAccounts?.xAccessToken}
                         onClick={() => verifyXAction(type.split(' ')[1].toLowerCase() as any)}
+                        className="hover:bg-accent hover:text-accent-foreground"
                       >
                         {isVerifying ? "Verifying..." : "Verify"}
                       </Button>
@@ -467,10 +471,10 @@ export default function SubmissionProofModal({
 
               case 'Join Discord':
                 return (
-                  <div key="discord">
-                    <div className="flex justify-between items-center mb-2">
-                      <label className="block text-sm font-medium">
-                        <SiDiscord className="inline h-4 w-4 mr-2" />
+                  <div key="discord" className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <label className="flex items-center text-sm font-medium text-foreground">
+                        <SiDiscord className="h-4 w-4 mr-2" />
                         Discord Verification
                       </label>
                       {taskConfig.DiscordChannelId && (
@@ -481,8 +485,8 @@ export default function SubmissionProofModal({
                         />
                       )}
                     </div>
-                    <div className="flex items-center justify-between gap-4 p-4 rounded-lg bg-muted">
-                      <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-between gap-4 p-4 rounded-lg bg-muted/50 border border-border">
+                      <div className="flex items-center gap-2 text-foreground">
                         <SiDiscord className="h-4 w-4" />
                         <span className="text-sm font-medium">
                           {socialAccounts?.discordUserName ?
@@ -496,6 +500,7 @@ export default function SubmissionProofModal({
                         variant="outline"
                         disabled={isVerifying || !socialAccounts?.discordAccessToken}
                         onClick={verifyDiscordJoin}
+                        className="hover:bg-accent hover:text-accent-foreground"
                       >
                         {isVerifying ? "Verifying..." : "Verify"}
                       </Button>
@@ -510,7 +515,7 @@ export default function SubmissionProofModal({
           <Button
             onClick={handleSubmit}
             disabled={buttonState.disabled}
-            className="min-w-[120px]"
+            className="min-w-[120px] bg-primary text-primary-foreground hover:bg-primary/90"
           >
             <div className="flex items-center">
               {buttonState.icon}
