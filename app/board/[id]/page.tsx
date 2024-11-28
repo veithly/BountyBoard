@@ -52,7 +52,7 @@ import { Chain, formatUnits, zeroAddress } from "viem";
 import { Info, Calendar, Coins, Users, User2 } from "lucide-react";
 
 // Modal Configurations
-const modalConfigs = {
+export const modalConfigs = {
   submitProof: {
     title: "Submit Proof",
     description: "Submit your proof of completion for this task.",
@@ -86,38 +86,36 @@ const modalConfigs = {
   },
 };
 
+// Add type guard helper function at the top of the file
+function isBoardDetailView(obj: any): obj is BoardDetailView {
+  return obj && typeof obj === "object" && "tasks" in obj && "creator" in obj;
+}
+
 // Main Board Page Component
 export default function BoardPage() {
   const { id } = useParams();
-  const { address, chain } = useAccount();
+  const { address, chain, isConnected } = useAccount();
   const [selectedTask, setSelectedTask] = useState<TaskView>();
 
-  // Add type assertion for board data
-  const { data: board, refetch } = useGetBoardDetail(BigInt(id as string)) as {
-    data: BoardDetailView | undefined;
-    refetch: () => void;
-  };
+  const { data: board, refetch } = useGetBoardDetail(BigInt(id as string));
 
   // Get all addresses to fetch profiles for
   const addressesToFetch = useMemo(() => {
-    if (!board) return [];
+    if (!board || typeof board !== "object") return [];
 
     const addresses = new Set<`0x${string}`>();
 
-    // Type guard to ensure board has required properties
-    if ('creator' in board && board.creator) {
+    if ("creator" in board && typeof board.creator === "string") {
       addresses.add(board.creator.toLowerCase() as `0x${string}`);
     }
 
-    // Add member addresses with type checking
-    if ('members' in board && Array.isArray(board.members)) {
+    if ("members" in board && Array.isArray(board.members)) {
       board.members.forEach((member: `0x${string}`) => {
         addresses.add(member.toLowerCase() as `0x${string}`);
       });
     }
 
-    // Add task-related addresses with type checking
-    if ('tasks' in board && Array.isArray(board.tasks)) {
+    if ("tasks" in board && Array.isArray(board.tasks)) {
       board.tasks.forEach((task: TaskView) => {
         addresses.add(task.creator.toLowerCase() as `0x${string}`);
         task.reviewers?.forEach((reviewer: `0x${string}`) => {
@@ -135,26 +133,30 @@ export default function BoardPage() {
     address as `0x${string}`
   ) as { data: boolean };
   // Add useAddressProfiles hook and type the result
-  const userProfiles = useAddressProfiles(addressesToFetch) as Record<string, { nickname: string; avatar: string }>;
+  const userProfiles = useAddressProfiles(addressesToFetch) as Record<
+    string,
+    { nickname: string; avatar: string }
+  >;
 
-  if (!board || !chain) {
+  if (!board || !isBoardDetailView(board)) {
     return <BoardSkeleton />;
   }
-
-  const isCreator = board.creator.toLowerCase() === address?.toLowerCase();
 
   return (
     <div className="container mx-auto p-4">
       <BoardDetails
-        board={board}
-        tasks={board.tasks}
+        board={board as BoardDetailView}
+        tasks={board.tasks || []}
         address={address}
-        chain={chain}
+        chain={chain!}
         onTaskSelect={setSelectedTask}
         refetch={refetch}
-        isCreator={isCreator}
-        isMember={isMember}
+        isCreator={
+          isConnected && board.creator.toLowerCase() === address?.toLowerCase()
+        }
+        isMember={isConnected && isMember}
         userProfiles={userProfiles}
+        isWalletConnected={isConnected}
       />
     </div>
   );
@@ -171,6 +173,7 @@ function BoardDetails({
   isCreator,
   isMember,
   userProfiles,
+  isWalletConnected,
 }: {
   board: BoardDetailView;
   tasks: TaskView[];
@@ -180,7 +183,8 @@ function BoardDetails({
   refetch: () => void;
   isCreator: boolean;
   isMember: boolean;
-  userProfiles: Record<string, { nickname: string; avatar: string; }>;
+  userProfiles: Record<string, { nickname: string; avatar: string }>;
+  isWalletConnected: boolean;
 }) {
   // Contract Hooks
   const createTask = useCreateTask();
@@ -320,7 +324,10 @@ function BoardDetails({
     const boardIdNum = board.id;
     const taskIdNum = selectedTaskId;
 
-    if (!taskIdNum && (modalType === "submitProof" || modalType === "addReviewer")) {
+    if (
+      !taskIdNum &&
+      (modalType === "submitProof" || modalType === "addReviewer")
+    ) {
       throw new Error("Task ID is required");
     }
 
@@ -523,19 +530,29 @@ function BoardDetails({
         )}
 
         {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-6">
+        <Tabs defaultValue="bounties" className="w-full">
           <TabsList>
             <TabsTrigger value="bounties">Tasks</TabsTrigger>
-            <TabsTrigger value="submissions">
-              Members and Submissions
-            </TabsTrigger>
+            <TabsTrigger value="submissions">Submissions</TabsTrigger>
+            {isWalletConnected && isCreator && (
+              <TabsTrigger value="members">Members</TabsTrigger>
+            )}
           </TabsList>
+
+          {/* Tasks Tab */}
           <TabsContent value="bounties">
-            {/* Task List */}
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Available Tasks</h3>
+              {isWalletConnected && (isCreator || isMember) && (
+                <Button onClick={() => setIsCreateTaskModalOpen(true)}>
+                  Create Task
+                </Button>
+              )}
+            </div>
             <TaskList
-              boardId={board.id}
               tasks={board.tasks}
-              userTaskStatuses={board.userTaskStatuses}
+              boardId={board.id}
+              userTaskStatuses={board.userTaskStatuses || []} // Add this prop
               address={address}
               chain={chain}
               onTaskSelect={onTaskSelect}
@@ -554,8 +571,20 @@ function BoardDetails({
               onCancelTask={(taskId) =>
                 isCreator && handleAction("cancelTask", taskId)
               }
+              onOpenModal={(type: keyof typeof modalConfigs, taskId?: bigint) =>
+                handleOpenModal(type, taskId)
+              }
+              onUpdateTask={(taskId: bigint) => {
+                const task = board.tasks.find((t) => t.id === taskId);
+                if (task && isCreator) {
+                  handleOpenUpdateTaskModal(task);
+                }
+              }}
               refetch={refetch}
               userProfiles={userProfiles}
+              isCreator={isCreator}
+              isMember={isMember}
+              isWalletConnected={isWalletConnected}
             />
           </TabsContent>
           <TabsContent value="submissions">
@@ -595,16 +624,21 @@ function BoardDetails({
                 description: selectedTaskForUpdate.description,
               },
               taskDetails: {
-                deadline: new Date(Number(selectedTaskForUpdate.deadline) * 1000),
+                deadline: new Date(
+                  Number(selectedTaskForUpdate.deadline) * 1000
+                ),
                 maxCompletions: Number(selectedTaskForUpdate.maxCompletions),
-                rewardAmount: Number(formatUnits(selectedTaskForUpdate.rewardAmount, 18)),
+                rewardAmount: Number(
+                  formatUnits(selectedTaskForUpdate.rewardAmount, 18)
+                ),
                 allowSelfCheck: selectedTaskForUpdate.allowSelfCheck,
                 boardId: board.id,
               },
               taskConfig: selectedTaskForUpdate.config
                 ? {
                     ...JSON.parse(selectedTaskForUpdate.config),
-                    taskType: JSON.parse(selectedTaskForUpdate.config).taskType || [],
+                    taskType:
+                      JSON.parse(selectedTaskForUpdate.config).taskType || [],
                   }
                 : { taskType: [] },
               selectedTypes: selectedTaskForUpdate.config

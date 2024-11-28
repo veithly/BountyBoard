@@ -1,15 +1,17 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-
-const navItems = [
-  { name: 'Home', path: '/' },
-  { name: 'Public Boards', path: '/boards' },
-  { name: 'Joined Boards', path: '/boards/joined' }
-];
+import { useAccount } from 'wagmi';
 
 export default function Navigation() {
   const pathname = usePathname();
+  const { address } = useAccount();
+
+  const navItems = [
+    { name: 'Home', path: '/' },
+    { name: 'Public Boards', path: '/boards' },
+    ...(address ? [{ name: 'Joined Boards', path: '/boards/joined' }] : [])
+  ];
 
   return (
     <nav className="flex space-x-6 ml-8">
