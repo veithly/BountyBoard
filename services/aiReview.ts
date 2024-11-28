@@ -154,49 +154,41 @@ ${fileContents.join('\n\n')}`;
   }
 
   private async callAIAPI(content: string, taskDescription: string, aiReviewPrompt: string): Promise<{ approved: boolean, reviewComment: string }> {
-    const AI_API_URL = 'https://coder.gaia.domains/v1';
-    const AI_MODEL = 'coder';
-    const response = await fetch(`${AI_API_URL}/chat/completions`, {
+    const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent';
+
+    const response = await fetch(`${API_URL}?key=${process.env.GOOGLE_API_KEY}`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: AI_MODEL,
-        messages: [
-          {
-            role: 'system',
-            content: `You are a task reviewer. Review all submitted proofs based on the task description and review prompt.
+        contents: [{
+          parts: [{
+            text: `You are a task reviewer. Review all submitted proofs based on the task description and review prompt.
 Please respond with a clean JSON object (no markdown formatting) containing:
 1. "approved": boolean indicating if ALL submissions meet the requirements
 2. "reviewComment": a concise comment (max 100 chars) explaining the review result
 
 Task Description: ${taskDescription}
-Review Prompt: ${aiReviewPrompt}`
-          },
-          {
-            role: 'user',
-            content: content
-          }
-        ],
-        response_format: { type: 'json_object' }
+Review Prompt: ${aiReviewPrompt}
+
+Submission Content:
+${content}`
+          }]
+        }]
       })
     });
 
     const result = await response.json();
     try {
-      // 清理响应内容中的 markdown 格式
-      let responseContent = result.choices[0].message.content;
-
-      // 移除可能的 markdown 代码块标记
-      responseContent = responseContent.replace(/```json\n?/g, '');
-      responseContent = responseContent.replace(/```\n?/g, '');
-
-      // 移除开头和结尾的空白字符
-      responseContent = responseContent.trim();
+      const responseContent = result.candidates[0].content.parts[0].text;
+      const cleanContent = responseContent
+        .replace(/```json\n?/g, '')
+        .replace(/```\n?/g, '')
+        .trim();
 
       // 解析 JSON
-      const aiResponse = JSON.parse(responseContent);
+      const aiResponse = JSON.parse(cleanContent);
 
       // 验证响应格式
       if (typeof aiResponse.approved !== 'boolean' || typeof aiResponse.reviewComment !== 'string') {
@@ -209,7 +201,6 @@ Review Prompt: ${aiReviewPrompt}`
       };
     } catch (error) {
       console.error('Error parsing AI response:', error);
-      // 返回一个默认的错误响应
       return {
         approved: false,
         reviewComment: 'Error processing AI review response'

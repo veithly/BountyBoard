@@ -11,6 +11,7 @@ import { Loader2, CheckCircle, ExternalLink } from "lucide-react";
 import Image from "next/image";
 import type { SubmissionView, TaskView, SubmissionProof, TaskConfig } from "@/types/types";
 import { SiGithub, SiX, SiDiscord } from '@icons-pack/react-simple-icons';
+import { cn } from "@/lib/utils";
 
 interface SubmissionDetailsModalProps {
   isOpen: boolean;
@@ -39,7 +40,7 @@ const SocialButton = ({
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-gray-100 hover:bg-gray-200 transition-colors"
+      className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-muted hover:bg-muted/80 transition-colors text-foreground"
       title={label}
     >
       <Icon className="h-4 w-4" />
@@ -180,7 +181,7 @@ export default function SubmissionDetailsModal({
 
       return (
         <Tabs defaultValue="text" className="w-full">
-          <TabsList className="grid w-full grid-cols-7">
+          <TabsList className="grid w-full grid-cols-7 bg-muted/30">
             {proofData.text && <TabsTrigger value="text">Text</TabsTrigger>}
             {proofData.image && <TabsTrigger value="image">Image</TabsTrigger>}
             {proofData.github && <TabsTrigger value="github">GitHub</TabsTrigger>}
@@ -190,20 +191,20 @@ export default function SubmissionDetailsModal({
             {proofData.discordUserName && <TabsTrigger value="discord">Discord</TabsTrigger>}
           </TabsList>
 
-          <div className="mt-4">
+          <div className="mt-4 p-4">
             {proofData.text && (
               <TabsContent value="text">
                 <Textarea
                   value={proofData.text}
                   readOnly
-                  className="resize-none bg-gray-50 min-h-[100px]"
+                  className="resize-none bg-muted/30 border-input min-h-[100px]"
                 />
               </TabsContent>
             )}
 
             {proofData.image && (
               <TabsContent value="image">
-                <div className="relative h-[300px] w-full">
+                <div className="relative h-[300px] w-full rounded-lg border border-border overflow-hidden">
                   <Image
                     src={proofData.image}
                     alt="Proof"
@@ -217,7 +218,7 @@ export default function SubmissionDetailsModal({
             {proofData.github && (
               <TabsContent value="github">
                 <div className="flex flex-col gap-3">
-                  <span className="text-sm text-gray-600">Repository:</span>
+                  <span className="text-sm text-muted-foreground">Repository:</span>
                   <SocialButton
                     href={`https://github.com/${proofData.github}`}
                     icon={SiGithub}
@@ -231,16 +232,16 @@ export default function SubmissionDetailsModal({
             {proofData.contract && (
               <TabsContent value="contract">
                 <div className="flex flex-col gap-3">
-                  <span className="text-sm text-gray-600">Contract Address:</span>
+                  <span className="text-sm text-muted-foreground">Contract Address:</span>
                   <div className="flex items-center gap-2">
-                    <code className="px-2 py-1 bg-gray-100 rounded text-sm font-mono">
+                    <code className="px-2 py-1 bg-muted/30 border-input rounded text-sm font-mono">
                       {proofData.contract}
                     </code>
                     <a
                       href={getExplorerUrl(proofData.contract, taskConfig.contractNetwork)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="p-2 rounded-md bg-gray-100 hover:bg-gray-200 transition-colors"
+                      className="p-2 rounded-md bg-muted/30 border-input hover:bg-muted/40 transition-colors"
                       title="View on Explorer"
                     >
                       <ExternalLink className="h-4 w-4" />
@@ -253,7 +254,7 @@ export default function SubmissionDetailsModal({
             {proofData.xUserName && (
               <TabsContent value="X">
                 <div className="flex flex-col gap-3">
-                  <span className="text-sm text-gray-600">X Profile:</span>
+                  <span className="text-sm text-muted-foreground">X Profile:</span>
                   <SocialButton
                     href={`https://x.com/${proofData.xUserName}`}
                     icon={SiX}
@@ -268,7 +269,7 @@ export default function SubmissionDetailsModal({
               <TabsContent value="xPost">
                 <div className="flex flex-col gap-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Posted by:</span>
+                    <span className="text-sm text-muted-foreground">Posted by:</span>
                     <SocialButton
                       href={`https://x.com/${proofData.xUserName}/status/${proofData.xPost}`}
                       icon={SiX}
@@ -283,7 +284,7 @@ export default function SubmissionDetailsModal({
             {proofData.discordUserName && (
               <TabsContent value="discord">
                 <div className="flex flex-col gap-3">
-                  <span className="text-sm text-gray-600">Discord User:</span>
+                  <span className="text-sm text-muted-foreground">Discord User:</span>
                   <div className="flex items-center gap-2">
                     <SiDiscord className="h-4 w-4" />
                     <span className="font-medium">{proofData.discordUserName}</span>
@@ -299,7 +300,7 @@ export default function SubmissionDetailsModal({
         <Textarea
           value={proof}
           readOnly
-          className="mt-2 resize-none bg-gray-50 min-h-[100px]"
+          className="mt-2 resize-none bg-muted/30 border-input min-h-[100px]"
         />
       );
     }
@@ -307,66 +308,66 @@ export default function SubmissionDetailsModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto bg-background border-border">
         <DialogHeader>
-          <DialogTitle>Submission Details</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-foreground">Submission Details</DialogTitle>
+          <DialogDescription className="text-muted-foreground">
             Submitted by: <Address address={submission?.submitter || "0x0"} />
           </DialogDescription>
         </DialogHeader>
 
         {submission && task && (
-          <div className="mt-4 space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <span className="font-semibold">Task:</span> {task.name}
+          <div className="mt-4 space-y-6">
+            <div className="grid grid-cols-2 gap-4 p-4 rounded-lg border border-border bg-muted/30">
+              <div className="space-y-1">
+                <span className="text-sm font-medium text-muted-foreground">Task:</span>
+                <p className="text-foreground">{task.name}</p>
               </div>
-              <div>
-                <span className="font-semibold">Status:</span>{" "}
-                <span
-                  className={
-                    submission.status === 1
-                      ? "text-green-500"
-                      : submission.status === -1
-                      ? "text-red-500"
-                      : "text-yellow-500"
-                  }
-                >
+              <div className="space-y-1">
+                <span className="text-sm font-medium text-muted-foreground">Status:</span>
+                <p className={cn(
+                  "font-medium",
+                  submission.status === 1 && "text-green-500 dark:text-green-400",
+                  submission.status === -1 && "text-red-500 dark:text-red-400",
+                  submission.status === 0 && "text-yellow-500 dark:text-yellow-400"
+                )}>
                   {submission.status === 1
                     ? "Approved"
                     : submission.status === -1
                     ? "Rejected"
                     : "Pending"}
-                </span>
+                </p>
               </div>
             </div>
 
             {submission.reviewComment && (
-              <div>
-                <span className="font-semibold">Review Comment:</span>
-                <p className="mt-1 p-3 bg-gray-50 rounded-md">
+              <div className="space-y-2">
+                <span className="text-sm font-medium text-muted-foreground">Review Comment:</span>
+                <p className="p-4 rounded-lg bg-muted/30 border border-border text-foreground">
                   {submission.reviewComment}
                 </p>
               </div>
             )}
 
-            <div>
-              <span className="font-semibold">Proof:</span>
-              <div className="mt-2">
+            <div className="space-y-2">
+              <span className="text-sm font-medium text-muted-foreground">Proof:</span>
+              <div className="rounded-lg border border-border bg-background">
                 {renderProofContent(submission.proof, submission.taskId)}
               </div>
             </div>
 
             {/* 审核部分 - 只对审核人员显示 */}
             {isReviewer && submission.status === 0 && (
-              <div className="space-y-4 pt-4 border-t">
-                <div>
-                  <label className="font-semibold">Review Comment:</label>
+              <div className="space-y-4 pt-4 border-t border-border">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-muted-foreground">
+                    Review Comment:
+                  </label>
                   <Textarea
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
                     placeholder="Enter your review comment..."
-                    className="mt-2"
+                    className="min-h-[100px] bg-background border-input focus-visible:ring-ring"
                   />
                 </div>
                 <div className="flex justify-end gap-4">
@@ -374,6 +375,7 @@ export default function SubmissionDetailsModal({
                     variant="destructive"
                     onClick={() => handleReview(false)}
                     disabled={getButtonState('reject').disabled}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                   >
                     {getButtonState('reject').icon}
                     {getButtonState('reject').text}
@@ -381,6 +383,7 @@ export default function SubmissionDetailsModal({
                   <Button
                     onClick={() => handleReview(true)}
                     disabled={getButtonState('approve').disabled}
+                    className="bg-primary text-primary-foreground hover:bg-primary/90"
                   >
                     {getButtonState('approve').icon}
                     {getButtonState('approve').text}
