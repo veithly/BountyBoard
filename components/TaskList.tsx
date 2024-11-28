@@ -75,7 +75,7 @@ export default function TaskList({
     tasks.reduce(
       (acc, task) => ({
         ...acc,
-        [Number(task.id)]: Number(task.deadline) - Date.now(),
+        [Number(task.id)]: Number(task.deadline) * 1000 - Date.now(),
       }),
       {}
     )
@@ -176,7 +176,7 @@ export default function TaskList({
         return;
       }
 
-      if (task.deadline && Number(task.deadline) < Date.now()) {
+      if (task.deadline && Number(task.deadline) * 1000 < Date.now()) {
         toast({
           title: "Error",
           description: "Task deadline has passed",
@@ -316,8 +316,8 @@ export default function TaskList({
     <>
       <ul className="space-y-4">
         {tasks.map((task) => {
-          const isExpired = Date.now() > Number(task.deadline);
-          const remainingTime = Number(task.deadline) - Date.now();
+          const isExpired = Date.now() > Number(task.deadline) * 1000;
+          const remainingTime = Number(task.deadline) * 1000 - Date.now();
           const days = Math.floor(remainingTime / (1000 * 60 * 60 * 24));
           const hours = Math.floor(
             (remainingTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
@@ -461,7 +461,7 @@ export default function TaskList({
                       <Clock className="h-4 w-4 text-purple-400" />
                       <span>
                         Deadline:{" "}
-                        {format(new Date(Number(task.deadline)), "PPP")}
+                        {format(new Date(Number(task.deadline) * 1000), "PPP")}
                       </span>
                     </div>
                   </div>
