@@ -93,7 +93,7 @@ export default function CreateTaskModal({
       : add(new Date(), { days: 7 }),
     maxCompletions: initialData?.taskDetails.maxCompletions || 1,
     rewardAmount: initialData?.taskDetails.rewardAmount || 0,
-    allowSelfCheck: initialData?.taskDetails.allowSelfCheck ?? false,
+    allowSelfCheck: initialData?.taskDetails.allowSelfCheck || false,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [transactionHash, setTransactionHash] = useState<`0x${string}` | undefined>();
@@ -138,7 +138,7 @@ export default function CreateTaskModal({
         deadline: new Date(Number(initialData.taskDetails.deadline) * 1000),
         maxCompletions: initialData.taskDetails.maxCompletions,
         rewardAmount: initialData.taskDetails.rewardAmount,
-        allowSelfCheck: initialData.taskDetails.allowSelfCheck ?? false,
+        allowSelfCheck: initialData.taskDetails.allowSelfCheck || false,
       });
       setTaskConfig(initialData.taskConfig || {});
       setSelectedTypes(initialData.selectedTypes || []);
@@ -605,7 +605,7 @@ export default function CreateTaskModal({
                     )}
                   >
                     {taskDetails.deadline ? (
-                      format(taskDetails.deadline, "PPP")
+                      format(Number(taskDetails.deadline) / 1000, "PPP")
                     ) : (
                       <span>Pick a date</span>
                     )}

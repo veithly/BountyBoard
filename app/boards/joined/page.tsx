@@ -25,6 +25,17 @@ export default function JoinedBoardsPage() {
   // 批量获取创建者资料
   const creatorProfiles = useAddressProfiles(creatorAddresses);
 
+  // 如果未连接钱包，显示提示信息
+  if (!address) {
+    return (
+      <div className="container mx-auto p-6 text-center">
+        <h1 className="text-2xl font-bold text-gray-400">
+          Please connect your wallet to view joined boards
+        </h1>
+      </div>
+    );
+  }
+
   if (isLoading) {
     return <BoardsPageSkeleton />;
   }

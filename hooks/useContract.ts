@@ -357,22 +357,38 @@ export function useTokenSymbol(rewardTokenAddress: `0x${string}`) {
 // 读取函数
 export function useGetAllBoards() {
   const { chain } = useAccount();
-  const bountyBoardAddress = contractAddress.BountyBoard[chain?.name as keyof typeof contractAddress.BountyBoard] as `0x${string}`;
+
+  const bountyBoardAddress = contractAddress.BountyBoard[
+    (chain?.name || 'Linea Sepolia Testnet') as keyof typeof contractAddress.BountyBoard
+  ] as `0x${string}`;
+
   return useReadContract<typeof abi, "getAllBoards", BoardView[]>({
     address: bountyBoardAddress,
     abi,
     functionName: "getAllBoards",
+    query: {
+      enabled: true,
+      gcTime: 0,
+    }
   });
 }
 export function useGetBoardDetail(boardId: bigint) {
   const { chain, address } = useAccount();
-  const bountyBoardAddress = contractAddress.BountyBoard[chain?.name as keyof typeof contractAddress.BountyBoard] as `0x${string}`;
+
+  const bountyBoardAddress = contractAddress.BountyBoard[
+    (chain?.name || 'Linea Sepolia Testnet') as keyof typeof contractAddress.BountyBoard
+  ] as `0x${string}`;
+
   return useReadContract<typeof abi, "getBoardDetail", [BoardDetailView]>({
     address: bountyBoardAddress,
     abi,
     functionName: "getBoardDetail",
     args: [boardId],
-    account: address,
+    account: address || zeroAddress,
+    query: {
+      enabled: true,
+      gcTime: 0,
+    }
   });
 }
 

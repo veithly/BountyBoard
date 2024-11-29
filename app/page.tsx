@@ -1,10 +1,29 @@
 "use client";
 
+import { useAccount } from 'wagmi';
+import { useToast } from "@/components/ui/use-toast";
 import Link from 'next/link';
 import Image from 'next/image';
 import { Bot, Shield, Rocket, Eye } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export default function HomePage() {
+  const { address } = useAccount();
+  const { toast } = useToast();
+  const router = useRouter();
+
+  const handleCreateBoard = () => {
+    if (!address) {
+      toast({
+        variant: "destructive",
+        title: "Wallet not connected",
+        description: "Please connect your wallet to create a board",
+      });
+      return;
+    }
+    router.push('/boards/create');
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       {/* Hero Section */}
@@ -42,8 +61,9 @@ export default function HomePage() {
                 </svg>
               </span>
             </Link>
-            <Link
-              href="/boards/create"
+            <button
+              type="button"
+              onClick={handleCreateBoard}
               className="neon-button-secondary group animate-fade-in-delay-2"
             >
               <span className="relative z-10 flex items-center">
@@ -57,7 +77,7 @@ export default function HomePage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
               </span>
-            </Link>
+            </button>
           </div>
         </div>
       </div>

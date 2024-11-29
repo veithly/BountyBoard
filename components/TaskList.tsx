@@ -27,6 +27,7 @@ import { useSubmitProof, useSelfCheckSubmission } from "@/hooks/useContract";
 import { useToast } from "./ui/use-toast";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
+import { modalConfigs } from "@/app/board/[id]/page";
 
 interface TaskListProps {
   boardId: bigint;
@@ -41,6 +42,11 @@ interface TaskListProps {
   onCancelTask: (taskId: bigint) => void;
   refetch: () => void;
   userProfiles: Record<string, { nickname: string; avatar: string }>;
+  isCreator: boolean;
+  isMember: boolean;
+  onOpenModal: (type: keyof typeof modalConfigs, taskId?: bigint) => void;
+  onUpdateTask: (taskId: bigint) => void;
+  isWalletConnected: boolean;
 }
 
 export default function TaskList({
@@ -55,19 +61,21 @@ export default function TaskList({
   onCancelTask,
   refetch,
   chain,
-  userProfiles,
+  userProfiles = {}, // 添加默认空对象
+  isCreator: isCreatorProp,
+  isMember,
+  onOpenModal,
+  onUpdateTask,
+  isWalletConnected
 }: TaskListProps) {
   const { toast } = useToast();
   const selfCheckSubmission = useSelfCheckSubmission();
 
-  const isCreator = tasks.some(
-    (task) => task.creator.toLowerCase() === address?.toLowerCase()
-  );
   const [remainingTimes, setRemainingTimes] = useState<Record<number, number>>(
     tasks.reduce(
       (acc, task) => ({
         ...acc,
-        [Number(task.id)]: Number(task.deadline) - Date.now(),
+        [Number(task.id)]: Number(task.deadline) * 1000 - Date.now(),
       }),
       {}
     )
@@ -168,7 +176,7 @@ export default function TaskList({
         return;
       }
 
-      if (task.deadline && Number(task.deadline) < Date.now()) {
+      if (task.deadline && Number(task.deadline) * 1000 < Date.now()) {
         toast({
           title: "Error",
           description: "Task deadline has passed",
@@ -308,8 +316,8 @@ export default function TaskList({
     <>
       <ul className="space-y-4">
         {tasks.map((task) => {
-          const isExpired = Date.now() > Number(task.deadline);
-          const remainingTime = Number(task.deadline) - Date.now();
+          const isExpired = Date.now() > Number(task.deadline) * 1000;
+          const remainingTime = Number(task.deadline) * 1000 - Date.now();
           const days = Math.floor(remainingTime / (1000 * 60 * 60 * 24));
           const hours = Math.floor(
             (remainingTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
@@ -333,7 +341,7 @@ export default function TaskList({
               )}
             >
               {/* Actions Dropdown */}
-              {address && (
+              {address && isCreatorProp && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
@@ -357,7 +365,7 @@ export default function TaskList({
                       )}
 
                     {/* Creator Actions */}
-                    {isCreator && (
+                    {isCreatorProp && (
                       <>
                         <DropdownMenuItem
                           onClick={() => onOpenAddReviewerModal(task.id)}
@@ -408,12 +416,12 @@ export default function TaskList({
                       <User2 className="h-4 w-4 text-purple-400" />
                       Creator:
                       <div className="relative w-4 h-4 flex-shrink-0">
-                        {userProfiles[task.creator.toLowerCase()]?.avatar && (
+                        {userProfiles &&
+                         task?.creator &&
+                         userProfiles[task.creator.toLowerCase()]?.avatar ? (
                           <Image
-                            src={
-                              userProfiles[task.creator.toLowerCase()].avatar
-                            }
-                            alt="Creator"
+                            src={userProfiles[task.creator.toLowerCase()].avatar}
+                            alt="Creator avatar"
                             fill
                             className="rounded-full object-cover"
                             onError={(e) => {
@@ -421,6 +429,8 @@ export default function TaskList({
                               target.src = "/placeholder.png";
                             }}
                           />
+                        ) : (
+                          <User2 className="w-4 h-4" />
                         )}
                       </div>
                       <span>
@@ -451,7 +461,7 @@ export default function TaskList({
                       <Clock className="h-4 w-4 text-purple-400" />
                       <span>
                         Deadline:{" "}
-                        {format(new Date(Number(task.deadline)), "PPP")}
+                        {format(new Date(Number(task.deadline) * 1000), "PPP")}
                       </span>
                     </div>
                   </div>
