@@ -2,15 +2,21 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useAccount } from 'wagmi';
+import { useEffect, useState } from 'react';
 
 export default function Navigation() {
   const pathname = usePathname();
   const { address } = useAccount();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const navItems = [
     { name: 'Home', path: '/' },
     { name: 'Public Boards', path: '/boards' },
-    ...(address ? [{ name: 'Joined Boards', path: '/boards/joined' }] : [])
+    ...(mounted && address ? [{ name: 'Joined Boards', path: '/boards/joined' }] : [])
   ];
 
   return (

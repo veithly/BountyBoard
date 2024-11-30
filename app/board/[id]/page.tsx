@@ -355,6 +355,7 @@ function BoardDetails({
           boardId: boardIdNum,
           name: data.name,
           description: data.description,
+          img: data.img,
           rewardToken: data.rewardToken,
         });
         break;
@@ -436,7 +437,7 @@ function BoardDetails({
 
             {/* Title and Badge */}
             <div>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 h-8">
                 {board.name}
                 {board.closed && (
                   <Badge variant="destructive" className="ml-2">
@@ -466,8 +467,9 @@ function BoardDetails({
 
       <CardContent>
         <div className="flex items-center gap-2 text-muted-foreground mb-2">
-          <Info className="h-4 w-4" />
-          <strong>Description:</strong> {board.description}
+          <Info className="h-4 w-4 flex-shrink-0" />
+          <strong className="flex-shrink-0">Description:</strong>
+          <span className="break-words">{board.description}</span>
         </div>
         <div className="flex items-center gap-2 text-muted-foreground mb-2">
           <Calendar className="h-4 w-4" />
@@ -522,21 +524,11 @@ function BoardDetails({
           <Button onClick={() => handleAction("joinBoard")}>Join Board</Button>
         )}
 
-        {/* Add Bounty Button */}
-        {isCreator && (
-          <Button onClick={() => setIsCreateTaskModalOpen(true)}>
-            Create Bounty Task
-          </Button>
-        )}
-
         {/* Tabs */}
         <Tabs defaultValue="bounties" className="w-full">
           <TabsList>
             <TabsTrigger value="bounties">Tasks</TabsTrigger>
             <TabsTrigger value="submissions">Submissions</TabsTrigger>
-            {isWalletConnected && isCreator && (
-              <TabsTrigger value="members">Members</TabsTrigger>
-            )}
           </TabsList>
 
           {/* Tasks Tab */}
