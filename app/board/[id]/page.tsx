@@ -530,7 +530,7 @@ function BoardDetails({
           <TabsContent value="bounties">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">Available Tasks</h3>
-              {isWalletConnected && (isCreator || isMember) && (
+              {address && isCreator && (
                 <Button onClick={() => setIsCreateTaskModalOpen(true)}>
                   Create Task
                 </Button>

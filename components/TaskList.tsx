@@ -341,7 +341,7 @@ export default function TaskList({
               )}
             >
               {/* Actions Dropdown */}
-              {address && isCreatorProp && (
+              {address && isMember && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
