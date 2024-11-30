@@ -359,7 +359,7 @@ export default function CreateTaskModal({
                   }))}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Enable Developer Mode in Discord to copy server ID
+                  Copy the Discord server ID from the url.
                 </p>
               </div>
 
