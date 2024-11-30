@@ -325,7 +325,7 @@ function BoardDetails({
     const taskIdNum = selectedTaskId;
 
     if (
-      !taskIdNum &&
+      taskIdNum === undefined &&
       (modalType === "submitProof" || modalType === "addReviewer")
     ) {
       throw new Error("Task ID is required");
@@ -519,11 +519,6 @@ function BoardDetails({
           </div>
         </div>
 
-        {/* Join Board Button */}
-        {address && !isMember && (
-          <Button onClick={() => handleAction("joinBoard")}>Join Board</Button>
-        )}
-
         {/* Tabs */}
         <Tabs defaultValue="bounties" className="w-full">
           <TabsList>
@@ -538,6 +533,12 @@ function BoardDetails({
               {isWalletConnected && (isCreator || isMember) && (
                 <Button onClick={() => setIsCreateTaskModalOpen(true)}>
                   Create Task
+                </Button>
+              )}
+              {/* Join Board Button */}
+              {address && !isMember && (
+                <Button onClick={() => handleAction("joinBoard")}>
+                  Join Board
                 </Button>
               )}
             </div>
