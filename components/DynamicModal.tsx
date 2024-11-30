@@ -223,31 +223,33 @@ export default function DynamicModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px] bg-background border-border">
         <DialogHeader>
-          <DialogTitle>{config.title}</DialogTitle>
-          <DialogDescription>{config.description}</DialogDescription>
+          <DialogTitle className="text-foreground">{config.title}</DialogTitle>
+          <DialogDescription className="text-muted-foreground">
+            {config.description}
+          </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           {config.title === "Review Submission" && selectedSubmission && (
-            <div className="w-full">
-              <p className="font-bold">Submission Details:</p>
-              <p className="mt-2">
-                <span className="font-semibold">Proof:</span>
+            <div className="w-full space-y-2">
+              <p className="font-bold text-foreground">Submission Details:</p>
+              <div className="mt-2">
+                <span className="text-sm font-medium text-muted-foreground">Proof:</span>
                 <Textarea
                   value={selectedSubmission.proof}
                   readOnly
-                  className="mt-1 resize-none bg-gray-50"
+                  className="mt-1 resize-none bg-muted/30 border-input"
                   rows={3}
                 />
-              </p>
+              </div>
             </div>
           )}
           {config.fields.map((field: ModalField) => (
-            <div key={field.name}>
+            <div key={field.name} className="space-y-2">
               <label
                 htmlFor={field.name}
-                className="block text-sm font-medium leading-6 text-gray-900"
+                className="text-sm font-medium text-foreground"
               >
                 {field.label}
               </label>
@@ -255,12 +257,14 @@ export default function DynamicModal({
                 <div className="mt-2">
                   <div className="flex items-center gap-4">
                     {formData[field.name] && (
-                      <Image
-                        src={formData[field.name]}
-                        alt={field.label}
-                        width={100}
-                        height={100}
-                      />
+                      <div className="relative w-24 h-24 rounded-lg border border-border overflow-hidden">
+                        <Image
+                          src={formData[field.name]}
+                          alt={field.label}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
                     )}
                     <Button
                       type="button"
@@ -269,6 +273,7 @@ export default function DynamicModal({
                       onClick={() =>
                         document.getElementById(`file-${field.name}`)?.click()
                       }
+                      className="hover:bg-accent hover:text-accent-foreground"
                     >
                       <Upload className="h-4 w-4 mr-2" />
                       {isUploading ? "Uploading..." : "Upload Image"}
@@ -286,9 +291,10 @@ export default function DynamicModal({
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
-                      variant={"outline"}
+                      variant="outline"
                       className={cn(
                         "w-[240px] justify-start text-left font-medium",
+                        "hover:bg-accent hover:text-accent-foreground",
                         !formData[field.name] && "text-muted-foreground"
                       )}
                     >
@@ -297,7 +303,7 @@ export default function DynamicModal({
                         : "Select Date"}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
+                  <PopoverContent className="w-auto p-0 bg-popover border-border">
                     <Calendar
                       mode="single"
                       selected={
@@ -312,6 +318,7 @@ export default function DynamicModal({
                         }));
                       }}
                       initialFocus
+                      className="bg-background"
                     />
                   </PopoverContent>
                 </Popover>
@@ -320,21 +327,28 @@ export default function DynamicModal({
                   placeholder={field.label}
                   name={field.name}
                   onChange={handleChange}
-                  className="mt-2"
+                  className="bg-background border-input focus-visible:ring-ring"
                 />
               ) : field.type === "checkbox" ? (
-                <Checkbox
-                  id={field.name}
-                  name={field.name}
-                  checked={formData[field.name] || false} // 设置默认值为 false
-                  onCheckedChange={(checked: boolean) =>
-                    handleChange({
-                      target: { name: field.name, type: "checkbox", checked },
-                    })
-                  }
-                >
-                  {field.label}
-                </Checkbox>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id={field.name}
+                    name={field.name}
+                    checked={formData[field.name] || false}
+                    onCheckedChange={(checked: boolean) =>
+                      handleChange({
+                        target: { name: field.name, type: "checkbox", checked },
+                      })
+                    }
+                    className="border-input data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                  />
+                  <label
+                    htmlFor={field.name}
+                    className="text-sm font-medium text-foreground leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    {field.label}
+                  </label>
+                </div>
               ) : (
                 <Input
                   type={field.type}
@@ -342,7 +356,7 @@ export default function DynamicModal({
                   name={field.name}
                   value={formData[field.name] || ''}
                   onChange={handleChange}
-                  className="mt-2"
+                  className="bg-background border-input focus-visible:ring-ring"
                 />
               )}
             </div>
@@ -353,7 +367,11 @@ export default function DynamicModal({
             type="submit"
             onClick={handleSubmit}
             disabled={buttonState.disabled}
-            className="min-w-[120px]" // 确保按钮宽度一致
+            className={cn(
+              "min-w-[120px] bg-primary text-primary-foreground",
+              "hover:bg-primary/90 transition-colors",
+              "disabled:opacity-50 disabled:cursor-not-allowed"
+            )}
           >
             <div className="flex items-center">
               {buttonState.icon}

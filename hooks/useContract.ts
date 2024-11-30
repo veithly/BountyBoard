@@ -331,17 +331,19 @@ export function useUpdateBountyBoard() {
     boardId,
     name,
     description,
+    img,
     rewardToken,
   }: {
     boardId: bigint;
     name: string;
     description: string;
+    img: string;
     rewardToken: string;
   }) => {
     if (!rewardToken) {
       rewardToken = zeroAddress;
     }
-    return contractFunction([boardId, name, description, rewardToken]);
+    return contractFunction([boardId, name, description, img, rewardToken]);
   };
 }
 

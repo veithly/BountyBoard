@@ -43,35 +43,39 @@ export default function BoardCard({
                 />
               </div>
             )}
-            <CardTitle>{board.name}</CardTitle>
+            <CardTitle className="break-words line-clamp-2 h-8">{board.name}</CardTitle>
           </div>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground line-clamp-2">{board.description}</p>
+          <p className="text-sm text-muted-foreground min-h-[3rem] break-words line-clamp-2">
+            {board.description}
+          </p>
           <div className="flex justify-between items-center text-xs mt-4 text-muted-foreground">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 min-w-0">
               {creatorProfile?.avatar ? (
                 <Image
                   src={creatorProfile.avatar}
                   alt="Creator"
                   width={16}
                   height={16}
-                  className="w-4 h-4 rounded-full"
+                  className="w-4 h-4 rounded-full flex-shrink-0"
                 />
               ) : (
-                <User2 className="h-4 w-4" />
+                <User2 className="h-4 w-4 flex-shrink-0" />
               )}
-              <span>
+              <span className="truncate">
                 {creatorProfile?.nickname || <Address address={board.creator} />}
               </span>
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 flex-shrink-0">
               <Calendar className="h-4 w-4" />
               {format(new Date(Number(board.createdAt) * 1000), 'PPP')}
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 flex-shrink-0">
               <Coins className="h-4 w-4" />
-              {formatUnits(board.totalPledged, 18)} {tokenSymbol ?? ((board.rewardToken === zeroAddress && 'ETH') || '')}
+              <span className="truncate">
+                {formatUnits(board.totalPledged, 18)} {tokenSymbol ?? ((board.rewardToken === zeroAddress && 'ETH') || '')}
+              </span>
             </div>
           </div>
         </CardContent>
