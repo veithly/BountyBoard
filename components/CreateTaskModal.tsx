@@ -135,7 +135,7 @@ export default function CreateTaskModal({
     if (isOpen && initialData) {
       setTaskBasicInfo(initialData.taskBasicInfo);
       setTaskDetails({
-        deadline: new Date(Number(initialData.taskDetails.deadline) * 1000),
+        deadline: new Date(Number(initialData.taskDetails.deadline)),
         maxCompletions: initialData.taskDetails.maxCompletions,
         rewardAmount: initialData.taskDetails.rewardAmount,
         allowSelfCheck: initialData.taskDetails.allowSelfCheck || false,
@@ -605,7 +605,7 @@ export default function CreateTaskModal({
                     )}
                   >
                     {taskDetails.deadline ? (
-                      format(Number(taskDetails.deadline) / 1000, "PPP")
+                      format(Number(taskDetails.deadline), "PPP")
                     ) : (
                       <span>Pick a date</span>
                     )}
