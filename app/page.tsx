@@ -37,7 +37,7 @@ export default function HomePage() {
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-background" />
         <div className="relative container mx-auto h-full flex flex-col items-center justify-center text-center px-4">
-          <h1 className="text-6xl font-bold mb-6 glow-text animate-fade-in">
+          <h1 className="text-6xl font-bold mb-6 glow-text animate-fade-in h-20">
             Welcome to Bounty Board
           </h1>
           <p className="text-xl text-purple-200/90 max-w-3xl mb-8 animate-fade-in-delay">

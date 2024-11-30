@@ -294,7 +294,7 @@ export default function ProfileSettingsModal({
         <div className="grid gap-4 py-4">
           <div>
             <label className="block text-sm font-medium mb-2">Avatar</label>
-            <div className="max-w-[200px]">
+            <div className="max-w-[250px]">
             <ImageUpload
               value={formData.avatar}
               onChange={(url) => {

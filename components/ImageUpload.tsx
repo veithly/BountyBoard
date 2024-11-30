@@ -52,13 +52,13 @@ export default function ImageUpload({ value, onChange, label, className }: Image
         onChange(data.Url);
         toast({
           title: "Success",
-          description: "Logo uploaded successfully"
+          description: "Image uploaded successfully"
         });
       } catch (error) {
         console.error("Upload error:", error);
         toast({
           title: "Error",
-          description: "Failed to upload logo",
+          description: "Failed to upload image",
           variant: "destructive",
         });
       } finally {
@@ -114,12 +114,12 @@ export default function ImageUpload({ value, onChange, label, className }: Image
             <div className="relative group aspect-square">
               <Image
                 src={value}
-                alt={label || "Board logo"}
+                alt={label || "Board image"}
                 fill
                 className="object-cover p-2"
               />
               <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
-                <p className="text-sm text-white/80">Click to change logo</p>
+                <p className="text-sm text-white/80">Click to change image</p>
                 <Button
                   type="button"
                   variant="outline"
@@ -128,7 +128,7 @@ export default function ImageUpload({ value, onChange, label, className }: Image
                   onClick={() => document.getElementById('image-upload')?.click()}
                 >
                   <Upload className="h-4 w-4 mr-2" />
-                  Change Logo
+                  Change Image
                 </Button>
               </div>
             </div>
@@ -144,7 +144,7 @@ export default function ImageUpload({ value, onChange, label, className }: Image
                     Uploading...
                   </span>
                 ) : (
-                  "Drop your logo here"
+                  "Drop your image here"
                 )}
               </p>
               <p className="text-purple-400/60 text-sm mb-4">
@@ -159,7 +159,7 @@ export default function ImageUpload({ value, onChange, label, className }: Image
                 className="bg-purple-500/10 border-purple-500/30 hover:bg-purple-500/20 hover:border-purple-500/50"
               >
                 <Upload className="mr-2 h-4 w-4" />
-                Upload Logo
+                Upload Image
               </Button>
             </div>
           )}
