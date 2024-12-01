@@ -25,7 +25,7 @@ async function verifySocialAction(taskConfig: any, proofData: any) {
     // 检查是否有 Twitter 相关任务
     if (taskConfig.XFollowUsername || taskConfig.XLikeId || taskConfig.XRetweetId) {
       // 验证 Twitter 账号
-      const verifyResponse = await fetch('/api/social/twitter/verify', {
+      const verifyResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/social/twitter/verify`, {
         headers: {
           'Authorization': `Bearer ${proofData.xAccessToken}`,
           'X-User-Id': proofData.xId
@@ -37,7 +37,7 @@ async function verifySocialAction(taskConfig: any, proofData: any) {
       }
 
       // 验证具体操作
-      const checkResponse = await fetch('/api/social/twitter/check-actions', {
+      const checkResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/social/twitter/check-actions`, {
         headers: {
           'X-User-Id': proofData.xId,
           'X-Target-User': taskConfig.XFollowUsername || '',
@@ -61,7 +61,7 @@ async function verifySocialAction(taskConfig: any, proofData: any) {
     // 验证 Discord 加入
     if (taskConfig.DiscordChannelId && proofData.discordAccessToken) {
       // 验证 Discord 账号
-      const verifyResponse = await fetch('/api/social/discord/verify', {
+      const verifyResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/social/discord/verify`, {
         headers: {
           'Authorization': `Bearer ${proofData.discordAccessToken}`,
           'X-User-Id': proofData.discordId
@@ -73,7 +73,7 @@ async function verifySocialAction(taskConfig: any, proofData: any) {
       }
 
       // 验证服务器成员资格
-      const checkResponse = await fetch('/api/social/discord/check-guild', {
+      const checkResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/social/discord/check-guild`, {
         headers: {
           'Authorization': `Bearer ${proofData.discordAccessToken}`,
           'X-User-Id': proofData.discordId,
