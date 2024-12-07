@@ -63,11 +63,14 @@ export function useContractFunction(functionName: string) {
 export function useCreateBoard() {
   const contractFunction = useContractFunction("createBountyBoard");
 
-  return ({ name, description, img, rewardToken }: CreateBoardParams) => {
+  return ({ name, description, img, rewardToken, config }: CreateBoardParams) => {
     if (!rewardToken) {
       rewardToken = zeroAddress;
     }
-    return contractFunction([name, description, img, rewardToken]);
+    if (!config) {
+      config = "{}";
+    }
+    return contractFunction([name, description, img, rewardToken, config]);
   };
 }
 
@@ -328,22 +331,27 @@ export function useUpdateBountyBoard() {
   const contractFunction = useContractFunction("updateBountyBoard");
 
   return ({
-    boardId,
+    id,
     name,
     description,
     img,
     rewardToken,
+    config,
   }: {
-    boardId: bigint;
+    id: bigint;
     name: string;
     description: string;
     img: string;
     rewardToken: string;
+    config: string;
   }) => {
     if (!rewardToken) {
       rewardToken = zeroAddress;
     }
-    return contractFunction([boardId, name, description, img, rewardToken]);
+    if (!config) {
+      config = "{}";
+    }
+    return contractFunction([id, name, description, img, rewardToken, config]);
   };
 }
 

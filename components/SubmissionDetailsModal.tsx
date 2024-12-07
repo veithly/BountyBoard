@@ -65,6 +65,8 @@ export default function SubmissionDetailsModal({
   const { toast } = useToast();
   const reviewSubmission = useReviewSubmission();
 
+  console.log(submission, task);
+
   const {
     isLoading: isConfirming,
     isSuccess: isConfirmed,
@@ -174,7 +176,7 @@ export default function SubmissionDetailsModal({
   };
 
   // 从 MemberSubmissionTable 复制并修改的 renderProofContent 函数
-  const renderProofContent = (proof: string, taskId: bigint) => {
+  const renderProofContent = (proof: string) => {
     try {
       const proofData: SubmissionProof = JSON.parse(proof);
       const taskConfig: TaskConfig = task ? JSON.parse(task.config || '{}') : {};
@@ -352,7 +354,7 @@ export default function SubmissionDetailsModal({
             <div className="space-y-2">
               <span className="text-sm font-medium text-muted-foreground">Proof:</span>
               <div className="rounded-lg border border-border bg-background">
-                {renderProofContent(submission.proof, submission.taskId)}
+                {renderProofContent(submission.proof)}
               </div>
             </div>
 

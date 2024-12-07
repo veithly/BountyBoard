@@ -1,6 +1,6 @@
 import { http, createConfig } from 'wagmi'
-import { lineaSepolia } from 'wagmi/chains'
-import anvil from './my-anvil'
+import { lineaSepolia, anvil } from 'wagmi/chains'
+// import anvil from './my-anvil'
 
 // 根据环境变量决定使用的链
 const chains = process.env.NODE_ENV === 'development'

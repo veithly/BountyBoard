@@ -8,6 +8,12 @@ const nextConfig = {
         port: "",
         pathname: "/ipfs/**",
       },
+      {
+        protocol: "https",
+        hostname: "s2.loli.net",
+        port: "",
+        pathname: "/**",
+      },
     ],
   },
   eslint: {

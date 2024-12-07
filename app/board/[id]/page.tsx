@@ -10,6 +10,7 @@ import { format, set } from "date-fns";
 import { toast } from "@/components/ui/use-toast";
 import Image from "next/image";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SiDiscord } from '@icons-pack/react-simple-icons';
 
 // Components
 import TaskList from "@/components/TaskList";
@@ -19,6 +20,8 @@ import BoardActionsDropdown from "@/components/BoardActionsDropdown";
 import LoadingSpinner from "@/components/ui/loading";
 import { Badge } from "@/components/ui/badge";
 import CreateTaskModal from "@/components/CreateTaskModal";
+import BoardForm from "@/components/BoardForm";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 // Contract Hooks & ABI
 import {
@@ -98,6 +101,8 @@ export default function BoardPage() {
   const [selectedTask, setSelectedTask] = useState<TaskView>();
 
   const { data: board, refetch } = useGetBoardDetail(BigInt(id as string));
+
+  console.log(board);
 
   // Get all addresses to fetch profiles for
   const addressesToFetch = useMemo(() => {
@@ -213,6 +218,7 @@ function BoardDetails({
   const [isUpdateTaskModalOpen, setIsUpdateTaskModalOpen] = useState(false);
   const [selectedTaskForUpdate, setSelectedTaskForUpdate] =
     useState<TaskView>();
+  const [showBoardForm, setShowBoardForm] = useState(false);
 
   // Modal Handlers
   const handleOpenModal = (
@@ -220,24 +226,13 @@ function BoardDetails({
     taskId?: bigint,
     submission?: Submission
   ) => {
-    setModalType(type);
-    setSelectedTaskId(taskId);
-    setSelectedSubmission(submission);
-    setIsModalOpen(true);
-
-    // 预填充更新表单
     if (type === "updateBoard") {
-      // 预填充 board 更新表单
-      const initialBoardData = {
-        name: board.name,
-        description: board.description,
-        img: board.img,
-        rewardToken: board.rewardToken === zeroAddress ? "" : board.rewardToken,
-      };
-      setInitialFormData(initialBoardData);
+      setShowBoardForm(true);
     } else {
-      // 其他类型的 modal 不需要预填充
-      setInitialFormData(undefined);
+      setModalType(type);
+      setSelectedTaskId(taskId);
+      setSelectedSubmission(submission);
+      setIsModalOpen(true);
     }
   };
 
@@ -348,15 +343,6 @@ function BoardDetails({
           boardId: boardIdNum,
           taskId: BigInt(taskIdNum!), // Convert to BigInt with non-null assertion
           reviewer: data.reviewer,
-        });
-        break;
-      case "updateBoard":
-        result = await updateBountyBoard({
-          boardId: boardIdNum,
-          name: data.name,
-          description: data.description,
-          img: data.img,
-          rewardToken: data.rewardToken,
         });
         break;
       case "pledgeTokens":
@@ -535,15 +521,27 @@ function BoardDetails({
           <TabsContent value="bounties">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">Available Tasks</h3>
-              {isWalletConnected && (isCreator || isMember) && (
-                <Button onClick={() => setIsCreateTaskModalOpen(true)}>
-                  Create Task
-                </Button>
+              {isWalletConnected && (isCreator) && (
+                <div className="flex gap-2">
+                  <Button onClick={() => setIsCreateTaskModalOpen(true)}>
+                    Create Task
+                  </Button>
+                  {isCreator && (
+                    <Button
+                      variant="outline"
+                      onClick={() => window.open('https://discord.com/oauth2/authorize?client_id=1309894992713613404', '_blank')}
+                    >
+                      <SiDiscord className="mr-2 h-4 w-4" />
+                      Add Discord Bot
+                    </Button>
+                  )}
+                </div>
               )}
             </div>
             <TaskList
               tasks={board.tasks}
               boardId={board.id}
+              boardConfig={JSON.parse(board.config || "{}")}
               userTaskStatuses={board.userTaskStatuses || []} // Add this prop
               address={address}
               chain={chain}
@@ -597,11 +595,13 @@ function BoardDetails({
           onSubmit={handleCreateTask}
           onConfirmed={refetch}
           mode="create"
+          boardConfig={JSON.parse(board.config || "{}")}
         />
 
         {/* Update Task Modal */}
         {selectedTaskForUpdate && (
           <CreateTaskModal
+            boardConfig={JSON.parse(board.config)}
             isOpen={isUpdateTaskModalOpen}
             onClose={() => {
               setIsUpdateTaskModalOpen(false);
@@ -651,6 +651,30 @@ function BoardDetails({
             onSubmit={handleModalSubmit}
             onConfirmed={refetch}
           />
+        )}
+
+        {showBoardForm && (
+          <Dialog open={showBoardForm} onOpenChange={setShowBoardForm}>
+            <DialogContent className="">
+              <DialogHeader>
+                <DialogTitle>Update Board</DialogTitle>
+              </DialogHeader>
+              <BoardForm
+                initialData={{
+                  id: board.id,
+                  name: board.name,
+                  description: board.description,
+                  img: board.img,
+                  rewardToken: board.rewardToken === zeroAddress ? "" : board.rewardToken,
+                  config: board.config,
+                }}
+                onSubmit={updateBountyBoard}
+                mode="update"
+                redirectPath={`/board/${board.id}`}
+                isDialog={true}
+              />
+            </DialogContent>
+          </Dialog>
         )}
       </CardContent>
     </Card>

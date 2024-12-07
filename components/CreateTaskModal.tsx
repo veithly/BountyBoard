@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { CreateTaskParams, TaskConfig } from '@/types/types';
+import { CreateTaskParams, BoardConfig, TaskConfig } from '@/types/types';
 import { Calendar } from "@/components/ui/calendar";
 import { add, format } from "date-fns";
 import {
@@ -35,6 +35,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { Badge } from "@/components/ui/badge";
 
 interface CreateTaskModalProps {
+  boardConfig: BoardConfig;
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: any) => Promise<any>;
@@ -72,6 +73,7 @@ interface TaskDetailsState {
 }
 
 export default function CreateTaskModal({
+  boardConfig,
   isOpen,
   onClose,
   onSubmit,
@@ -135,7 +137,7 @@ export default function CreateTaskModal({
     if (isOpen && initialData) {
       setTaskBasicInfo(initialData.taskBasicInfo);
       setTaskDetails({
-        deadline: new Date(Number(initialData.taskDetails.deadline) * 1000),
+        deadline: initialData.taskDetails.deadline,
         maxCompletions: initialData.taskDetails.maxCompletions,
         rewardAmount: initialData.taskDetails.rewardAmount,
         allowSelfCheck: initialData.taskDetails.allowSelfCheck || false,
@@ -176,6 +178,61 @@ export default function CreateTaskModal({
       setIsSubmitting(false);
     }
   }, [isConfirming, isConfirmed, transactionError, onConfirmed, toast]);
+
+  useEffect(() => {
+    const sendAnnouncement = async () => {
+      if (isConfirmed && boardConfig.channelId && taskBasicInfo.name && taskBasicInfo.description) {
+        try {
+          fetch('/api/discord-announcement', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              channelId: boardConfig.channelId,
+              type: mode === 'create' ? 'task_created' : 'task_updated',
+              data: {
+                taskName: taskBasicInfo.name,
+                taskDescription: taskBasicInfo.description,
+                taskTypes: selectedTypes,
+                taskConfig: taskConfig,
+                deadline: taskDetails.deadline,
+                maxCompletions: taskDetails.maxCompletions,
+                rewardAmount: taskDetails.rewardAmount,
+                allowSelfCheck: taskDetails.allowSelfCheck,
+                aiReview: taskConfig.aiReview,
+                aiReviewPrompt: taskConfig.aiReviewPrompt,
+                socialRequirements: {
+                  ...(taskConfig.XPostContent && { xPost: taskConfig.XPostContent }),
+                  ...(taskConfig.XFollowUsername && { xFollow: taskConfig.XFollowUsername }),
+                  ...(taskConfig.XLikeId && { xLike: taskConfig.XLikeId }),
+                  ...(taskConfig.XRetweetId && { xRetweet: taskConfig.XRetweetId }),
+                  ...(taskConfig.DiscordChannelId && {
+                    discordServer: taskConfig.DiscordChannelId,
+                    discordInvite: taskConfig.DiscordInviteLink
+                  }),
+                }
+              }
+            }),
+          }).catch(error => {
+            console.error('Failed to send announcement:', error);
+          });
+        } catch (error) {
+          console.error('Failed to prepare announcement data:', error);
+        }
+      }
+    };
+
+    sendAnnouncement();
+  }, [
+    isConfirmed,
+    boardConfig.channelId,
+    taskBasicInfo,
+    taskConfig,
+    taskDetails,
+    selectedTypes,
+    mode
+  ]);
 
   const taskTypes = [
     'Plain Text',
@@ -462,7 +519,7 @@ export default function CreateTaskModal({
       try {
         const finalData: CreateTaskParams = {
           ...taskBasicInfo,
-          deadline: Math.floor(taskDetails.deadline.getTime() / 1000),
+          deadline: Math.floor(taskDetails.deadline.getTime()),
           maxCompletions: taskDetails.maxCompletions,
           rewardAmount: taskDetails.rewardAmount,
           allowSelfCheck: shouldShowSelfCheck ? taskDetails.allowSelfCheck : false,
@@ -605,7 +662,7 @@ export default function CreateTaskModal({
                     )}
                   >
                     {taskDetails.deadline ? (
-                      format(Number(taskDetails.deadline) / 1000, "PPP")
+                      format(Number(taskDetails.deadline), "PPP")
                     ) : (
                       <span>Pick a date</span>
                     )}

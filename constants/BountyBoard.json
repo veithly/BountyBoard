@@ -56,7 +56,8 @@
       },
       { "name": "totalPledged", "type": "uint256", "internalType": "uint256" },
       { "name": "createdAt", "type": "uint256", "internalType": "uint256" },
-      { "name": "closed", "type": "bool", "internalType": "bool" }
+      { "name": "closed", "type": "bool", "internalType": "bool" },
+      { "name": "config", "type": "string", "internalType": "string" }
     ],
     "stateMutability": "view"
   },
@@ -103,7 +104,8 @@
       { "name": "_name", "type": "string", "internalType": "string" },
       { "name": "_description", "type": "string", "internalType": "string" },
       { "name": "_img", "type": "string", "internalType": "string" },
-      { "name": "_rewardToken", "type": "address", "internalType": "address" }
+      { "name": "_rewardToken", "type": "address", "internalType": "address" },
+      { "name": "_config", "type": "string", "internalType": "string" }
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
@@ -136,7 +138,7 @@
       {
         "name": "",
         "type": "tuple[]",
-        "internalType": "struct BountyBoard.BoardView[]",
+        "internalType": "struct BoardView.BoardViewStruct[]",
         "components": [
           { "name": "id", "type": "uint256", "internalType": "uint256" },
           { "name": "creator", "type": "address", "internalType": "address" },
@@ -154,7 +156,8 @@
             "type": "address",
             "internalType": "address"
           },
-          { "name": "closed", "type": "bool", "internalType": "bool" }
+          { "name": "closed", "type": "bool", "internalType": "bool" },
+          { "name": "config", "type": "string", "internalType": "string" }
         ]
       }
     ],
@@ -170,13 +173,8 @@
       {
         "name": "",
         "type": "tuple",
-        "internalType": "struct BountyBoard.BoardDetailView",
+        "internalType": "struct BoardView.BoardDetailView",
         "components": [
-          {
-            "name": "currentUser",
-            "type": "address",
-            "internalType": "address"
-          },
           { "name": "id", "type": "uint256", "internalType": "uint256" },
           { "name": "creator", "type": "address", "internalType": "address" },
           { "name": "name", "type": "string", "internalType": "string" },
@@ -197,7 +195,7 @@
           {
             "name": "tasks",
             "type": "tuple[]",
-            "internalType": "struct BountyBoard.TaskView[]",
+            "internalType": "struct BoardStorage.Task[]",
             "components": [
               { "name": "id", "type": "uint256", "internalType": "uint256" },
               { "name": "name", "type": "string", "internalType": "string" },
@@ -226,6 +224,11 @@
                 "type": "uint256",
                 "internalType": "uint256"
               },
+              {
+                "name": "reviewers",
+                "type": "address[]",
+                "internalType": "address[]"
+              },
               { "name": "completed", "type": "bool", "internalType": "bool" },
               {
                 "name": "rewardAmount",
@@ -238,11 +241,6 @@
                 "internalType": "uint256"
               },
               { "name": "cancelled", "type": "bool", "internalType": "bool" },
-              {
-                "name": "reviewers",
-                "type": "address[]",
-                "internalType": "address[]"
-              },
               { "name": "config", "type": "string", "internalType": "string" },
               {
                 "name": "allowSelfCheck",
@@ -252,15 +250,15 @@
             ]
           },
           {
+            "name": "members",
+            "type": "address[]",
+            "internalType": "address[]"
+          },
+          {
             "name": "submissions",
-            "type": "tuple[]",
-            "internalType": "struct BountyBoard.SubmissionView[]",
+            "type": "tuple[][]",
+            "internalType": "struct BoardStorage.Submission[][]",
             "components": [
-              {
-                "name": "taskId",
-                "type": "uint256",
-                "internalType": "uint256"
-              },
               {
                 "name": "submitter",
                 "type": "address",
@@ -281,14 +279,9 @@
             ]
           },
           {
-            "name": "members",
-            "type": "address[]",
-            "internalType": "address[]"
-          },
-          {
             "name": "userTaskStatuses",
             "type": "tuple[]",
-            "internalType": "struct BountyBoard.UserTaskStatus[]",
+            "internalType": "struct BoardView.UserTaskStatus[]",
             "components": [
               {
                 "name": "taskId",
@@ -313,7 +306,8 @@
                 "internalType": "string"
               }
             ]
-          }
+          },
+          { "name": "config", "type": "string", "internalType": "string" }
         ]
       }
     ],
@@ -329,7 +323,7 @@
       {
         "name": "",
         "type": "tuple[]",
-        "internalType": "struct BountyBoard.BoardView[]",
+        "internalType": "struct BoardView.BoardViewStruct[]",
         "components": [
           { "name": "id", "type": "uint256", "internalType": "uint256" },
           { "name": "creator", "type": "address", "internalType": "address" },
@@ -347,7 +341,8 @@
             "type": "address",
             "internalType": "address"
           },
-          { "name": "closed", "type": "bool", "internalType": "bool" }
+          { "name": "closed", "type": "bool", "internalType": "bool" },
+          { "name": "config", "type": "string", "internalType": "string" }
         ]
       }
     ],
@@ -360,96 +355,6 @@
       { "name": "role", "type": "bytes32", "internalType": "bytes32" }
     ],
     "outputs": [{ "name": "", "type": "bytes32", "internalType": "bytes32" }],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "getTaskDetail",
-    "inputs": [
-      { "name": "_boardId", "type": "uint256", "internalType": "uint256" },
-      { "name": "_taskId", "type": "uint256", "internalType": "uint256" }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "tuple",
-        "internalType": "struct BountyBoard.TaskDetailView",
-        "components": [
-          { "name": "id", "type": "uint256", "internalType": "uint256" },
-          { "name": "name", "type": "string", "internalType": "string" },
-          { "name": "creator", "type": "address", "internalType": "address" },
-          { "name": "description", "type": "string", "internalType": "string" },
-          { "name": "deadline", "type": "uint256", "internalType": "uint256" },
-          {
-            "name": "maxCompletions",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "numCompletions",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          { "name": "completed", "type": "bool", "internalType": "bool" },
-          {
-            "name": "rewardAmount",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          { "name": "createdAt", "type": "uint256", "internalType": "uint256" },
-          { "name": "cancelled", "type": "bool", "internalType": "bool" },
-          { "name": "config", "type": "string", "internalType": "string" },
-          { "name": "allowSelfCheck", "type": "bool", "internalType": "bool" }
-        ]
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "getTasksForBoard",
-    "inputs": [
-      { "name": "_boardId", "type": "uint256", "internalType": "uint256" }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "tuple[]",
-        "internalType": "struct BountyBoard.TaskView[]",
-        "components": [
-          { "name": "id", "type": "uint256", "internalType": "uint256" },
-          { "name": "name", "type": "string", "internalType": "string" },
-          { "name": "creator", "type": "address", "internalType": "address" },
-          { "name": "description", "type": "string", "internalType": "string" },
-          { "name": "deadline", "type": "uint256", "internalType": "uint256" },
-          {
-            "name": "maxCompletions",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "numCompletions",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          { "name": "completed", "type": "bool", "internalType": "bool" },
-          {
-            "name": "rewardAmount",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          { "name": "createdAt", "type": "uint256", "internalType": "uint256" },
-          { "name": "cancelled", "type": "bool", "internalType": "bool" },
-          {
-            "name": "reviewers",
-            "type": "address[]",
-            "internalType": "address[]"
-          },
-          { "name": "config", "type": "string", "internalType": "string" },
-          { "name": "allowSelfCheck", "type": "bool", "internalType": "bool" }
-        ]
-      }
-    ],
     "stateMutability": "view"
   },
   {
@@ -614,7 +519,8 @@
       { "name": "_name", "type": "string", "internalType": "string" },
       { "name": "_description", "type": "string", "internalType": "string" },
       { "name": "_img", "type": "string", "internalType": "string" },
-      { "name": "_rewardToken", "type": "address", "internalType": "address" }
+      { "name": "_rewardToken", "type": "address", "internalType": "address" },
+      { "name": "_config", "type": "string", "internalType": "string" }
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
@@ -715,6 +621,12 @@
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
+      },
+      {
+        "name": "config",
+        "type": "string",
+        "indexed": false,
+        "internalType": "string"
       }
     ],
     "anonymous": false
@@ -746,68 +658,12 @@
         "type": "address",
         "indexed": false,
         "internalType": "address"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "BountyCancelled",
-    "inputs": [
-      {
-        "name": "boardId",
-        "type": "uint256",
-        "indexed": true,
-        "internalType": "uint256"
       },
       {
-        "name": "bountyId",
-        "type": "uint256",
-        "indexed": true,
-        "internalType": "uint256"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "BountyUpdated",
-    "inputs": [
-      {
-        "name": "boardId",
-        "type": "uint256",
-        "indexed": true,
-        "internalType": "uint256"
-      },
-      {
-        "name": "bountyId",
-        "type": "uint256",
-        "indexed": true,
-        "internalType": "uint256"
-      },
-      {
-        "name": "description",
+        "name": "config",
         "type": "string",
         "indexed": false,
         "internalType": "string"
-      },
-      {
-        "name": "deadline",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      },
-      {
-        "name": "maxCompletions",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      },
-      {
-        "name": "rewardAmount",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
       }
     ],
     "anonymous": false
@@ -865,25 +721,6 @@
         "type": "address",
         "indexed": false,
         "internalType": "address"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "RewardDistributionUpdated",
-    "inputs": [
-      {
-        "name": "boardId",
-        "type": "uint256",
-        "indexed": true,
-        "internalType": "uint256"
-      },
-      {
-        "name": "totalPledged",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
       }
     ],
     "anonymous": false

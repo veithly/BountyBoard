@@ -18,7 +18,12 @@ import {
 import { format } from "date-fns";
 import { Address } from "./ui/Address";
 import { Chain, formatUnits } from "viem";
-import { TaskView, SubmissionProof, UserTaskStatus } from "@/types/types";
+import {
+  TaskView,
+  SubmissionProof,
+  UserTaskStatus,
+  BoardConfig,
+} from "@/types/types";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Badge } from "./ui/badge";
@@ -28,9 +33,12 @@ import { useToast } from "./ui/use-toast";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { modalConfigs } from "@/app/board/[id]/page";
+import { Input } from "./ui/input";
+import { Textarea } from "./ui/textarea";
 
 interface TaskListProps {
   boardId: bigint;
+  boardConfig: BoardConfig;
   tasks: TaskView[];
   userTaskStatuses: UserTaskStatus[];
   address: `0x${string}` | undefined;
@@ -51,6 +59,7 @@ interface TaskListProps {
 
 export default function TaskList({
   boardId,
+  boardConfig,
   tasks,
   userTaskStatuses,
   address,
@@ -66,10 +75,14 @@ export default function TaskList({
   isMember,
   onOpenModal,
   onUpdateTask,
-  isWalletConnected
+  isWalletConnected,
 }: TaskListProps) {
   const { toast } = useToast();
   const selfCheckSubmission = useSelfCheckSubmission();
+
+  const [customDeadlines, setCustomDeadlines] = useState<
+    Record<number, number>
+  >({});
 
   const [remainingTimes, setRemainingTimes] = useState<Record<number, number>>(
     tasks.reduce(
@@ -88,16 +101,15 @@ export default function TaskList({
           (acc, task) => ({
             ...acc,
             [Number(task.id)]:
-              prevTimes[Number(task.id)] > 0
-                ? prevTimes[Number(task.id)] - 1000
-                : 0,
+              customDeadlines[Number(task.id)] ||
+              Number(task.deadline) * 1000 - Date.now(),
           }),
           {}
         )
       );
     }, 1000);
     return () => clearInterval(intervalId);
-  }, [tasks]);
+  }, [tasks, customDeadlines]);
 
   const [isSubmitProofModalOpen, setIsSubmitProofModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<TaskView | null>(null);
@@ -126,75 +138,69 @@ export default function TaskList({
     }
   }
 
+  const [selfCheckResult, setSelfCheckResult] = useState<{
+    isOpen: boolean;
+    success: boolean;
+    message: string;
+    taskId?: bigint;
+    signature?: string;
+    comment?: string;
+  }>({
+    isOpen: false,
+    success: false,
+    message: "",
+  });
+
   const handleSelfCheck = async (task: TaskView) => {
-    // 显示加载中的 Toast
-    toast({
-      title: "Processing",
-      description: (
-        <div className="flex items-center gap-2">
-          <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent" />
-          <span>Verifying your submission...</span>
-        </div>
-      ),
-    });
-
     try {
-      // 验证必要参数
-      if (!address) {
-        toast({
-          title: "Error",
-          description: "Please connect your wallet",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (!chain) {
-        toast({
-          title: "Error",
-          description: "Chain not found",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (task.completed) {
-        toast({
-          title: "Error",
-          description: "Task is already completed",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (task.cancelled) {
-        toast({
-          title: "Error",
-          description: "Task is cancelled",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (task.deadline && Number(task.deadline) * 1000 < Date.now()) {
-        toast({
-          title: "Error",
-          description: "Task deadline has passed",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Call API to get signature
-      toast({
+      const waitToast = toast({
         title: "Processing",
         description: (
           <div className="flex items-center gap-2">
             <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent" />
-            <span>Getting verification signature...</span>
+            <span>Verifying your submission...</span>
           </div>
         ),
+        duration: Infinity,
       });
+      // 验证必要参数
+      if (
+        !address ||
+        !chain ||
+        task.completed ||
+        task.cancelled ||
+        (task.deadline && Number(task.deadline) * 1000 < Date.now())
+      ) {
+        clearTimeout(waitToast.id);
+        setSelfCheckResult({
+          isOpen: true,
+          success: false,
+          message: !address
+            ? "Please connect your wallet"
+            : !chain
+            ? "Chain not found"
+            : task.completed
+            ? "Task is already completed"
+            : task.cancelled
+            ? "Task is cancelled"
+            : "Task deadline has passed",
+        });
+        return;
+      }
+
+      const taskJson = {
+        id: task.id.toString(),
+        name: task.name,
+        description: task.description,
+        rewardAmount: task.rewardAmount.toString(),
+        numCompletions: task.numCompletions.toString(),
+        maxCompletions: task.maxCompletions.toString(),
+        createdAt: task.createdAt.toString(),
+        deadline: task.deadline.toString(),
+        allowSelfCheck: task.allowSelfCheck,
+        reviewers: task.reviewers,
+        config: JSON.parse(task.config || "{}"),
+      };
 
       const response = await fetch("/api/self-check", {
         method: "POST",
@@ -203,102 +209,86 @@ export default function TaskList({
         },
         body: JSON.stringify({
           boardId: boardId.toString(),
+          boardConfig,
           taskId: task.id.toString(),
           address,
           proof: userTaskStatuses.find((status) => status.taskId === task.id)
             ?.submitProof,
           chainName: chain.name,
+          task: taskJson,
         }),
       });
 
       const data = await response.json();
 
+      clearTimeout(waitToast.id);
+
       if (data.error) {
-        toast({
-          title: "Error",
-          description: data.error,
-          variant: "destructive",
+        setSelfCheckResult({
+          isOpen: true,
+          success: false,
+          message: "Failed to complete self check",
+          taskId: task.id,
+          comment: data.error,
         });
         return;
       }
 
-      // Submit to contract with signature
-      toast({
-        title: "Processing",
-        description: (
-          <div className="flex items-center gap-2">
-            <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent" />
-            <span>Waiting for transaction confirmation...</span>
-          </div>
-        ),
-      });
-
-      const tx = await selfCheckSubmission({
-        boardId,
+      setSelfCheckResult({
+        isOpen: true,
+        success: data.signature ? true : false,
+        message: data.signature
+          ? "Verification successful! You can now claim your reward."
+          : "Verification failed",
         taskId: task.id,
         signature: data.signature,
-        checkData: data.checkData,
+        comment: data.checkData,
+      });
+    } catch (error) {
+      setSelfCheckResult({
+        isOpen: true,
+        success: false,
+        message: "Failed to complete self check",
+      });
+    }
+  };
+
+  const handleClaim = async () => {
+    if (
+      selfCheckResult.taskId === undefined ||
+      !selfCheckResult.signature ||
+      !selfCheckResult.comment
+    )
+      return;
+
+    try {
+      const tx = await selfCheckSubmission({
+        boardId,
+        taskId: selfCheckResult.taskId,
+        signature: selfCheckResult.signature as `0x${string}`,
+        checkData: selfCheckResult.comment,
       });
 
       if (tx.error) {
-        toast({
-          title: "Error",
-          description: tx.error,
-          variant: "destructive",
+        setSelfCheckResult({
+          isOpen: true,
+          success: false,
+          message: "Failed to claim reward",
         });
         return;
       }
 
-      // 成功状态
-      toast({
-        title: "Success",
-        description: (
-          <div className="flex items-center gap-2">
-            <svg
-              className="h-4 w-4 text-green-500"
-              fill="none"
-              strokeWidth="2"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
-            <span>Self check completed successfully</span>
-          </div>
-        ),
-      });
+      setSelfCheckResult((prev) => ({
+        ...prev,
+        isOpen: false,
+      }));
 
       refetch();
     } catch (error) {
-      toast({
-        title: "Error",
-        description: (
-          <div className="flex items-center gap-2 text-destructive">
-            <svg
-              className="h-4 w-4"
-              fill="none"
-              strokeWidth="2"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-            <span>
-              {error instanceof Error
-                ? error.message
-                : "Failed to complete self check"}
-            </span>
-          </div>
-        ),
-        variant: "destructive",
+      setSelfCheckResult({
+        isOpen: true,
+        success: false,
+        message: "Failed to claim reward",
       });
     }
   };
@@ -316,8 +306,8 @@ export default function TaskList({
     <>
       <ul className="space-y-4">
         {tasks.map((task) => {
-          const isExpired = Date.now() > Number(task.deadline) * 1000;
-          const remainingTime = Number(task.deadline) * 1000 - Date.now();
+          const isExpired = Date.now() > Number(task.deadline);
+          const remainingTime = Number(task.deadline) - Date.now();
           const days = Math.floor(remainingTime / (1000 * 60 * 60 * 24));
           const hours = Math.floor(
             (remainingTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
@@ -341,7 +331,7 @@ export default function TaskList({
               )}
             >
               {/* Actions Dropdown */}
-              {address && isCreatorProp && (
+              {address && isMember && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
@@ -417,10 +407,12 @@ export default function TaskList({
                       Creator:
                       <div className="relative w-4 h-4 flex-shrink-0">
                         {userProfiles &&
-                         task?.creator &&
-                         userProfiles[task.creator.toLowerCase()]?.avatar ? (
+                        task?.creator &&
+                        userProfiles[task.creator.toLowerCase()]?.avatar ? (
                           <Image
-                            src={userProfiles[task.creator.toLowerCase()].avatar}
+                            src={
+                              userProfiles[task.creator.toLowerCase()].avatar
+                            }
                             alt="Creator avatar"
                             fill
                             className="rounded-full object-cover"
@@ -461,7 +453,7 @@ export default function TaskList({
                       <Clock className="h-4 w-4 text-purple-400" />
                       <span>
                         Deadline:{" "}
-                        {format(new Date(Number(task.deadline) * 1000), "PPP")}
+                        {format(new Date(Number(task.deadline)), "PPP")}
                       </span>
                     </div>
                   </div>
@@ -549,6 +541,90 @@ export default function TaskList({
           onSubmit={onSubmitProof}
           onConfirmed={refetch}
         />
+      )}
+
+      {/* Self Check Result Modal */}
+      {selfCheckResult.isOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-background p-6 rounded-lg max-w-md w-full mx-4">
+            <div className="flex flex-col items-center gap-4">
+              {selfCheckResult.success ? (
+                <>
+                  <div className="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center">
+                    <svg
+                      className="w-6 h-6 text-green-500"
+                      fill="none"
+                      strokeWidth="2"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground">
+                    Success!
+                  </h3>
+                </>
+              ) : (
+                <>
+                  <div className="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center">
+                    <svg
+                      className="w-6 h-6 text-red-500"
+                      fill="none"
+                      strokeWidth="2"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground">
+                    Error
+                  </h3>
+                </>
+              )}
+
+              <p className="text-center text-muted-foreground">
+                {selfCheckResult.message}
+              </p>
+
+              {selfCheckResult.comment && (
+                <>
+                  <h3 className="text-sm text-muted-foreground text-left font-bold w-full">
+                    Comment:
+                  </h3>
+                  <Textarea
+                    value={selfCheckResult.comment}
+                    className="w-full"
+                    disabled
+                  />
+                </>
+              )}
+
+              <div className="flex gap-2 mt-4">
+                {selfCheckResult.success ? (
+                  <Button onClick={handleClaim}>Claim Reward</Button>
+                ) : null}
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    setSelfCheckResult((prev) => ({ ...prev, isOpen: false }))
+                  }
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

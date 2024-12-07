@@ -36,13 +36,18 @@ export default function MemberSubmissionTable({
   refetch,
   userProfiles,
 }: MemberSubmissionTableProps) {
-  const [selectedSubmission, setSelectedSubmission] =
-    useState<SubmissionView | null>(null);
+  const [selectedSubmission, setSelectedSubmission] = useState<SubmissionView | null>(null);
+  const [selectedTaskId, setSelectedTaskId] = useState<bigint | null>(null);
   const [isSubmissionModalOpen, setIsSubmissionModalOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<TaskView | null>(null);
 
-  const handleSubmissionClick = (submission: SubmissionView | undefined) => {
-    if (submission) {
+  const handleSubmissionClick = (submission: SubmissionView, task: TaskView) => {
+    console.log(submission, task);
+
+    if (submission.submitter !== "0x0000000000000000000000000000000000000000") {
       setSelectedSubmission(submission);
+      setSelectedTask(task);
+      setSelectedTaskId(task.id);
       setIsSubmissionModalOpen(true);
     }
   };
@@ -50,6 +55,8 @@ export default function MemberSubmissionTable({
   const closeSubmissionModal = () => {
     setIsSubmissionModalOpen(false);
     setSelectedSubmission(null);
+    setSelectedTask(null);
+    setSelectedTaskId(null);
   };
 
   return (
@@ -89,21 +96,15 @@ export default function MemberSubmissionTable({
           <TableRow>
             <TableCell className="font-medium text-purple-100">Member</TableCell>
             {board.tasks.map((task) => (
-              <TableCell
-                key={task.id}
-                className="font-medium text-purple-100"
-              >
+              <TableCell key={task.id} className="font-medium text-purple-100">
                 {task.name}
               </TableCell>
             ))}
           </TableRow>
         </TableHeader>
         <TableBody>
-          {board.members.map((member) => (
-            <TableRow
-              key={member}
-              className="hover:bg-purple-500/5 transition-colors duration-200"
-            >
+          {board.members.map((member, memberIndex) => (
+            <TableRow key={member} className="hover:bg-purple-500/5 transition-colors duration-200">
               <TableCell className="font-medium text-purple-200">
                 <div className="flex items-center gap-2">
                   {userProfiles[member.toLowerCase()]?.avatar ? (
@@ -128,12 +129,8 @@ export default function MemberSubmissionTable({
                   </span>
                 </div>
               </TableCell>
-              {board.tasks.map((task: TaskView) => {
-                const submission = board.submissions.find(
-                  (sub: SubmissionView) =>
-                    sub.submitter === member && sub.taskId === task.id
-                );
-
+              {board.tasks.map((task, taskIndex) => {
+                const submission = board.submissions[taskIndex][memberIndex];
                 const isReviewer = task.reviewers.some(
                   (reviewer: `0x${string}`) => reviewer.toLowerCase() === address?.toLowerCase()
                 );
@@ -143,7 +140,7 @@ export default function MemberSubmissionTable({
                   className: "text-yellow-400/80 hover:text-yellow-400"
                 };
 
-                if (submission) {
+                if (submission.submitter !== "0x0000000000000000000000000000000000000000") {
                   if (submission.status === 1) {
                     icon = {
                       component: Check,
@@ -176,7 +173,7 @@ export default function MemberSubmissionTable({
                         "h-5 w-5 cursor-pointer transition-colors duration-200",
                         icon.className
                       )}
-                      onClick={() => handleSubmissionClick(submission)}
+                      onClick={() => handleSubmissionClick(submission, task)}
                     />
                   </TableCell>
                 );
@@ -191,10 +188,10 @@ export default function MemberSubmissionTable({
         onClose={closeSubmissionModal}
         submission={selectedSubmission}
         boardId={board.id}
-        task={selectedSubmission ? board.tasks.find((t) => t.id === selectedSubmission.taskId) || null : null}
-        isReviewer={selectedSubmission ? board.tasks.find((t) => t.id === selectedSubmission.taskId)?.reviewers.some(
+        task={selectedTask}
+        isReviewer={selectedTask?.reviewers.some(
           (reviewer: `0x${string}`) => reviewer.toLowerCase() === address?.toLowerCase()
-        ) || false : false}
+        ) || false}
         onConfirmed={refetch}
       />
     </>

@@ -70,7 +70,13 @@ $ cast --help
 ### Script
 
 ```shell
-$ forge script script/BountyBoard.s.sol:BountyBoardScript --rpc-url $RPC_URL --private-key $PRIVATE_KEY
+$ forge script script/BountyBoard.s.sol:BountyBoardScript --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
+```
+
+Deploy Mock ERC20
+
+```shell
+$ forge script script/DeployMockERC20.s.sol:DeployMockERC20Script --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
 ```
 
 ### Create
@@ -90,7 +96,7 @@ $ cast abi-encode "initialize(address)" $SIGNER_ADDRESS
 
 $ forge create --rpc-url $RPC_URL_LINEA \
   --private-key $PRIVATE_KEY_LINEA \
-  lib/@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol:ERC1967Proxy \
+  lib/openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Proxy.sol:ERC1967Proxy \
   --constructor-args $IMPLEMENTATION_ADDRESS $INITIALIZE_CALLDATA
 ```
 

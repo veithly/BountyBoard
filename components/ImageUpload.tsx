@@ -38,10 +38,10 @@ export default function ImageUpload({ value, onChange, label, className }: Image
 
       setIsUploading(true);
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("smfile", file);
 
       try {
-        const response = await fetch("https://api.img2ipfs.org/api/v0/add", {
+        const response = await fetch("/api/upload", {
           method: "POST",
           body: formData,
         });
@@ -49,11 +49,20 @@ export default function ImageUpload({ value, onChange, label, className }: Image
         if (!response.ok) throw new Error("Upload failed");
 
         const data = await response.json();
-        onChange(data.Url);
-        toast({
-          title: "Success",
-          description: "Logo uploaded successfully"
-        });
+
+        if (data.success) {
+          onChange(data.data.url);
+          toast({
+            title: "Success",
+            description: "Logo uploaded successfully"
+          });
+        } else {
+          if (data.code === "image_repeated") {
+            onChange(data.images);
+          } else {
+            throw new Error(data.message || "Upload failed");
+          }
+        }
       } catch (error) {
         console.error("Upload error:", error);
         toast({
