@@ -1,0 +1,22 @@
+{
+    "name": "@ai16z/plugin-bountyboard-evm",
+    "version": "0.1.4-alpha.3",
+    "main": "dist/index.js",
+    "type": "module",
+    "types": "dist/index.d.ts",
+    "dependencies": {
+        "@ai16z/eliza": "workspace:*",
+        "@ai16z/plugin-trustdb": "workspace:*",
+        "@lifi/data-types": "5.15.5",
+        "@lifi/sdk": "3.4.1",
+        "@lifi/types": "16.3.0",
+        "tsup": "8.3.5",
+        "viem": "2.21.53"
+    },
+    "scripts": {
+        "build": "tsup --format esm --dts"
+    },
+    "peerDependencies": {
+        "whatwg-url": "7.1.0"
+    }
+}

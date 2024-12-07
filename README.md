@@ -1,31 +1,80 @@
-# Bounty Board: The Web3 Community Engagement Tool & Decentralized Organization Collaboration Platform
+# BountyBoard
 
-Bounty Board is a decentralized platform designed to streamline Web3 community activities and decentralized organization collaboration. It offers transparent, secure, and efficient solutions for tasks like airdrops and development missions, eliminating the hassle of user data recording, form creation, and token payments. All records are stored on-chain to ensure fairness and integrity in activities.
+![Bounty Board](./assets/BountyBoard.png)
 
-![Bounty Board](./assets/screenshot.jpeg)
+BountyBoard is a decentralized Web3 community engagement platform built on blockchain technology, aiming to automate task management and reward distribution, thereby increasing community participation and efficiency.
 
-## Technical Architecture
+## Key Advantages:
 
-Bounty Board employs the following technical architecture:
+* **Decentralization**: Utilizes blockchain technology to ensure transparency and trust in platform operations.
+* **Smart Contracts**: Automates task management and reward distribution using smart contracts, improving efficiency and transparency.
+* **AI-Agent (Eliza)**: Provides intelligent Q&A, task auditing, data analysis, and task notifications to enhance community interaction and efficiency.
+* **User-Friendly Interface**: Offers a simple and intuitive interface for users to create and manage tasks, track progress, and monitor participation.
 
-- **Smart Contracts (Solidity):** The core logic is implemented via smart contracts written in Solidity, managing functions such as bounty boards, activity tasks, submissions, reviews, and reward disbursements.
-- **Next.js:** Next.js is utilized to build the frontend application, delivering a user-friendly interface and interaction experience.
-- **Wagmi:** Wagmi is employed to connect Ethereum wallets, facilitating user interaction with smart contracts.
-- **Shadcn/UI:** The Shadcn/UI component library is used to create an aesthetically pleasing user interface.
+## Key Features
 
-## Core Features
+**Task Management**:
 
-- **Simplified Activity Creation:** Communities can easily create various tasks, including study groups, project collaborations, airdrops, and more, with customizable task content, rewards, reviewers, and deadlines.
-- **Automated Data Recording:** User information, participation status, and completion progress are automatically recorded, with automatic generation of comprehensive tables for visualization, eliminating the need for manual table maintenance.
-- **On-Chain Token Payments:** Supports reward distribution using various tokens. Initiators must stake the corresponding tokens into the contract, which are automatically distributed upon review completion.
-- **Permanent Data Storage:** All activity information and records are stored on the blockchain, ensuring permanent, tamper-proof preservation.
+* **Multiple Task Types**: Supports various task types to cater to different community activities and engagement needs.
+* **Customizable Completion Criteria**: Allows users to set specific conditions for task completion, ensuring tasks are tailored to individual project requirements.
+* **Progress Tracking Dashboard**: Provides real-time monitoring of task progress and participant performance.
 
-## Future Development Goals
+**Reward Distribution**:
+* **Smart Contract Automation**: Automates reward distribution using smart contracts, ensuring transparency and fairness.
+* **Multiple Token Support**: Supports various tokens for rewards, providing flexibility to cater to different community preferences.
 
-- **Optimize Storage Structure:** Use IPFS to store complex records such as task descriptions, bounty board details, proof of submissions, images, etc., reducing on-chain storage costs and improving data storage efficiency.
-- **Identity Storage and Binding:** Support user identity storage and binding for easier participation in multiple bounty board activities, enhancing the user experience.
-- **Refined Permission Controls:** Implement more granular permission management, such as visibility control for different bounty boards or tasks, and require application verification for joining bounty boards.
-- **Multi-Token Reward System:** Support issuing different types of tokens as rewards for various tasks, increasing the flexibility of activities.
-- **Token Staking Revenue:** The platform can stake tokens from the contract into liquidity pools to generate revenue, creating a sustainable economic model.
-- **Decentralized Organization Collaboration:** Expand platform functionality to serve as a tool for decentralized organizations for project collaboration, task distribution, and compensation management.
-- **On-Chain AI Review:** Utilize on-chain AI Agents to review submitted tasks, enhancing review efficiency.
+**Community Management**:
+
+* **AI-Agent (Eliza)**: Offers intelligent Q&A, task auditing, data analysis, and task notifications to enhance community interaction and efficiency.
+* **Community Verification**: Enables community validation of AI-Agent operations, ensuring privacy and security.
+
+## Start
+
+### Install
+
+First, install the dependencies:
+
+```bash
+pnpm install
+```
+
+Second, set the environment variables:
+
+```bash
+cp .env.example .env
+```
+
+### Run
+
+```bash
+pnpm dev
+```
+
+## Set up the agent
+
+First, clone the agent repository:
+
+```bash
+git clone https://github.com/ai16z/eliza.git
+```
+
+Second, set the environment variables, you need to set the `DISCORD_APPLICATION_ID`, `DISCORD_API_TOKEN`,`BOUNTYBOARD_PRIVATE_KEY`(the private key of the account that will review the tasks), `BOUNTYBOARD_ADDRESS`, `GAIANET_MODEL`, `GAIANET_SERVER_URL`, `GAIANET_EMBEDDING_MODEL`, `USE_GAIANET_EMBEDDING`, `DSTACK_SIMULATOR_ENDPOINT`(the endpoint of the TEE simulator), `WALLET_SECRET_SALT`(the TEE secret salt) in the `.env` file.
+
+```bash
+cp .env.example .env
+```
+
+Third, install the dependencies:
+
+```bash
+pnpm install
+```
+
+Fourth, copy the `eliza-add` directory to the `eliza` directory:
+
+Then, you can build and start the agent:
+
+```bash
+pnpm build
+pnpm start --characters="characters/BountyBoard.character.json"
+```
