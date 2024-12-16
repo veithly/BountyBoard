@@ -11,7 +11,7 @@ import {
     type Address,
     Account,
 } from "viem";
-import { mainnet, base, anvil, lineaSepolia } from "viem/chains";
+import { mantaSepoliaTestnet, mantle ,mainnet, base, anvil, lineaSepolia, mantleSepoliaTestnet } from "viem/chains";
 import type { SupportedChain, ChainConfig, ChainMetadata } from "../types";
 import { privateKeyToAccount } from "viem/accounts";
 
@@ -64,6 +64,30 @@ export const DEFAULT_CHAIN_CONFIGS: Record<SupportedChain, ChainMetadata> = {
         },
         blockExplorerUrl: "https://sepolia.lineascan.build",
     },
+    mantle: {
+        chainId: 5000,
+        name: "Mantle",
+        chain: mantle,
+        rpcUrl: "https://rpc.manta.network/testnet",
+        nativeCurrency: {
+            name: "Mantle",
+            symbol: "MNT",
+            decimals: 18
+        },
+        blockExplorerUrl: ""
+    },
+    mantle_testnet: {
+        chainId: 5003,
+        name: "Mantle Testnet",
+        chain: mantleSepoliaTestnet,
+        rpcUrl: "https://rpc.manta.network/testnet",
+        nativeCurrency: {
+            name: "Mantle",
+            symbol: "MNT",
+            decimals: 18
+        },
+        blockExplorerUrl: ""
+    },
 } as const;
 
 export const getChainConfigs = (runtime: IAgentRuntime) => {
@@ -105,6 +129,8 @@ export class WalletProvider {
         };
 
         this.chainConfigs = {
+            mantle: createClients("mantle"),
+            mantle_testnet: createClients("mantle_testnet"),
             ethereum: createClients("ethereum"),
             base: createClients("base"),
             linea_testnet: createClients("linea_testnet"),

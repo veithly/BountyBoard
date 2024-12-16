@@ -9,7 +9,7 @@ import type {
     WalletClient,
 } from "viem";
 
-export type SupportedChain = "ethereum" | "base" | "linea_testnet" | "anvil";
+export type SupportedChain = "ethereum" | "base" | "linea_testnet" | "anvil" | "mantle" | "mantle_testnet";
 
 // Transaction types
 export interface Transaction {
