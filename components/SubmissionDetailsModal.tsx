@@ -77,6 +77,10 @@ export default function SubmissionDetailsModal({
 
   const getExplorerUrl = (address: string, network?: string) => {
     switch (network) {
+      case 'Mantle':
+        return `https://explorer.mantle.xyz/address/${address}`;
+      case 'Mantle Sepolia':
+        return `https://explorer.sepolia.mantle.xyz/address/${address}`;
       case 'Linea':
         return `https://lineascan.build/address/${address}`;
       case 'Linea Sepolia':

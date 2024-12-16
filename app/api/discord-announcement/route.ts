@@ -5,6 +5,8 @@ const elizaAgentUserId = process.env.ELIZA_AGENT_USER_ID || "";
 const elizaAgentId = process.env.ELIZA_AGENT_ID || "";
 const elizaAgentUrl = `${process.env.ELIZA_API_URL}/${elizaAgentId}/message`;
 const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
+const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,89 +19,104 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 1. 构建AI消息内容
-    const memoryContent = {
-      type,
-      timestamp: new Date().toISOString(),
-      ...data,
-    };
+    let announcementText = '';
 
-    // 2. 调用AI服务获取公告内容
-    const aiResponse = await fetch(elizaAgentUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        roomId: stringToUuid(channelId + "-" + elizaAgentId),
-        userId: stringToUuid(elizaAgentUserId),
-        userName: "user",
-        content: {
-          text: `Please format the following information into a clear and concise announcement. Use appropriate emojis and maintain a professional tone. Focus only on the essential details:
+    // 检查是否配置了 Eliza
+    if (elizaAgentUrl && elizaAgentId) {
+      // 使用现有的 Eliza 逻辑
+      const aiResponse = await fetch(elizaAgentUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          roomId: stringToUuid(channelId + "-" + elizaAgentId),
+          userId: stringToUuid(elizaAgentUserId),
+          userName: "user",
+          content: {
+            text: `Please format the following information into a clear and concise announcement. Use appropriate emojis and maintain a professional tone. Focus only on the essential details:
 Type: ${type}
 Content: ${JSON.stringify(data)}`,
-          attachments: [],
-          source: "direct",
+            attachments: [],
+            source: "direct",
+          },
+        }),
+      });
+
+      if (!aiResponse.ok) {
+        const errorDetails = await aiResponse.json();
+        throw new Error(errorDetails.error || "Failed to get AI response");
+      }
+
+      // 处理 Eliza 响应...
+      const reader = aiResponse.body?.getReader();
+      let aiContent = "";
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const chunk = new TextDecoder().decode(value);
+          aiContent += chunk;
+        }
+      }
+
+      let responses;
+      try {
+        const parsedContent = JSON.parse(aiContent);
+        if (Array.isArray(parsedContent)) {
+          responses = parsedContent;
+        } else if (parsedContent.responses) {
+          responses = parsedContent.responses;
+        } else {
+          responses = [parsedContent];
+        }
+        announcementText = responses[0].content?.text || responses[0].text;
+      } catch (error) {
+        console.error("Eliza Parse Error:", error);
+        throw new Error("Failed to parse Eliza response");
+      }
+    }
+    // 如果没有配置 Eliza 但配置了 Google AI
+    else if (GOOGLE_API_KEY) {
+      const prompt = {
+        announcement_request: {
+          type,
+          content: data
         },
-      }),
-    });
+        instructions: "Format the given information into a clear and concise announcement. Use appropriate emojis and maintain a professional tone. Focus on essential details. Return only the formatted announcement text without any JSON structure or additional formatting.",
+        example_response: "🎉 New Update Available!\nWe're excited to announce the latest features...",
+      };
 
-    if (!aiResponse.ok) {
-      const errorDetails = await aiResponse.json();
-      throw new Error(errorDetails.error || "Failed to get AI response");
-    }
+      const geminiResponse = await fetch(`${GEMINI_API_URL}?key=${GOOGLE_API_KEY}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: JSON.stringify(prompt)
+            }]
+          }]
+        })
+      });
 
-    // 读取流式响应
-    const reader = aiResponse.body?.getReader();
-    let aiContent = "";
-
-    if (reader) {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        // 将 Uint8Array 转换为字符串
-        const chunk = new TextDecoder().decode(value);
-        aiContent += chunk;
+      if (!geminiResponse.ok) {
+        throw new Error('Failed to get Gemini API response');
       }
+
+      const geminiData = await geminiResponse.json();
+      announcementText = geminiData.candidates[0].content.parts[0].text.trim();
+    } else {
+      throw new Error("No AI service configured");
     }
-
-    console.log("Raw AI Content:", aiContent);
-
-    // 尝试解析响应
-    let responses;
-    try {
-      const parsedContent = JSON.parse(aiContent);
-      console.log("Parsed Content:", parsedContent);
-
-      // 处理不同的响应格式
-      if (Array.isArray(parsedContent)) {
-        responses = parsedContent;
-      } else if (parsedContent.responses) {
-        responses = parsedContent.responses;
-      } else {
-        responses = [parsedContent];
-      }
-    } catch (error) {
-      console.error("JSON Parse Error:", error);
-      throw new Error("Failed to parse AI response");
-    }
-
-    if (!responses || responses.length === 0) {
-      throw new Error("No valid response from AI service");
-    }
-
-    console.log("Processed Responses:", responses);
-
-    // 提取消息内容
-    const announcementText = responses[0].content?.text || responses[0].text;
 
     if (!announcementText) {
-      console.error("Response structure:", responses[0]);
-      throw new Error("Could not extract announcement text from response");
+      throw new Error("Could not generate announcement text");
     }
 
-    // 3. 发送到Discord
+    // 发送到 Discord
     const discordResponse = await fetch(
       `https://discord.com/api/v10/channels/${channelId}/messages`,
       {

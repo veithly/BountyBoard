@@ -36,6 +36,7 @@ import { Badge } from "@/components/ui/badge";
 
 interface CreateTaskModalProps {
   boardConfig: BoardConfig;
+  tokenSymbol: string;
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: any) => Promise<any>;
@@ -74,6 +75,7 @@ interface TaskDetailsState {
 
 export default function CreateTaskModal({
   boardConfig,
+  tokenSymbol,
   isOpen,
   onClose,
   onSubmit,
@@ -91,7 +93,7 @@ export default function CreateTaskModal({
   });
   const [taskDetails, setTaskDetails] = useState<TaskDetailsState>({
     deadline: initialData?.taskDetails.deadline
-      ? new Date(Number(initialData.taskDetails.deadline) * 1000)
+      ? new Date(Number(initialData.taskDetails.deadline) / 1000)
       : add(new Date(), { days: 7 }),
     maxCompletions: initialData?.taskDetails.maxCompletions || 1,
     rewardAmount: initialData?.taskDetails.rewardAmount || 0,
@@ -137,7 +139,7 @@ export default function CreateTaskModal({
     if (isOpen && initialData) {
       setTaskBasicInfo(initialData.taskBasicInfo);
       setTaskDetails({
-        deadline: initialData.taskDetails.deadline,
+        deadline: new Date(Number(initialData.taskDetails.deadline) / 1000),
         maxCompletions: initialData.taskDetails.maxCompletions,
         rewardAmount: initialData.taskDetails.rewardAmount,
         allowSelfCheck: initialData.taskDetails.allowSelfCheck || false,
@@ -199,6 +201,7 @@ export default function CreateTaskModal({
                 deadline: taskDetails.deadline,
                 maxCompletions: taskDetails.maxCompletions,
                 rewardAmount: taskDetails.rewardAmount,
+                tokenSymbol: tokenSymbol,
                 allowSelfCheck: taskDetails.allowSelfCheck,
                 aiReview: taskConfig.aiReview,
                 aiReviewPrompt: taskConfig.aiReviewPrompt,
@@ -231,7 +234,8 @@ export default function CreateTaskModal({
     taskConfig,
     taskDetails,
     selectedTypes,
-    mode
+    mode,
+    tokenSymbol
   ]);
 
   const taskTypes = [
@@ -312,6 +316,8 @@ export default function CreateTaskModal({
                 <SelectValue placeholder="Select Network" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="Mantle">Mantle</SelectItem>
+                <SelectItem value="Mantle Sepolia">Mantle Sepolia</SelectItem>
                 <SelectItem value="Linea">Linea</SelectItem>
                 <SelectItem value="Linea Sepolia">Linea Sepolia</SelectItem>
                 <SelectItem value="Ethereum">Ethereum</SelectItem>

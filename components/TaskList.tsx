@@ -163,6 +163,7 @@ export default function TaskList({
         ),
         duration: Infinity,
       });
+
       // 验证必要参数
       if (
         !address ||
@@ -188,6 +189,24 @@ export default function TaskList({
         return;
       }
 
+      // 获取当前任务的提交证明
+      const currentSubmission = userTaskStatuses.find(
+        (status) => status.taskId === task.id
+      );
+
+      if (!currentSubmission?.submitProof) {
+        clearTimeout(waitToast.id);
+        setSelfCheckResult({
+          isOpen: true,
+          success: false,
+          message: "No submission found",
+        });
+        return;
+      }
+
+      // 解析提交的证明数据
+      const submissionProof = JSON.parse(currentSubmission.submitProof);
+
       const taskJson = {
         id: task.id.toString(),
         name: task.name,
@@ -212,8 +231,7 @@ export default function TaskList({
           boardConfig,
           taskId: task.id.toString(),
           address,
-          proof: userTaskStatuses.find((status) => status.taskId === task.id)
-            ?.submitProof,
+          proof: currentSubmission.submitProof,
           chainName: chain.name,
           task: taskJson,
         }),
@@ -245,6 +263,12 @@ export default function TaskList({
         comment: data.checkData,
       });
     } catch (error) {
+      console.error("Self check error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to complete self check",
+        variant: "destructive",
+      });
       setSelfCheckResult({
         isOpen: true,
         success: false,

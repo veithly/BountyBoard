@@ -11,88 +11,76 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Copy, LogOut, Settings, User } from "lucide-react";
 import { useToast } from "./ui/use-toast";
-import { useDisconnect } from "wagmi";
+import { useDisconnect, useAccount } from "wagmi";
 import { useState, useEffect } from "react";
 import ProfileSettingsModal from "./ProfileSettingsModal";
-import attestationConfig from "@/constants/attestaion";
 import { UserProfile } from "@/types/profile";
 import { useUserStore } from "@/store/userStore";
-
-// GraphQL 查询
-const PROFILE_QUERY = `
-  query GetProfile($address: Bytes!, $schemaId: String!) {
-    attestations(
-      where: {
-        subject: $address,
-        schema: $schemaId,
-        revoked: false
-      },
-      orderBy: attestedDate,
-      orderDirection: desc,
-      first: 1
-    ) {
-      decodedData
-    }
-  }
-`;
+import { useGetProfile } from "@/hooks/useContract";
 
 const ConnectWallet: React.FC = () => {
   const { toast } = useToast();
   const { disconnect } = useDisconnect();
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const { setSocialAccounts } = useUserStore();
+  const { setSocialAccounts, clearSocialAccounts } = useUserStore();
+  const { address } = useAccount();
+  const [previousAddress, setPreviousAddress] = useState<string | undefined>(undefined);
 
-  const fetchProfile = async (address: `0x${string}`) => {
-    try {
-      // 使用 GraphQL 查询用户资料
-      // https://api.studio.thegraph.com/query/67521/verax-v2-linea-sepolia/v0.0.2
-      const response = await fetch(
-        "https://api.studio.thegraph.com/query/67521/verax-v2-linea-sepolia/v0.0.2",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            query: PROFILE_QUERY,
-            variables: {
-              address: address.toLowerCase(),
-              schemaId: attestationConfig.schema,
-            },
-          }),
-        }
-      );
+  // 使用合约 hook 获取用户资料
+  const { data: profileData, isError } = useGetProfile(address);
+  console.log(profileData);
 
-      const data = await response.json();
+  // 当合约数据更新时，更新本地状态
+  useEffect(() => {
+    if (profileData && Array.isArray(profileData)) {
+      const [nickname, avatar, socialAccount, _] = profileData;
 
-      console.log(data);
-
-      if (data.data?.attestations?.length > 0) {
-        const [nickname, avatar, socialAccount] =
-          data.data.attestations[0].decodedData;
-
-        // 解析并设置社交账号信息到 store
-        try {
-          const parsedSocialAccount = JSON.parse(socialAccount);
-          setSocialAccounts(parsedSocialAccount);
-        } catch (error) {
-          console.error("Failed to parse social account data:", error);
-        }
-
-        setProfile({
-          nickname,
-          avatar,
-          socialAccount,
-        });
-      } else {
-        setProfile(null);
+      // 解析并设置社交账号信息到 store
+      try {
+        const parsedSocialAccount = JSON.parse(socialAccount);
+        setSocialAccounts(parsedSocialAccount);
+      } catch (error) {
+        console.error("Failed to parse social account data:", error);
       }
-    } catch (error) {
-      console.error("Failed to fetch profile:", error);
+
+      setProfile({
+        nickname,
+        avatar,
+        socialAccount,
+      });
+    } else {
       setProfile(null);
     }
-  };
+  }, [profileData, setSocialAccounts]);
+
+  // 处理错误情况
+  useEffect(() => {
+    if (isError) {
+      console.error("Failed to fetch profile from contract");
+      setProfile(null);
+    }
+  }, [isError]);
+
+  // 监听地址变化
+  useEffect(() => {
+    // 忽略初始的空地址
+    if (!previousAddress && !address) {
+      setPreviousAddress(address);
+      return;
+    }
+
+    // 只有当之前有地址，且地址发生变化时才清除信息
+    if (previousAddress && previousAddress !== address) {
+      clearSocialAccounts();
+      setProfile(null);
+      // 清除 localStorage 中的相关数据
+      localStorage.removeItem("profileFormData");
+      localStorage.removeItem("verificationInfo");
+    }
+
+    setPreviousAddress(address);
+  }, [address, clearSocialAccounts, previousAddress]);
 
   const handleCopyAddress = (address: string) => {
     navigator.clipboard.writeText(address);
@@ -105,10 +93,14 @@ const ConnectWallet: React.FC = () => {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const modalType = params.get("modal");
+    const provider = params.get("provider");
+
     if (modalType === "profile") {
       setIsProfileModalOpen(true);
-      // 清除 URL 参数
-      window.history.replaceState({}, "", window.location.pathname);
+      // 只有在没有 provider 参数时才清除 URL 参数
+      if (!provider) {
+        window.history.replaceState({}, "", window.location.pathname);
+      }
     }
   }, []);
 
@@ -122,12 +114,6 @@ const ConnectWallet: React.FC = () => {
         openConnectModal,
         mounted,
       }) => {
-        useEffect(() => {
-          if (account?.address) {
-            fetchProfile(account.address as `0x${string}`);
-          }
-        }, [account?.address]);
-
         const ready = mounted;
         const connected = ready && account && chain;
 
@@ -241,10 +227,6 @@ const ConnectWallet: React.FC = () => {
                 address={account.address as `0x${string}`}
                 onSuccess={() => {
                   setIsProfileModalOpen(false);
-                  // 重新获取用户资料
-                  if (account.address) {
-                    fetchProfile(account.address as `0x${string}`);
-                  }
                 }}
                 initialData={profile}
               />

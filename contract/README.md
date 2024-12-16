@@ -70,13 +70,25 @@ $ cast --help
 ### Script
 
 ```shell
-$ forge script script/BountyBoard.s.sol:BountyBoardScript --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
+forge script script/BountyBoard.s.sol:BountyBoardScript --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
+
+forge script script/BountyBoard.s.sol:BountyBoardScript --rpc-url $RPC_URL_MANTLE --private-key $PRIVATE_KEY_MANTLE --broadcast --skip-simulation --legacy
+```
+
+Deploy UserProfile
+
+```shell
+forge script script/UserProfile.s.sol:UserProfileScript --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
+
+forge script script/UserProfile.s.sol:UserProfileScript --rpc-url $RPC_URL_MANTLE --private-key $PRIVATE_KEY_MANTLE --broadcast
 ```
 
 Deploy Mock ERC20
 
 ```shell
-$ forge script script/DeployMockERC20.s.sol:DeployMockERC20Script --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
+forge script script/DeployMockERC20.s.sol:DeployMockERC20Script --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
+
+forge script script/DeployMockERC20.s.sol:DeployMockERC20Script --rpc-url $RPC_URL_MANTLE --private-key $PRIVATE_KEY_MANTLE --broadcast
 ```
 
 ### Create
@@ -84,20 +96,45 @@ $ forge script script/DeployMockERC20.s.sol:DeployMockERC20Script --rpc-url $RPC
 BountyBoard
 
 ```shell
-$ forge create --rpc-url $RPC_URL_LINEA \
+forge create --rpc-url $RPC_URL_LINEA \
   --private-key $PRIVATE_KEY_LINEA \
+  src/BountyBoard.sol:BountyBoard
+
+forge create --rpc-url $RPC_URL_MANTLE \
+  --private-key $PRIVATE_KEY_MANTLE \
   src/BountyBoard.sol:BountyBoard
 ```
 
 BountyBoard Proxy
 
 ```shell
-$ cast abi-encode "initialize(address)" $SIGNER_ADDRESS
+cast calldata "initialize(address)" $SIGNER_ADDRESS
 
-$ forge create --rpc-url $RPC_URL_LINEA \
+forge create --rpc-url $RPC_URL_MANTLE \
+  --private-key $PRIVATE_KEY_MANTLE \
+  lib/openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Proxy.sol:ERC1967Proxy \
+  --constructor-args $IMPLEMENTATION_ADDRESS $INITIALIZE_CALLDATA
+
+forge create --rpc-url $RPC_URL_LINEA \
   --private-key $PRIVATE_KEY_LINEA \
   lib/openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Proxy.sol:ERC1967Proxy \
   --constructor-args $IMPLEMENTATION_ADDRESS $INITIALIZE_CALLDATA
+```
+
+UserProfile
+
+```shell
+forge create --rpc-url $RPC_URL_MANTLE --private-key $PRIVATE_KEY_MANTLE src/UserProfile.sol:UserProfile --constructor-args $SIGNER_ADDRESS
+
+forge create --rpc-url $RPC_URL_LINEA --private-key $PRIVATE_KEY_LINEA src/UserProfile.sol:UserProfile --constructor-args $SIGNER_ADDRESS
+```
+
+Mock ERC20
+
+```shell
+forge create --rpc-url $RPC_URL_MANTLE --private-key $PRIVATE_KEY_MANTLE src/MockERC20.sol:MockERC20 --constructor-args "Bounty" "BOUNTY"
+
+forge create --rpc-url $RPC_URL_LINEA --private-key $PRIVATE_KEY_LINEA src/MockERC20.sol:MockERC20 --constructor-args "Bounty" "BOUNTY"
 ```
 
 UserProfilePortal
@@ -112,12 +149,43 @@ BountyBoard
 
 ```shell
 forge verify-contract \
+  --verifier-url https://api-sepolia.mantlescan.xyz/api \
+  --etherscan-api-key $MANTLESCAN_API_KEY \
+  --compiler-version "v0.8.27+commit.40a35a09" \
+  0x7F5c43e497d7F3392e7114809856Ac2fCc9454A6 \
+  src/BountyBoard.sol:BountyBoard \
+  --constructor-args $(cast abi-encode "constructor()") \
+  --watch
+
+forge verify-contract \
+  --verifier-url https://api-sepolia.mantlescan.xyz/api \
+  --etherscan-api-key $MANTLESCAN_API_KEY \
+  --compiler-version "v0.8.27+commit.40a35a09" \
+  0x397e12962a9dCed668FD5b7B2bfAfE585bdad323 \
+  lib/openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Proxy.sol:ERC1967Proxy \
+  --constructor-args $(cast abi-encode "constructor(address,bytes)" "0x7F5c43e497d7F3392e7114809856Ac2fCc9454A6" $(cast calldata "initialize(address)" "0x2809dCa37069918607b1eAaf591dE29fC389D3Cc")) \
+  --watch
+
+forge verify-contract \
   --watch \
   0x0d09f915E9C025366A14B78Bd78d1075e6aECB9b \
   src/BountyBoard.sol:BountyBoard \
   --constructor-args $(cast abi-encode "constructor()") \
   --etherscan-api-key $LINEASCAN_API_KEY \
   --verifier-url https://api-sepolia.lineascan.build/api
+```
+
+UserProfile
+
+```shell
+forge verify-contract \
+  --verifier-url https://api-sepolia.mantlescan.xyz/api \
+  --etherscan-api-key $MANTLESCAN_API_KEY \
+  --compiler-version "v0.8.21" \
+  0xCD40B2D99FBaf151f5C131A7ca3Cd801374Ec785 \
+  src/UserProfile.sol:UserProfile \
+  --constructor-args $(cast abi-encode "constructor(address)" "0x2809dCa37069918607b1eAaf591dE29fC389D3Cc") \
+  --watch
 ```
 
 UserProfilePortal
@@ -129,6 +197,19 @@ forge verify-contract \
   src/UserProfilePortal.sol:UserProfilePortal \
   --etherscan-api-key $LINEASCAN_API_KEY \
   --verifier-url https://api-sepolia.lineascan.build/api
+```
+
+Mock ERC20
+
+```shell
+forge verify-contract \
+  --verifier-url https://api-sepolia.mantlescan.xyz/api \
+  --etherscan-api-key $MANTLESCAN_API_KEY \
+  --compiler-version "v0.8.27+commit.40a35a09" \
+  0xaEbAfCa968c845bD69206Ba3c61cFbf59D123A23 \
+  src/MockERC20.sol:MockERC20 \
+  --constructor-args $(cast abi-encode "constructor(string,string)" "Bounty" "BOUNTY") \
+  --watch
 ```
 
 ## Update

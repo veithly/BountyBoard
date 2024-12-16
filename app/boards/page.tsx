@@ -2,13 +2,12 @@
 
 import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { useGetAllBoards } from "@/hooks/useContract";
+import { useGetAllBoards, useGetProfiles } from "@/hooks/useContract";
 import { type BoardView } from "@/types/types";
 import BoardCard from "@/components/BoardCard";
 import BoardsPageSkeleton from "@/components/BoardsPageSkeleton";
 import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useAddressProfiles } from "@/hooks/useAddressProfiles";
 import { useAccount } from "wagmi";
 
 export default function HomePage() {
@@ -19,11 +18,26 @@ export default function HomePage() {
   // 获取所有创建者地址
   const creatorAddresses = useMemo(() => {
     if (!boardsData || !Array.isArray(boardsData)) return [];
-    return boardsData.map((board: BoardView) => board.creator);
+    return boardsData.map((board: BoardView) => board.creator as `0x${string}`);
   }, [boardsData]);
 
   // 批量获取创建者资料
-  const creatorProfiles = useAddressProfiles(creatorAddresses);
+  const { data: profilesData } = useGetProfiles(creatorAddresses);
+
+  // 将资料数据转换为映射格式
+  const creatorProfiles = useMemo(() => {
+    if (!profilesData || !Array.isArray(profilesData)) return {};
+
+    const [nicknames, avatars, socialAccounts, _, __] = profilesData;
+    return creatorAddresses.reduce((acc, address, index) => {
+      acc[address.toLowerCase()] = {
+        nickname: nicknames[index],
+        avatar: avatars[index],
+        socialAccount: socialAccounts[index]
+      };
+      return acc;
+    }, {} as Record<string, { nickname: string; avatar: string; socialAccount: string }>);
+  }, [profilesData, creatorAddresses]);
 
   if (isLoading) {
     return <BoardsPageSkeleton />;

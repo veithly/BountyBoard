@@ -12,16 +12,17 @@ export interface AttestationData {
 }
 
 export interface socialAccount {
-  xAccessToken: string;
+  xAccessToken?: string;
   xUserName: string;
   xName: string;
   xId: string;
-  discordAccessToken: string;
+  discordAccessToken?: string;
   discordUserName: string;
   discordName: string;
   discordId: string;
-  githubAccessToken: string;
+  githubAccessToken?: string;
   githubUserName: string;
   githubName: string;
   githubId: string;
+  encryptedTokens: string;
 }

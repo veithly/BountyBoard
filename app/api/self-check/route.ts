@@ -1,7 +1,7 @@
 import { keccak256, encodeAbiParameters, parseAbiParameters, SignableMessage } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { NextRequest, NextResponse } from 'next/server';
-import { lineaSepolia, Chain } from 'viem/chains';
+import { lineaSepolia, Chain, mantleSepoliaTestnet, mantle, linea } from 'viem/chains';
 import anvil from '@/providers/my-anvil';
 import contractAddress from '@/constants/contract-address';
 import { TaskDetailView } from '@/types/types';
@@ -12,6 +12,9 @@ const SIGNER_PRIVATE_KEY = process.env.SIGNER_ADDRESS_PRIVATE_KEY as `0x${string
 
 // 支持的链配置
 const SUPPORTED_CHAINS: Record<string, Chain> = {
+  'Mantle Sepolia Testnet': mantleSepoliaTestnet,
+  'Mantle Mainnet': mantle,
+  'Linea Mainnet': linea,
   'Linea Sepolia Testnet': lineaSepolia,
   'Anvil': anvil,
 };
@@ -28,65 +31,65 @@ function getBaseUrl() {
 // 验证社交账号操作
 async function verifySocialAction(taskConfig: any, proofData: any) {
   try {
+    // 如果没有社交账号任务配置，直接返回 true
+    if (!taskConfig.XFollowUsername &&
+        !taskConfig.XLikeId &&
+        !taskConfig.XRetweetId &&
+        !taskConfig.DiscordChannelId) {
+      return true;
+    }
+
     const baseUrl = getBaseUrl();
 
     // 检查是否有 Twitter 相关任务
     if (taskConfig.XFollowUsername || taskConfig.XLikeId || taskConfig.XRetweetId) {
+      if (!proofData.encryptedTokens || !proofData.xId) {
+        throw new Error('Missing Twitter account information');
+      }
+
       // 验证 Twitter 账号
-      const verifyResponse = await fetch(`${baseUrl}/api/social/twitter/verify`, {
+      const verifyResponse = await fetch(`${baseUrl}/api/social/twitter/check-actions`, {
+        method: 'POST',
         headers: {
-          'Authorization': `Bearer ${proofData.xAccessToken}`,
-          'X-User-Id': proofData.xId
-        }
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          encryptedTokens: proofData.encryptedTokens,
+          action: taskConfig.XFollowUsername ? 'follow' :
+                 taskConfig.XLikeId ? 'like' :
+                 taskConfig.XRetweetId ? 'retweet' : '',
+          targetUser: taskConfig.XFollowUsername || '',
+          tweetId: taskConfig.XLikeId || taskConfig.XRetweetId || '',
+          userId: proofData.xId
+        })
       });
 
       if (!verifyResponse.ok) {
-        throw new Error('Twitter account verification failed');
-      }
-
-      // 验证具体操作
-      const checkResponse = await fetch(`${baseUrl}/api/social/twitter/check-actions`, {
-        headers: {
-          'X-User-Id': proofData.xId,
-          'X-Target-User': taskConfig.XFollowUsername || '',
-          'X-Tweet-Id': taskConfig.XLikeId || taskConfig.XRetweetId || '',
-          'X-Action-Type': taskConfig.XFollowUsername ? 'follow' :
-                          taskConfig.XLikeId ? 'like' :
-                          taskConfig.XRetweetId ? 'retweet' : ''
-        }
-      });
-
-      if (!checkResponse.ok) {
         throw new Error('Twitter action verification failed');
       }
 
-      const result = await checkResponse.json();
+      const result = await verifyResponse.json();
       if (!result.verified) {
         throw new Error('Twitter action not verified');
       }
     }
 
     // 验证 Discord 加入
-    if (taskConfig.DiscordChannelId && proofData.discordAccessToken) {
-      // 验证 Discord 账号
-      const verifyResponse = await fetch(`${baseUrl}/api/social/discord/verify`, {
-        headers: {
-          'Authorization': `Bearer ${proofData.discordAccessToken}`,
-          'X-User-Id': proofData.discordId
-        }
-      });
-
-      if (!verifyResponse.ok) {
-        throw new Error('Discord account verification failed');
+    if (taskConfig.DiscordChannelId) {
+      if (!proofData.encryptedTokens || !proofData.discordId) {
+        throw new Error('Missing Discord account information');
       }
 
-      // 验证服务器成员资格
       const checkResponse = await fetch(`${baseUrl}/api/social/discord/check-guild`, {
+        method: 'POST',
         headers: {
-          'Authorization': `Bearer ${proofData.discordAccessToken}`,
-          'X-User-Id': proofData.discordId,
-          'X-Guild-Id': taskConfig.DiscordChannelId
-        }
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          encryptedTokens: proofData.encryptedTokens,
+          guildId: taskConfig.DiscordChannelId,
+          userId: proofData.discordId
+        })
       });
 
       if (!checkResponse.ok) {
@@ -144,7 +147,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    let checkData = proof;
+    let checkData = 'Check Success';
     const taskConfig = task.config;
     const proofData = JSON.parse(proof);
 

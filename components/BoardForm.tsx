@@ -7,6 +7,9 @@ import { useToast } from "@/components/ui/use-toast";
 import { motion } from "framer-motion";
 import ImageUpload from "@/components/ImageUpload";
 import { useWaitForTransactionReceipt } from "wagmi";
+import { Chain, zeroAddress } from 'viem';
+import { useAccount } from 'wagmi';
+import { getNativeTokenSymbol } from '@/utils/chain';
 
 interface BoardFormProps {
   initialData?: {
@@ -23,21 +26,33 @@ interface BoardFormProps {
   isDialog?: boolean;
 }
 
+interface FormData {
+  id?: bigint;
+  name: string;
+  description: string;
+  img: string;
+  tokenType: 'native' | 'erc20';
+  rewardToken: string;
+  channelId: string;
+}
+
 export default function BoardForm({ initialData, onSubmit, mode, redirectPath = '/boards', isDialog = false }: BoardFormProps) {
 
   const initialConfig = initialData?.config ? JSON.parse(initialData.config) : {};
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     id: initialData?.id,
     name: initialData?.name || "",
     description: initialData?.description || "",
     img: initialData?.img || "",
-    rewardToken: initialData?.rewardToken || "",
+    tokenType: initialData?.rewardToken === zeroAddress ? 'native' : 'erc20',
+    rewardToken: initialData?.rewardToken === zeroAddress ? "" : (initialData?.rewardToken || ""),
     channelId: initialConfig?.channelId || "",
   });
 
   const [transactionHash, setTransactionHash] = useState<`0x${string}`>();
   const router = useRouter();
   const { toast } = useToast();
+  const { chain } = useAccount();
 
   const {
     isLoading: isConfirming,
@@ -52,6 +67,7 @@ export default function BoardForm({ initialData, onSubmit, mode, redirectPath = 
     try {
       const submitData = {
         ...formData,
+        rewardToken: formData.tokenType === 'native' ? zeroAddress : formData.rewardToken,
         config: JSON.stringify({
           channelId: formData.channelId
         })
@@ -168,17 +184,43 @@ export default function BoardForm({ initialData, onSubmit, mode, redirectPath = 
           </div>
         </div>
 
-        <div>
+        <div className="space-y-2">
           <label className="block text-sm font-medium text-purple-300 mb-2">
-            Reward Token Address (Optional)
+            Reward Token Type
           </label>
-          <Input
-            type="text"
-            value={formData.rewardToken}
-            onChange={(e) => setFormData({ ...formData, rewardToken: e.target.value })}
-            className="glass-input"
-            placeholder="Leave blank for ETH"
-          />
+          <div className="flex gap-4">
+            <Button
+              type="button"
+              variant={formData.tokenType === 'native' ? 'default' : 'outline'}
+              onClick={() => setFormData({ ...formData, tokenType: 'native', rewardToken: '' })}
+              className="flex-1"
+            >
+              Native Token ({getNativeTokenSymbol(chain)})
+            </Button>
+            <Button
+              type="button"
+              variant={formData.tokenType === 'erc20' ? 'default' : 'outline'}
+              onClick={() => setFormData({ ...formData, tokenType: 'erc20' })}
+              className="flex-1"
+            >
+              ERC20 Token
+            </Button>
+          </div>
+
+          {formData.tokenType === 'erc20' && (
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-purple-300 mb-2">
+                ERC20 Token Address
+              </label>
+              <Input
+                type="text"
+                value={formData.rewardToken}
+                onChange={(e) => setFormData({ ...formData, rewardToken: e.target.value })}
+                className="glass-input"
+                placeholder="Enter ERC20 token contract address"
+              />
+            </div>
+          )}
         </div>
 
         <div>

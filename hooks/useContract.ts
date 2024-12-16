@@ -21,9 +21,18 @@ import type {
   SelfCheckParams,
 } from "@/types/types";
 import contractAddress from "@/constants/contract-address";
+import userProfileAbi from "@/constants/UserProfile.json";
+import { getNativeTokenSymbol } from "@/utils/chain";
+
+// 添加通用的 UserProfile 合约地址获取函数
+function getUserProfileAddress(chain?: { name: string }) {
+  return contractAddress.UserProfile[
+    (chain?.name || 'Linea Sepolia Testnet') as keyof typeof contractAddress.UserProfile
+  ] as `0x${string}`;
+}
 
 // 通用合约函数调用 hook
-export function useContractFunction(functionName: string) {
+export function useBountyBoardFunction(functionName: string) {
   const { writeContractAsync } = useWriteContract();
   const { toast } = useToast();
   const { chain } = useAccount();
@@ -61,7 +70,7 @@ export function useContractFunction(functionName: string) {
 
 // 创建板块
 export function useCreateBoard() {
-  const contractFunction = useContractFunction("createBountyBoard");
+  const contractFunction = useBountyBoardFunction("createBountyBoard");
 
   return ({ name, description, img, rewardToken, config }: CreateBoardParams) => {
     if (!rewardToken) {
@@ -76,7 +85,7 @@ export function useCreateBoard() {
 
 // 创建任务
 export function useCreateTask() {
-  const contractFunction = useContractFunction("createTask");
+  const contractFunction = useBountyBoardFunction("createTask");
 
   return ({
     boardId,
@@ -104,7 +113,7 @@ export function useCreateTask() {
 
 // 更新任务
 export function useUpdateTask() {
-  const contractFunction = useContractFunction("updateTask");
+  const contractFunction = useBountyBoardFunction("updateTask");
 
   return ({
     boardId,
@@ -134,7 +143,7 @@ export function useUpdateTask() {
 
 // 提交证明
 export function useSubmitProof() {
-  const contractFunction = useContractFunction("submitProof");
+  const contractFunction = useBountyBoardFunction("submitProof");
 
   return ({ boardId, taskId, proof }: SubmitProofParams) => {
     return contractFunction([boardId, taskId, proof]);
@@ -143,7 +152,7 @@ export function useSubmitProof() {
 
 // 审核提交
 export function useReviewSubmission() {
-  const contractFunction = useContractFunction("reviewSubmission");
+  const contractFunction = useBountyBoardFunction("reviewSubmission");
 
   return ({
     boardId,
@@ -161,7 +170,7 @@ export function useReviewSubmission() {
 
 // 自检提交
 export function useSelfCheckSubmission() {
-  const contractFunction = useContractFunction('selfCheckSubmission');
+  const contractFunction = useBountyBoardFunction('selfCheckSubmission');
 
   return async ({
     boardId,
@@ -181,7 +190,7 @@ export function useSelfCheckSubmission() {
 
 // 添加审核员
 export function useAddReviewerToTask() {
-  const contractFunction = useContractFunction("addReviewerToTask");
+  const contractFunction = useBountyBoardFunction("addReviewerToTask");
 
   return ({ boardId, taskId, reviewer }: AddReviewerParams) => {
     return contractFunction([boardId, taskId, reviewer]);
@@ -190,7 +199,7 @@ export function useAddReviewerToTask() {
 
 // 自行检查
 export function useSelfCheck() {
-  const contractFunction = useContractFunction("selfCheck");
+  const contractFunction = useBountyBoardFunction("selfCheck");
 
   return ({ boardId, taskId, checkData, signature }: SelfCheckParams) => {
     return contractFunction([boardId, taskId, checkData, signature]);
@@ -199,7 +208,7 @@ export function useSelfCheck() {
 
 // 取消任务
 export function useCancelTask() {
-  const contractFunction = useContractFunction("cancelTask");
+  const contractFunction = useBountyBoardFunction("cancelTask");
 
   return ({ boardId, taskId }: { boardId: bigint; taskId: bigint }) => {
     return contractFunction([boardId, taskId]);
@@ -248,7 +257,7 @@ export function usePledgeTokens(tokenAddress: `0x${string}`) {
     args: [address as `0x${string}`, bountyBoardAddress],
   });
   const { toast } = useToast();
-  const contractFunction = useContractFunction("pledgeTokens");
+  const contractFunction = useBountyBoardFunction("pledgeTokens");
 
   return async ({ boardId, amount }: PledgeTokensParams) => {
     await refetch();
@@ -265,7 +274,7 @@ export function usePledgeTokens(tokenAddress: `0x${string}`) {
       toast({
         title: "Warning",
         description:
-          "You are pledging ETH, please confirm the transaction in your wallet.",
+          "You are pledging native token, please confirm the transaction in your wallet.",
       });
       return await contractFunction([boardId, formatAmount], formatAmount);
     }
@@ -275,7 +284,7 @@ export function usePledgeTokens(tokenAddress: `0x${string}`) {
 
 // 加入赏金板
 export function useJoinBoard() {
-  const contractFunction = useContractFunction("joinBoard");
+  const contractFunction = useBountyBoardFunction("joinBoard");
 
   return ({ boardId }: { boardId: bigint }) => {
     return contractFunction([boardId]);
@@ -284,7 +293,7 @@ export function useJoinBoard() {
 
 // 添加审核员
 export function useAddReviewerToBounty() {
-  const contractFunction = useContractFunction("addReviewerToBounty");
+  const contractFunction = useBountyBoardFunction("addReviewerToBounty");
 
   return ({
     boardId,
@@ -301,7 +310,7 @@ export function useAddReviewerToBounty() {
 
 // 取消赏金任务
 export function useCancelBounty() {
-  const contractFunction = useContractFunction("cancelBounty");
+  const contractFunction = useBountyBoardFunction("cancelBounty");
 
   return ({ boardId, bountyId }: { boardId: bigint; bountyId: bigint }) => {
     return contractFunction([boardId, bountyId]);
@@ -310,7 +319,7 @@ export function useCancelBounty() {
 
 // 关闭赏金板
 export function useCloseBoard() {
-  const contractFunction = useContractFunction("closeBoard");
+  const contractFunction = useBountyBoardFunction("closeBoard");
 
   return ({ boardId }: { boardId: bigint }) => {
     return contractFunction([boardId]);
@@ -319,7 +328,7 @@ export function useCloseBoard() {
 
 // 提取质押代币
 export function useWithdrawPledgedTokens() {
-  const contractFunction = useContractFunction("withdrawPledgedTokens");
+  const contractFunction = useBountyBoardFunction("withdrawPledgedTokens");
 
   return ({ boardId }: { boardId: bigint }) => {
     return contractFunction([boardId]);
@@ -328,7 +337,7 @@ export function useWithdrawPledgedTokens() {
 
 // 更新赏金板
 export function useUpdateBountyBoard() {
-  const contractFunction = useContractFunction("updateBountyBoard");
+  const contractFunction = useBountyBoardFunction("updateBountyBoard");
 
   return ({
     id,
@@ -436,5 +445,90 @@ export function useGetBoardsByMember(address?: `0x${string}`) {
     query: {
       enabled: !!address
     }
+  });
+}
+
+// 设置个人资料
+export function useSetProfile() {
+  const { chain } = useAccount();
+  const { toast } = useToast();
+  const { writeContractAsync } = useWriteContract();
+  const userProfileAddress = getUserProfileAddress(chain);
+
+  return async ({
+    nickname,
+    avatar,
+    socialAccount,
+    signature
+  }: {
+    nickname: string;
+    avatar: string;
+    socialAccount: string;
+    signature: `0x${string}`;
+  }) => {
+    try {
+      toast({
+        title: "Notification",
+        description: "Please confirm the transaction in your wallet.",
+      });
+
+      console.log("setProfile", nickname, avatar, socialAccount, signature, userProfileAddress);
+
+
+      const hash = await writeContractAsync({
+        address: userProfileAddress,
+        abi: userProfileAbi,
+        functionName: "setProfile",
+        args: [nickname, avatar, socialAccount, signature],
+      });
+      return { hash };
+    } catch (error) {
+      console.error("Profile update error:", error);
+      throw error;
+    }
+  };
+}
+
+// 获取个人资料
+export function useGetProfile(address?: `0x${string}`) {
+  const { chain } = useAccount();
+  const userProfileAddress = getUserProfileAddress(chain);
+
+  return useReadContract<typeof userProfileAbi, "getProfile", [string, string, string, bigint]>({
+    address: userProfileAddress,
+    abi: userProfileAbi,
+    functionName: "getProfile",
+    args: address ? [address] : undefined,
+    query: {
+      enabled: !!address,
+    }
+  });
+}
+
+// 批量获取个人资料
+export function useGetProfiles(addresses?: `0x${string}`[]) {
+  const { chain } = useAccount();
+  const userProfileAddress = getUserProfileAddress(chain);
+
+  return useReadContract<typeof userProfileAbi, "getProfiles", [string[], string[], string[], bigint[], boolean[]]>({
+    address: userProfileAddress,
+    abi: userProfileAbi,
+    functionName: "getProfiles",
+    args: addresses ? [addresses] : undefined,
+    query: {
+      enabled: !!addresses?.length,
+    }
+  });
+}
+
+// 获取所有用户
+export function useGetAllUsers() {
+  const { chain } = useAccount();
+  const userProfileAddress = getUserProfileAddress(chain);
+
+  return useReadContract<typeof userProfileAbi, "getAllUsers", `0x${string}`[]>({
+    address: userProfileAddress,
+    abi: userProfileAbi,
+    functionName: "getAllUsers",
   });
 }

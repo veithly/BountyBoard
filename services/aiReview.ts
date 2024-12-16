@@ -111,12 +111,20 @@ ${fileContents.join('\n\n')}`;
 
           case 'Contract Verification':
             if (proofData.contract) {
-              const network = taskConfig?.contractNetwork || 'Linea';
+              const network = taskConfig?.contractNetwork || 'Mantle';
 
               let apiUrl = '';
               let apiKey = '';
 
               switch (network) {
+                case 'Mantle':
+                  apiUrl = 'https://api.mantlescan.xyz/api';
+                  apiKey = process.env.MANTLESCAN_API_KEY || '';
+                  break;
+                case 'Mantle Sepolia':
+                  apiUrl = 'https://api-sepolia.mantlescan.xyz/api';
+                  apiKey = process.env.MANTLESCAN_API_KEY || '';
+                  break;
                 case 'Linea':
                   apiUrl = 'https://api.lineascan.build/api';
                   apiKey = process.env.LINEASCAN_API_KEY || '';
@@ -136,7 +144,7 @@ ${fileContents.join('\n\n')}`;
               }
 
               const response = await fetch(
-                `${apiUrl}?module=contract&action=getsourcecode&address=${proofData.contract}&apikey=${apiKey}`
+                `${apiUrl}?module=contract&action=getsourcecode&address=${proofData.contract}&apikey=${apiKey || ''}`
               );
               const data = await response.json();
 
@@ -187,64 +195,73 @@ ${fileContents.join('\n\n')}`;
 
   private async callAIAPI(content: string, taskName: string, taskDescription: string, aiReviewPrompt: string, boardConfig?: BoardConfig): Promise<{ approved: boolean, reviewComment: string }> {
     try {
-      // 调用AI代理服务进行审核
-      const aiResponse = await fetch(elizaAgentUrl, {
+      const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
+      const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+
+      // 构建结构化的提示词
+      const prompt = {
+        task_info: {
+          name: taskName,
+          description: taskDescription,
+          review_prompt: aiReviewPrompt
+        },
+        submission_content: content,
+        review_instructions: "Review the submission and return a JSON object WITHOUT markdown formatting. The response must be a valid JSON object with the following structure: { decision: 'APPROVED' or 'REJECTED', comment: 'explanation', confidence_score: number between 0 and 1 }",
+        example_response: {
+          decision: "APPROVED",
+          comment: "The submission meets all requirements",
+          confidence_score: 0.95
+        }
+      };
+
+      const response = await fetch(`${GEMINI_API_URL}?key=${GOOGLE_API_KEY}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          roomId: stringToUuid(boardConfig?.channelId + "-" + elizaAgentId),
-          userId: stringToUuid(elizaAgentUserId),
-          userName: "reviewer",
-          content: {
-            text: `Please review the following submission and respond with either 'APPROVED' or 'REJECTED' followed by your review comment:
-Task Name: ${taskName}
-Task Description: ${taskDescription}
-Review Prompt: ${aiReviewPrompt}
-Submission Content: ${content}`,
-            attachments: [],
-            source: "direct",
-          }
-        }),
+          contents: [{
+            parts: [{
+              text: JSON.stringify(prompt)
+            }]
+          }]
+        })
       });
 
-      if (!aiResponse.ok) {
-        const errorDetails = await aiResponse.json();
-        throw new Error(errorDetails.error || 'Failed to get AI review response');
+      if (!response.ok) {
+        throw new Error('Failed to get Gemini API response');
       }
 
-      // 读取流式响应
-      const reader = aiResponse.body?.getReader();
-      let aiContent = '';
+      const data = await response.json();
+      let result = data.candidates[0].content.parts[0].text;
 
-      if (reader) {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          const chunk = new TextDecoder().decode(value);
-          aiContent += chunk;
-        }
+      // 清理响应文本，移除可能的 markdown 标记
+      result = result.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+
+      try {
+        const parsedResult = JSON.parse(result);
+        const isApproved = parsedResult.decision === 'APPROVED';
+
+        return {
+          approved: isApproved,
+          reviewComment: parsedResult.comment || (isApproved ? 'Approved' : 'Rejected')
+        };
+      } catch (error) {
+        console.error('Error parsing Gemini response:', error);
+        console.log('Raw response:', result);
+
+        // 如果解析失败，尝试使用简单的文本匹配
+        const isApproved = result.toLowerCase().includes('approved');
+        const comment = result.split('\n').find((line: string) =>
+          line.toLowerCase().includes('comment') ||
+          line.toLowerCase().includes('explanation')
+        ) || 'Review completed';
+
+        return {
+          approved: isApproved,
+          reviewComment: comment.replace(/^[^:]*:\s*/, '').trim()
+        };
       }
-
-      const lowerContent = aiContent.toLowerCase();
-      const isApproved = lowerContent.includes('approve') ||
-                        lowerContent.includes('approved') ||
-                        lowerContent.includes('accept') ||
-                        lowerContent.includes('accepted') ||
-                        lowerContent.includes('pass') ||
-                        lowerContent.includes('passed');
-
-      const reviewComment = JSON.parse(aiContent)[0].text;
-
-      console.log('Review Comment:', reviewComment, isApproved);
-
-
-      return {
-        approved: isApproved,
-        reviewComment: reviewComment
-      };
-
     } catch (error) {
       console.error('Error in AI review:', error);
       return {

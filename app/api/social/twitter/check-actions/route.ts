@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { Client } from "twitter-api-sdk";
+import { decryptData } from '@/utils/encryption-server';
 
 // Define simplified types instead of using Components
 type User = {
@@ -30,22 +31,29 @@ const getTwitterClient = () => {
   return new Client(process.env.TWITTER_BEARER_TOKEN);
 };
 
-export async function GET(req: Request) {
+export async function POST(req: Request) {
   try {
-    const userId = req.headers.get('X-User-Id');
-    const targetUserId = req.headers.get('X-Target-User');
-    const tweetId = req.headers.get('X-Tweet-Id');
-    const action = req.headers.get('X-Action-Type');
+    const { encryptedTokens, action, targetUser, tweetId, userId } = await req.json();
 
-    if (!userId || !action) {
+    if (!encryptedTokens || !action || !userId) {
       return NextResponse.json(
         { error: "Missing required parameters" },
         { status: 400 }
       );
     }
 
-    const client = getTwitterClient();
+    // 使用服务器端解密
+    const decryptedTokens = JSON.parse(decryptData(encryptedTokens));
+    const accessToken = decryptedTokens.xAccessToken;
 
+    if (!accessToken) {
+      return NextResponse.json(
+        { error: "Invalid access token" },
+        { status: 401 }
+      );
+    }
+
+    const client = getTwitterClient();
     let result = { verified: false };
 
     switch (action) {
@@ -57,7 +65,7 @@ export async function GET(req: Request) {
           });
 
           result.verified = following.data?.some((user: User) =>
-            user.username?.toLowerCase() === targetUserId?.toLowerCase()
+            user.username?.toLowerCase() === targetUser?.toLowerCase()
           ) || false;
         } catch (error: any) {
           console.error('Follow check error:', error);
@@ -128,10 +136,10 @@ export async function GET(req: Request) {
 
     return NextResponse.json({ verified: true });//result);
 
-  } catch (error) {
-    console.error("Twitter action verification error:", error);
+  } catch (error: any) {
+    console.error('错误:', error);
     return NextResponse.json(
-      { error: "Failed to verify Twitter action" },
+      { error: "Failed to process request", details: error.message },
       { status: 500 }
     );
   }

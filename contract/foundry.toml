@@ -10,3 +10,4 @@ linea-sepolia = "${RPC_URL_LINEA}"
 
 [etherscan]
 linea-sepolia = { key = "${LINEASCAN_API_KEY}", url = "https://api-sepolia.lineascan.build/api" }
+mantle-sepolia = { key = "", url = "https://explorer.sepolia.mantle.xyz/api" }

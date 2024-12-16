@@ -1,15 +1,14 @@
 'use client';
 
-import { useAccount } from 'wagmi';
-import { useGetBoardsByMember } from '@/hooks/useContract';
+import { useMemo } from "react";
+import { Button } from "@/components/ui/button";
+import { useGetBoardsByMember, useGetProfiles } from '@/hooks/useContract';
 import BoardCard from '@/components/BoardCard';
 import BoardsPageSkeleton from "@/components/BoardsPageSkeleton";
 import { BoardView } from '@/types/types';
-import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useAddressProfiles } from "@/hooks/useAddressProfiles";
-import { useMemo } from 'react';
+import { useAccount } from 'wagmi';
 
 export default function JoinedBoardsPage() {
   const router = useRouter();
@@ -19,11 +18,26 @@ export default function JoinedBoardsPage() {
   // 获取所有创建者地址
   const creatorAddresses = useMemo(() => {
     if (!boardsData || !Array.isArray(boardsData)) return [];
-    return boardsData.map((board: BoardView) => board.creator);
+    return boardsData.map((board: BoardView) => board.creator as `0x${string}`);
   }, [boardsData]);
 
   // 批量获取创建者资料
-  const creatorProfiles = useAddressProfiles(creatorAddresses);
+  const { data: profilesData } = useGetProfiles(creatorAddresses);
+
+  // 将资料数据转换为映射格式
+  const creatorProfiles = useMemo(() => {
+    if (!profilesData || !Array.isArray(profilesData)) return {};
+
+    const [nicknames, avatars, socialAccounts, _, __] = profilesData;
+    return creatorAddresses.reduce((acc, address, index) => {
+      acc[address.toLowerCase()] = {
+        nickname: nicknames[index],
+        avatar: avatars[index],
+        socialAccount: socialAccounts[index]
+      };
+      return acc;
+    }, {} as Record<string, { nickname: string; avatar: string; socialAccount: string }>);
+  }, [profilesData, creatorAddresses]);
 
   // 如果未连接钱包，显示提示信息
   if (!address) {

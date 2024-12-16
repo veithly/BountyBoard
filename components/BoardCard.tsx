@@ -9,6 +9,8 @@ import { BoardView } from '@/types/types';
 import { formatUnits, zeroAddress } from 'viem';
 import { Address } from './ui/Address';
 import { User2, Calendar, Coins } from 'lucide-react';
+import { getNativeTokenSymbol } from '@/utils/chain';
+import { useAccount } from 'wagmi';
 
 export default function BoardCard({
   board,
@@ -20,6 +22,7 @@ export default function BoardCard({
     avatar: string;
   }
 }) {
+  const { chain } = useAccount();
   const { data: tokenSymbol } = useTokenSymbol(board.rewardToken);
 
   return (
@@ -74,7 +77,7 @@ export default function BoardCard({
             <div className="flex items-center gap-1 flex-shrink-0">
               <Coins className="h-4 w-4" />
               <span className="truncate">
-                {formatUnits(board.totalPledged, 18)} {tokenSymbol ?? ((board.rewardToken === zeroAddress && 'ETH') || '')}
+                {formatUnits(board.totalPledged, 18)} {tokenSymbol ?? ((board.rewardToken === zeroAddress && getNativeTokenSymbol(chain)) || '')}
               </span>
             </div>
           </div>
