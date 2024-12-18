@@ -27,7 +27,7 @@ import { getNativeTokenSymbol } from "@/utils/chain";
 // 添加通用的 UserProfile 合约地址获取函数
 function getUserProfileAddress(chain?: { name: string }) {
   return contractAddress.UserProfile[
-    (chain?.name || 'Linea Sepolia Testnet') as keyof typeof contractAddress.UserProfile
+    (chain?.name || 'Mantle Sepolia Testnet') as keyof typeof contractAddress.UserProfile
   ] as `0x${string}`;
 }
 
@@ -378,7 +378,7 @@ export function useGetAllBoards() {
   const { chain } = useAccount();
 
   const bountyBoardAddress = contractAddress.BountyBoard[
-    (chain?.name || 'Linea Sepolia Testnet') as keyof typeof contractAddress.BountyBoard
+    (chain?.name || 'Mantle Sepolia Testnet') as keyof typeof contractAddress.BountyBoard
   ] as `0x${string}`;
 
   return useReadContract<typeof abi, "getAllBoards", BoardView[]>({
@@ -395,7 +395,7 @@ export function useGetBoardDetail(boardId: bigint) {
   const { chain, address } = useAccount();
 
   const bountyBoardAddress = contractAddress.BountyBoard[
-    (chain?.name || 'Linea Sepolia Testnet') as keyof typeof contractAddress.BountyBoard
+    (chain?.name || 'Mantle Sepolia Testnet') as keyof typeof contractAddress.BountyBoard
   ] as `0x${string}`;
 
   return useReadContract<typeof abi, "getBoardDetail", [BoardDetailView]>({
