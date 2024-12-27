@@ -65,8 +65,6 @@ export default function SubmissionDetailsModal({
   const { toast } = useToast();
   const reviewSubmission = useReviewSubmission();
 
-  console.log(submission, task);
-
   const {
     isLoading: isConfirming,
     isSuccess: isConfirmed,

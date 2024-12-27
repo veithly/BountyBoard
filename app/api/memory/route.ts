@@ -37,16 +37,6 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify(memory),
     });
 
-    console.log(elizaAgentUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(memory),
-    })
-
-    console.log(response);
-
     if (!response.ok) {
       const errorDetails = await response.json();
       throw new Error(errorDetails.error || 'Unknown error');

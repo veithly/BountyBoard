@@ -26,8 +26,9 @@ import { getNativeTokenSymbol } from "@/utils/chain";
 
 // 添加通用的 UserProfile 合约地址获取函数
 function getUserProfileAddress(chain?: { name: string }) {
+  console.log("chain?.name", chain?.name);
   return contractAddress.UserProfile[
-    (chain?.name || 'Mantle Sepolia Testnet') as keyof typeof contractAddress.UserProfile
+    (chain?.name || 'opBNB Testnet') as keyof typeof contractAddress.UserProfile
   ] as `0x${string}`;
 }
 

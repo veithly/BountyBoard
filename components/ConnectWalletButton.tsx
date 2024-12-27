@@ -29,7 +29,6 @@ const ConnectWallet: React.FC = () => {
 
   // 使用合约 hook 获取用户资料
   const { data: profileData, isError } = useGetProfile(address);
-  console.log(profileData);
 
   // 当合约数据更新时，更新本地状态
   useEffect(() => {

@@ -8,7 +8,11 @@ export const getNativeTokenSymbol = (chain?: Chain): string => {
       return 'ETH';
     case 137: // Polygon
       return 'MATIC';
-    case 56: // BSC
+    case 5611: // BSC
+      return 'BNB';
+    case 97: // BSC Testnet
+      return 'BNB';
+    case 204: // OPBNB Testnet
       return 'BNB';
     case 42161: // Arbitrum
       return 'ETH';

@@ -4,13 +4,14 @@ import { Input } from "./ui/input";
 import { useState, useEffect } from "react";
 import { useToast } from "./ui/use-toast";
 import { Loader2 } from "lucide-react";
-import { SiGithub, SiX, SiDiscord } from "@icons-pack/react-simple-icons";
+import { SiGithub, SiX, SiDiscord, SiTelegram } from "@icons-pack/react-simple-icons";
 import ImageUpload from "./ImageUpload";
 import { UserProfile, socialAccount } from "@/types/profile";
 import { signIn, useSession } from "next-auth/react";
 import { useUserStore } from "@/store/userStore";
 import { encryptData } from "@/utils/encryption";
 import { useSetProfile } from "@/hooks/useContract";
+import { useTelegramAuth } from '@/providers/TelegramAuthContext';
 
 interface ProfileSettingsModalProps {
   isOpen: boolean;
@@ -33,6 +34,7 @@ export default function ProfileSettingsModal({
   const { data: session } = useSession();
   const { setSocialAccounts, socialAccounts } = useUserStore();
   const setProfileContract = useSetProfile();
+  const { userID: telegramUserId, username: telegramUsername, isInitialized } = useTelegramAuth();
 
   // 保存表单数据到 localStorage
   const saveFormData = (data: any) => {
@@ -61,6 +63,8 @@ export default function ProfileSettingsModal({
       xAccessToken: "",
       discordAccessToken: "",
       githubAccessToken: "",
+      telegramUsername: "",
+      telegramUserId: "",
     },
   });
 
@@ -97,6 +101,8 @@ export default function ProfileSettingsModal({
             xAccessToken: "",
             discordAccessToken: "",
             githubAccessToken: "",
+            telegramUsername: "",
+            telegramUserId: "",
           },
         });
         localStorage.removeItem("profileFormData");
@@ -115,6 +121,8 @@ export default function ProfileSettingsModal({
           discordAccessToken: "",
           githubAccessToken: "",
           encryptedTokens: "",
+          telegramUsername: "",
+          telegramUserId: "",
         };
 
         try {
@@ -212,12 +220,6 @@ export default function ProfileSettingsModal({
       ? JSON.parse(savedVerificationInfo)
       : null;
 
-    console.log("Verification check:", {
-      session,
-      isOpen,
-      verificationInfo,
-    });
-
     if (
       session &&
       verificationInfo?.modalType === "profile" &&
@@ -245,7 +247,6 @@ export default function ProfileSettingsModal({
           );
 
           const data = await response.json();
-          console.log("Verification response:", data);
 
           if (data) {
             const socialInfo = getSocialAccountInfo(
@@ -253,8 +254,6 @@ export default function ProfileSettingsModal({
               data,
               (session as any).accessToken
             );
-            console.log("Social info:", socialInfo);
-
             const newFormData = {
               ...savedData,
               socialAccounts: {
@@ -301,6 +300,21 @@ export default function ProfileSettingsModal({
     };
   }, [isOpen]);
 
+  useEffect(() => {
+    if (isInitialized && telegramUserId && telegramUsername) {
+      const newFormData = {
+        ...formData,
+        socialAccounts: {
+          ...formData.socialAccounts,
+          telegramUsername,
+          telegramUserId: telegramUserId.toString(),
+        },
+      };
+      setFormData(newFormData);
+      saveFormData(newFormData);
+    }
+  }, [isInitialized, telegramUserId, telegramUsername]);
+
   const handleSubmit = async () => {
     try {
       setIsSubmitting(true);
@@ -316,6 +330,8 @@ export default function ProfileSettingsModal({
         githubUserName: formData.socialAccounts.githubUserName,
         githubName: formData.socialAccounts.githubName,
         githubId: formData.socialAccounts.githubId,
+        telegramUsername: formData.socialAccounts.telegramUsername,
+        telegramUserId: formData.socialAccounts.telegramUserId,
       };
 
       // 使用 AES 加密敏感数据
@@ -327,9 +343,6 @@ export default function ProfileSettingsModal({
 
       const encryptedSensitiveData = await encryptData(JSON.stringify(sensitiveData));
 
-      console.log("Encrypted sensitive data:", encryptedSensitiveData);
-
-      // 组合公开数据和加密后的敏感数据
       const socialAccountData = {
         ...publicSocialAccounts,
         encryptedTokens: encryptedSensitiveData,
@@ -445,6 +458,17 @@ export default function ProfileSettingsModal({
                 {formData.socialAccounts.githubUserName
                   ? formData.socialAccounts.githubName
                   : "Verify GitHub"}
+              </Button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={!isInitialized}
+              >
+                <SiTelegram className="mr-2 h-4 w-4" />
+                {formData.socialAccounts.telegramUsername
+                  ? formData.socialAccounts.telegramUsername
+                  : "Verify Telegram"}
               </Button>
             </div>
           </div>
