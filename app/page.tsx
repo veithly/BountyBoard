@@ -110,20 +110,20 @@ export default function HomePage() {
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-background" />
         <div className="relative container mx-auto h-full flex flex-col items-center justify-center text-center px-4">
-          <h1 className="text-6xl font-bold mb-6 glow-text animate-fade-in">
+          <h1 className="text-4xl md:text-6xl font-bold mb-4 md:mb-6 glow-text animate-fade-in">
             Welcome to Bounty Board
           </h1>
-          <p className="text-xl text-purple-200/90 max-w-3xl mb-8 animate-fade-in-delay">
+          <p className="text-base md:text-xl text-purple-200/90 max-w-3xl mb-6 md:mb-8 animate-fade-in-delay">
             A Web3-native platform revolutionizing community engagement and task
             management. Create, manage, and participate in bounty tasks with
             transparency and efficiency.
           </p>
-          <div className="flex gap-6 mt-4">
+          <div className="flex flex-col sm:flex-row gap-4 mt-4">
             <Link
               href="/boards"
-              className="neon-button-primary group animate-fade-in-delay-2"
+              className="w-full sm:w-auto neon-button-primary group animate-fade-in-delay-2"
             >
-              <span className="relative z-10 flex items-center">
+              <span className="relative z-10 flex items-center justify-center">
                 Explore Boards
                 <svg
                   className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform"
@@ -143,9 +143,9 @@ export default function HomePage() {
             <button
               type="button"
               onClick={handleCreateBoard}
-              className="neon-button-secondary group animate-fade-in-delay-2"
+              className="w-full sm:w-auto neon-button-secondary group animate-fade-in-delay-2"
             >
-              <span className="relative z-10 flex items-center">
+              <span className="relative z-10 flex items-center justify-center">
                 Create Board
                 <svg
                   className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform"
@@ -167,14 +167,14 @@ export default function HomePage() {
       </div>
 
       {/* Use Cases Section */}
-      <div className="bg-black/30 backdrop-blur-sm py-20">
+      <div className="bg-black/30 backdrop-blur-sm py-12 md:py-20">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 gap-8">
+          <div className="grid grid-cols-1 gap-6 md:gap-8">
             {USE_CASES.map((useCase, index) => (
-              <div key={index} className="glass-card p-8 rounded-2xl">
-                <div className={`flex flex-col ${useCase.reverse ? 'md:flex-row-reverse' : 'md:flex-row'} gap-8 items-center`}>
+              <div key={index} className="glass-card p-4 md:p-8 rounded-2xl">
+                <div className={`flex flex-col ${useCase.reverse ? 'md:flex-row-reverse' : 'md:flex-row'} gap-6 md:gap-8 items-center`}>
                   <div className="w-full md:w-1/2">
-                    <div className="relative aspect-square max-w-[270px] mx-auto">
+                    <div className="relative aspect-square max-w-[200px] md:max-w-[270px] mx-auto">
                       <Image
                         src={useCase.image}
                         alt={useCase.title}
@@ -183,13 +183,13 @@ export default function HomePage() {
                       />
                     </div>
                   </div>
-                  <div className="w-full md:w-1/2 space-y-4">
-                    <h3 className="text-3xl font-bold text-purple-300">
+                  <div className="w-full md:w-1/2 space-y-3 md:space-y-4">
+                    <h3 className="text-2xl md:text-3xl font-bold text-purple-300">
                       {useCase.title}
                     </h3>
-                    <div className="space-y-4 text-gray-400">
-                      <p>{useCase.description}</p>
-                      <ul className="list-disc list-inside space-y-2">
+                    <div className="space-y-3 md:space-y-4 text-gray-400">
+                      <p className="text-sm md:text-base">{useCase.description}</p>
+                      <ul className="list-disc list-inside space-y-1 md:space-y-2 text-sm md:text-base">
                         {useCase.features.map((feature, featureIndex) => (
                           <li key={featureIndex}>{feature}</li>
                         ))}
@@ -204,17 +204,17 @@ export default function HomePage() {
       </div>
 
       {/* Features Section */}
-      <div className="container mx-auto px-4 py-20">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div className="container mx-auto px-4 py-12 md:py-20">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8">
           {FEATURES.map((feature, index) => (
-            <div key={index} className="glass-card p-8 rounded-2xl">
-              <div className="h-16 w-16 mx-auto mb-6 bg-gradient-to-br from-purple-500 to-purple-700 rounded-2xl flex items-center justify-center">
-                <feature.icon className="h-8 w-8 text-white" />
+            <div key={index} className="glass-card p-4 md:p-8 rounded-2xl">
+              <div className="h-12 w-12 md:h-16 md:w-16 mx-auto mb-4 md:mb-6 bg-gradient-to-br from-purple-500 to-purple-700 rounded-2xl flex items-center justify-center">
+                <feature.icon className="h-6 w-6 md:h-8 md:w-8 text-white" />
               </div>
-              <h2 className="text-2xl font-bold mb-4 text-purple-300">
+              <h2 className="text-xl md:text-2xl font-bold mb-3 md:mb-4 text-purple-300">
                 {feature.title}
               </h2>
-              <p className="text-gray-400">
+              <p className="text-sm md:text-base text-gray-400">
                 {feature.description}
               </p>
             </div>
@@ -223,7 +223,7 @@ export default function HomePage() {
       </div>
 
       {/* Footer */}
-      <footer className="mt-auto py-6 text-center text-sm text-gray-400">
+      <footer className="mt-auto py-4 md:py-6 text-center text-xs md:text-sm text-gray-400">
         <p>© 2024 Bounty Board. All rights reserved.</p>
       </footer>
     </div>

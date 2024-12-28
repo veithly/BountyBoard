@@ -1,40 +1,51 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { useAccount } from 'wagmi';
-import { useEffect, useState } from 'react';
 
-export default function Navigation() {
+interface NavigationProps {
+  mobile?: boolean;
+  onClose?: () => void;
+}
+
+export default function Navigation({ mobile, onClose }: NavigationProps) {
   const pathname = usePathname();
-  const { address } = useAccount();
-  const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const navItems = [
-    { name: 'Home', path: '/' },
-    { name: 'Public Boards', path: '/boards' },
-    ...(mounted && address ? [{ name: 'Joined Boards', path: '/boards/joined' }] : [])
+  const links = [
+    { href: '/boards', label: 'All Boards' },
+    { href: '/boards/joined', label: 'My Boards' },
+    { href: '/boards/create', label: 'Create Board' },
   ];
 
+  const NavLink = ({ href, label }: { href: string; label: string }) => {
+    const isActive = pathname === href;
+
+    return (
+      <Link
+        href={href}
+        onClick={onClose}
+        className={cn(
+          "relative px-3 py-2 transition-colors hover:text-purple-300",
+          mobile ? "block w-full text-left text-base" : "text-sm",
+          isActive
+            ? "text-purple-300 font-medium"
+            : "text-muted-foreground hover:text-purple-300"
+        )}
+      >
+        {label}
+        {isActive && (
+          <span className="absolute inset-x-1 -bottom-px h-px bg-gradient-to-r from-purple-500/0 via-purple-500/70 to-purple-500/0" />
+        )}
+      </Link>
+    );
+  };
+
   return (
-    <nav className="flex space-x-6 ml-8">
-      {navItems.map((item) => (
-        <Link
-          key={item.path}
-          href={item.path}
-          className={cn(
-            "relative px-4 py-2 text-sm font-medium transition-all duration-300",
-            "hover:text-purple-400",
-            pathname === item.path ?
-              "text-purple-400 after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-gradient-to-r after:from-purple-400 after:to-purple-600" :
-              "text-gray-400"
-          )}
-        >
-          {item.name}
-        </Link>
+    <nav className={cn(
+      "flex",
+      mobile ? "flex-col space-y-2" : "items-center space-x-4"
+    )}>
+      {links.map((link) => (
+        <NavLink key={link.href} {...link} />
       ))}
     </nav>
   );

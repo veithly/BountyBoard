@@ -24,17 +24,20 @@ export const TelegramAuthProvider = ({
 
   useEffect(() => {
     // Ensure this code only runs on the client side
-    if (typeof window !== 'undefined' && WebApp) {
+    if (typeof window !== 'undefined') {
       try {
-        WebApp.isVerticalSwipesEnabled = false;
-        setWindowHeight(WebApp.viewportStableHeight || window.innerHeight);
-        WebApp.ready();
+        // Check if we're in a Telegram WebApp environment
+        if ('Telegram' in window && WebApp) {
+          WebApp.isVerticalSwipesEnabled = false;
+          setWindowHeight(WebApp.viewportStableHeight || window.innerHeight);
+          WebApp.ready();
 
-        // Set Telegram user data
-        const user = WebApp.initDataUnsafe.user;
-        if (user) {
-          setUserID(user.id || null);
-          setUsername(user.username || null);
+          // Set Telegram user data
+          const user = WebApp.initDataUnsafe.user;
+          if (user) {
+            setUserID(user.id || null);
+            setUsername(user.username || null);
+          }
         }
       } catch (error) {
         console.error('Failed to initialize Telegram WebApp:', error);

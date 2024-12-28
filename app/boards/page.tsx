@@ -44,15 +44,15 @@ export default function HomePage() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-200 to-purple-400 bg-clip-text text-transparent">
+    <div className="container mx-auto p-4 md:p-6 space-y-4 md:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-purple-200 to-purple-400 bg-clip-text text-transparent">
           All Boards
         </h1>
         {address && (
           <Button
             onClick={() => router.push('/boards/create')}
-            className="bg-purple-500/20 text-purple-100 hover:bg-purple-500/30 backdrop-blur-sm"
+            className="w-full sm:w-auto bg-purple-500/20 text-purple-100 hover:bg-purple-500/30 backdrop-blur-sm"
           >
             <Plus className="mr-2 h-4 w-4" />
             Create Board
@@ -60,7 +60,7 @@ export default function HomePage() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         {Array.isArray(boardsData) && boardsData.map((board: BoardView) => (
           <BoardCard
             key={board.id.toString()}

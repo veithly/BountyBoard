@@ -11,20 +11,24 @@ export interface AttestationData {
   signature: Uint8Array;
 }
 
-export interface socialAccount {
-  xUserName: string;
-  xName: string;
-  xId: string;
-  discordUserName: string;
-  discordName: string;
-  discordId: string;
-  githubUserName: string;
-  githubName: string;
-  githubId: string;
-  xAccessToken: string;
-  discordAccessToken: string;
-  githubAccessToken: string;
-  encryptedTokens: string;
-  telegramUsername: string;
-  telegramUserId: string;
+export interface SocialAccount {
+  twitter?: string;
+  discord?: string;
+  github?: string;
+  telegram?: string;
+  xUserName?: string;
+  xName?: string;
+  xId?: string;
+  discordUserName?: string;
+  discordName?: string;
+  discordId?: string;
+  githubUserName?: string;
+  githubName?: string;
+  githubId?: string;
+  xAccessToken?: string;
+  discordAccessToken?: string;
+  githubAccessToken?: string;
+  encryptedTokens?: string;
+  telegramUsername?: string;
+  telegramUserId?: string;
 }

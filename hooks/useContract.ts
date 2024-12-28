@@ -24,9 +24,7 @@ import contractAddress from "@/constants/contract-address";
 import userProfileAbi from "@/constants/UserProfile.json";
 import { getNativeTokenSymbol } from "@/utils/chain";
 
-// 添加通用的 UserProfile 合约地址获取函数
 function getUserProfileAddress(chain?: { name: string }) {
-  console.log("chain?.name", chain?.name);
   return contractAddress.UserProfile[
     (chain?.name || 'opBNB Testnet') as keyof typeof contractAddress.UserProfile
   ] as `0x${string}`;
@@ -532,4 +530,42 @@ export function useGetAllUsers() {
     abi: userProfileAbi,
     functionName: "getAllUsers",
   });
+}
+
+// 更新用户资料
+export function useUpdateProfile() {
+  const { writeContractAsync } = useWriteContract();
+  const { toast } = useToast();
+  const { chain } = useAccount();
+  const userProfileAddress = getUserProfileAddress(chain);
+
+  const updateProfile = async (args: [string, string, string, `0x${string}`]) => {
+    try {
+      toast({
+        title: "Notification",
+        description: "Please confirm the transaction in your wallet.",
+      });
+
+      console.log("userProfileAddress", userProfileAddress);
+      console.log("setProfile args:", args);
+
+      const hash = await writeContractAsync({
+        address: userProfileAddress,
+        abi: userProfileAbi,
+        functionName: "setProfile",
+        args,
+      });
+
+      return hash;
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message,
+      });
+      throw error;
+    }
+  };
+
+  return updateProfile;
 }
