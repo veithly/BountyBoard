@@ -4,8 +4,9 @@ import { useCreateBoard } from "@/hooks/useContract";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import BoardForm from "@/components/BoardForm";
+import { Suspense } from "react";
 
-export default function CreateBoardPage() {
+function CreateBoardPageInner() {
   const createBoard = useCreateBoard();
 
   return (
@@ -27,5 +28,13 @@ export default function CreateBoardPage() {
         />
       </div>
     </div>
+  );
+}
+
+export default function CreateBoardPage() {
+  return (
+    <Suspense fallback={null}>
+      <CreateBoardPageInner />
+    </Suspense>
   );
 }

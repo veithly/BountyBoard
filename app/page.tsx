@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Bot, Shield, Rocket, Eye, Users, Share } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { Suspense } from "react";
 
 // Use Cases data
 const USE_CASES = [
@@ -80,7 +81,7 @@ const FEATURES = [
   }
 ];
 
-export default function HomePage() {
+function HomePageInner() {
   const { address } = useAccount();
   const { toast } = useToast();
   const router = useRouter();
@@ -227,5 +228,13 @@ export default function HomePage() {
         <p>© 2024 Bounty Board. All rights reserved.</p>
       </footer>
     </div>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={null}>
+      <HomePageInner />
+    </Suspense>
   );
 }

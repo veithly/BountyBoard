@@ -44,8 +44,6 @@ export function useBountyBoardFunction(functionName: string) {
       });
 
       const bountyBoardAddress = contractAddress.BountyBoard[chain?.name as keyof typeof contractAddress.BountyBoard] as `0x${string}`;
-      console.log("chain?.name", chain?.name);
-      console.log("bountyBoardAddress", bountyBoardAddress);
 
       const hash = await writeContractAsync({
         functionName,

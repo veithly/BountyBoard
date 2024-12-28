@@ -9,8 +9,9 @@ import { BoardView } from '@/types/types';
 import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAccount } from 'wagmi';
+import { Suspense } from "react";
 
-export default function JoinedBoardsPage() {
+function JoinedBoardsPageInner() {
   const router = useRouter();
   const { address } = useAccount();
   const { data: boardsData = [], isLoading } = useGetBoardsByMember(address);
@@ -79,5 +80,13 @@ export default function JoinedBoardsPage() {
         ))}
       </div>
     </div>
+  );
+}
+
+export default function JoinedBoardsPage() {
+  return (
+    <Suspense fallback={null}>
+      <JoinedBoardsPageInner />
+    </Suspense>
   );
 }

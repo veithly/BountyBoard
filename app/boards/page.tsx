@@ -9,8 +9,9 @@ import BoardsPageSkeleton from "@/components/BoardsPageSkeleton";
 import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAccount } from "wagmi";
+import { Suspense } from "react";
 
-export default function HomePage() {
+function BoardsPageInner() {
   const router = useRouter();
   const { data: boardsData, isLoading } = useGetAllBoards();
   const { address } = useAccount();
@@ -70,5 +71,13 @@ export default function HomePage() {
         ))}
       </div>
     </div>
+  );
+}
+
+export default function BoardsPage() {
+  return (
+    <Suspense fallback={null}>
+      <BoardsPageInner />
+    </Suspense>
   );
 }

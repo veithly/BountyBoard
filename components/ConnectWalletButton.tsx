@@ -19,8 +19,9 @@ import { UserProfile } from "@/types/profile";
 import { useUserStore } from '@/store/userStore';
 import { useGetProfile } from '@/hooks/useContract';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense } from "react";
 
-export default function ConnectWalletButton() {
+function ConnectWalletButtonInner() {
   const isMobile = useMediaQuery('(max-width: 768px)');
   const { toast } = useToast();
   const { disconnect } = useDisconnect();
@@ -240,5 +241,13 @@ export default function ConnectWalletButton() {
         );
       }}
     </ConnectButton.Custom>
+  );
+}
+
+export default function ConnectWalletButton() {
+  return (
+    <Suspense fallback={null}>
+      <ConnectWalletButtonInner />
+    </Suspense>
   );
 }

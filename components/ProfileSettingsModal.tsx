@@ -2,7 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSetProfile, useGetProfile } from "@/hooks/useContract";
 import { useToast } from "@/components/ui/use-toast";
 import { UserProfile, SocialAccount } from "@/types/profile";
@@ -23,7 +23,7 @@ interface ProfileSettingsModalProps {
   initialData?: UserProfile | null;
 }
 
-export default function ProfileSettingsModal({
+function ProfileSettingsModalInner({
   isOpen,
   onClose,
   address,
@@ -179,7 +179,6 @@ export default function ProfileSettingsModal({
     // 如果有 modal 参数或者 shouldOpenModal，执行验证并打开弹窗
     if (modalParam === 'profile' || shouldOpenModal) {
       verifyAccount();
-      // 确保 modal 打开
       if (!isOpen) {
         onSuccess?.();
       }
@@ -411,5 +410,13 @@ export default function ProfileSettingsModal({
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+export default function ProfileSettingsModal(props: ProfileSettingsModalProps) {
+  return (
+    <Suspense fallback={null}>
+      <ProfileSettingsModalInner {...props} />
+    </Suspense>
   );
 }
