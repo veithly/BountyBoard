@@ -273,3 +273,86 @@ $ cast send --rpc-url https://linea-sepolia.infura.io/v3/f6f740dc92d444c89118838
   0xBec6DF509D1e02172A8e3e756720cD1f4447456d \ # implementation
   0x
 ```
+
+### Deploy to Flow Testnet
+
+```shell
+forge script script/BountyBoard.s.sol:BountyBoardScript --rpc-url https://testnet.evm.nodes.onflow.org --private-key $PRIVATE_KEY_FLOW --broadcast --legacy
+
+forge script script/UserProfile.s.sol:UserProfileScript --rpc-url https://testnet.evm.nodes.onflow.org --private-key $PRIVATE_KEY_FLOW --broadcast --legacy
+
+forge script script/DeployMockERC20.s.sol:DeployMockERC20Script --rpc-url https://testnet.evm.nodes.onflow.org --private-key $PRIVATE_KEY_FLOW --broadcast --legacy
+```
+
+### Create on Flow Testnet
+
+BountyBoard:
+```shell
+forge create --rpc-url https://testnet.evm.nodes.onflow.org \
+  --private-key $PRIVATE_KEY_FLOW \
+  src/BountyBoard.sol:BountyBoard
+```
+
+BountyBoard Proxy:
+```shell
+cast calldata "initialize(address)" $SIGNER_ADDRESS
+
+forge create --rpc-url https://testnet.evm.nodes.onflow.org \
+  --private-key $PRIVATE_KEY_FLOW \
+  lib/openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Proxy.sol:ERC1967Proxy \
+  --constructor-args $IMPLEMENTATION_ADDRESS $INITIALIZE_CALLDATA
+```
+
+UserProfile:
+```shell
+forge create --rpc-url https://testnet.evm.nodes.onflow.org \
+  --private-key $PRIVATE_KEY_FLOW \
+  src/UserProfile.sol:UserProfile \
+  --constructor-args $SIGNER_ADDRESS
+```
+
+Mock ERC20:
+```shell
+forge create --rpc-url https://testnet.evm.nodes.onflow.org \
+  --private-key $PRIVATE_KEY_FLOW \
+  src/MockERC20.sol:MockERC20 \
+  --constructor-args "Bounty" "BOUNTY"
+```
+
+### Verify on Flow Testnet
+
+BountyBoard:
+```shell
+forge verify-contract \
+  --verifier-url https://evm-testnet.flowscan.io/api \
+  0xf72eD6a6BC53669B7E818A106Ec9E7B090D3Da86 \
+  src/BountyBoard.sol:BountyBoard \
+  --constructor-args $(cast abi-encode "constructor()")
+```
+
+BountyBoard Proxy:
+```shell
+forge verify-contract \
+  --verifier-url https://evm-testnet.flowscan.io/api \
+  0x09D61437f07838AB892Bd92386EC39462BfE1972 \
+  lib/openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Proxy.sol:ERC1967Proxy \
+  --constructor-args $(cast abi-encode "constructor(address,bytes)" "0xf72eD6a6BC53669B7E818A106Ec9E7B090D3Da86" $(cast calldata "initialize(address)" "0x2809dCa37069918607b1eAaf591dE29fC389D3Cc"))
+```
+
+UserProfile:
+```shell
+forge verify-contract \
+  --verifier-url https://evm-testnet.flowscan.io/api \
+  0xBec6DF509D1e02172A8e3e756720cD1f4447456d \
+  src/UserProfile.sol:UserProfile \
+  --constructor-args $(cast abi-encode "constructor(address)" $SIGNER_ADDRESS)
+```
+
+Mock ERC20:
+```shell
+forge verify-contract \
+  --verifier-url https://evm-testnet.flowscan.io/api \
+  0xf576133fB9B5ac7186Dd917C915d90aFFD396c11 \
+  src/MockERC20.sol:MockERC20 \
+  --constructor-args $(cast abi-encode "constructor(string,string)" "Bounty" "BOUNTY")
+```

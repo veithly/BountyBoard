@@ -1,5 +1,5 @@
 import { http, createConfig } from 'wagmi'
-import { opBNBTestnet, anvil } from 'wagmi/chains'
+import { flowTestnet, opBNBTestnet, anvil } from 'wagmi/chains'
 import {
   injectedWallet,
   rainbowWallet,
@@ -11,8 +11,8 @@ import { connectorsForWallets } from '@rainbow-me/rainbowkit'
 
 // 根据环境变量决定使用的链
 const chains = process.env.NODE_ENV === 'development'
-  ? [anvil, opBNBTestnet] as const
-  : [opBNBTestnet] as const
+  ? [anvil, flowTestnet, opBNBTestnet] as const
+  : [flowTestnet, opBNBTestnet] as const
 
 // 配置钱包
 const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || ''

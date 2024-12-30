@@ -18,6 +18,8 @@ export const getNativeTokenSymbol = (chain?: Chain): string => {
       return 'ETH';
     case 10: // Optimism
       return 'ETH';
+    case 545: // Flow
+      return 'FLOW';
     case 43114: // Avalanche
       return 'AVAX';
     case 59140: // Linea Testnet
