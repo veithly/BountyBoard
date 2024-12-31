@@ -22,14 +22,13 @@ const USE_CASES = [
     reverse: false
   },
   {
-    title: "Product Attraction and Testing",
+    title: "Product Growth & Airdrop",
     image: "/home/ProductTesting.jpg",
-    description: "Guide users to interact with your project through incentivized testing programs, increasing exposure while identifying potential issues.",
+    description: "Design engaging tasks and airdrops to attract users, boost product adoption and build vibrant communities with AI-powered community management.",
     features: [
-      "AI-powered bug detection and verification system",
-      "Automated reward distribution for valuable feedback and bug reports",
-      "Smart contract security testing and validation",
-      "User experience feedback analysis and tracking"
+      "Customizable social tasks for following, retweeting and engagement",
+      "AI agent for automated community engagement and support",
+      "Intelligent task verification and token distribution"
     ],
     reverse: true
   },
@@ -40,8 +39,7 @@ const USE_CASES = [
     features: [
       "AI-assisted Discord and social media engagement tracking",
       "Automated community event management and reward distribution",
-      "Smart contract-based governance participation incentives",
-      "AI-powered content moderation and quality assessment"
+      "Smart contract-based governance participation incentives"
     ],
     reverse: false
   }
