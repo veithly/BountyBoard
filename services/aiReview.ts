@@ -111,7 +111,7 @@ ${fileContents.join('\n\n')}`;
 
           case 'Contract Verification':
             if (proofData.contract) {
-              const network = taskConfig?.contractNetwork || 'Mantle';
+              const network = taskConfig?.contractNetwork || 'Flow EVM';
 
               let apiUrl = '';
               let apiKey = '';
@@ -141,34 +141,88 @@ ${fileContents.join('\n\n')}`;
                   apiUrl = 'https://api-sepolia.etherscan.io/api';
                   apiKey = process.env.ETHERSCAN_API_KEY || '';
                   break;
+                case 'Flow EVM':
+                case 'Flow EVM Testnet':
+                  const isTestnet = network === 'Flow EVM Testnet';
+                  apiUrl = isTestnet
+                    ? 'https://evm-testnet.flowscan.io/api/v2'
+                    : 'https://evm.flowscan.io/api/v2';
+                  break;
               }
 
-              const response = await fetch(
-                `${apiUrl}?module=contract&action=getsourcecode&address=${proofData.contract}&apikey=${apiKey || ''}`
-              );
-              const data = await response.json();
+              let content = '';
 
-              let sourceCode = data.result[0].SourceCode || '';
+              if (network.startsWith('Flow EVM')) {
+                // BlockScout API 调用
+                try {
+                  const response = await fetch(
+                    `${apiUrl}/smart-contracts/${proofData.contract}`
+                  );
+                  const data = await response.json();
+                  console.log('Flow EVM API Response:', data.source_code);
 
-              try {
-                const parsedSource = JSON.parse(sourceCode.slice(1, -1));
-                const sources = parsedSource.sources;
+                  if (data.source_code) {
+                    const sourceCode = data.source_code;
 
-                content = Object.entries(sources)
-                  .filter(([filename]) => !filename.toLowerCase().includes('lib/') &&
-                    !filename.toLowerCase().includes("@")
-                  )
-                  .map(([filename, fileContent]) => {
-                    if (typeof fileContent === 'object' && fileContent !== null && 'content' in fileContent) {
-                      return `File: ${filename}\n${(fileContent as any).content}`;
-                    } else {
-                      throw new Error(`Invalid file content for ${filename}`);
+                    // 尝试解析多文件合约
+                    try {
+                      const parsedSource = JSON.parse(sourceCode);
+                      content = Object.entries(parsedSource)
+                        .filter(([filename]) => !filename.toLowerCase().includes('lib/') &&
+                          !filename.toLowerCase().includes("@")
+                        )
+                        .map(([filename, fileContent]) => {
+                          if (typeof fileContent === 'object' && fileContent !== null && 'content' in fileContent) {
+                            return `File: ${filename}\n${(fileContent as any).content}`;
+                          } else {
+                            return `File: ${filename}\n${fileContent}`;
+                          }
+                        })
+                        .join('\n\n');
+                    } catch (e) {
+                      // 如果不是多文件格式，直接使用源代码
+                      content = sourceCode;
                     }
-                  })
-                  .join('\n\n');
-              } catch (e) {
-                content = sourceCode;
+                  } else {
+                    throw new Error('Contract source code not found');
+                  }
+                } catch (error: any) {
+                  console.error('Error fetching from BlockScout API:', error);
+                  throw new Error(`Failed to fetch contract source code: ${error.message}`);
+                }
+              } else {
+                // 原有的 Etherscan 风格 API 调用
+                const response = await fetch(
+                  `${apiUrl}?module=contract&action=getsourcecode&address=${proofData.contract}&apikey=${apiKey || ''}`
+                );
+                const data = await response.json();
+                let sourceCode = data.result[0].SourceCode || '';
+
+                try {
+                  const parsedSource = JSON.parse(sourceCode.slice(1, -1));
+                  const sources = parsedSource.sources;
+
+                  content = Object.entries(sources)
+                    .filter(([filename]) => !filename.toLowerCase().includes('lib/') &&
+                      !filename.toLowerCase().includes("@")
+                    )
+                    .map(([filename, fileContent]) => {
+                      if (typeof fileContent === 'object' && fileContent !== null && 'content' in fileContent) {
+                        return `File: ${filename}\n${(fileContent as any).content}`;
+                      } else {
+                        throw new Error(`Invalid file content for ${filename}`);
+                      }
+                    })
+                    .join('\n\n');
+                } catch (e) {
+                  content = sourceCode;
+                }
               }
+
+              if (!content) {
+                throw new Error('No source code content found');
+              }
+              return content;
             }
             break;
 

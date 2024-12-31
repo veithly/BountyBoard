@@ -1,7 +1,7 @@
 import { keccak256, encodeAbiParameters, parseAbiParameters, SignableMessage } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { NextRequest, NextResponse } from 'next/server';
-import { lineaSepolia, Chain, mantleSepoliaTestnet, mantle, linea } from 'viem/chains';
+import { lineaSepolia, Chain, mantleSepoliaTestnet, mantle, linea, flowMainnet, flowTestnet } from 'viem/chains';
 import anvil from '@/providers/my-anvil';
 import contractAddress from '@/constants/contract-address';
 import { TaskDetailView } from '@/types/types';
@@ -12,6 +12,8 @@ const SIGNER_PRIVATE_KEY = process.env.SIGNER_ADDRESS_PRIVATE_KEY as `0x${string
 
 // 支持的链配置
 const SUPPORTED_CHAINS: Record<string, Chain> = {
+  'Flow EVM': flowMainnet,
+  'Flow EVM Testnet': flowTestnet,
   'Mantle Sepolia Testnet': mantleSepoliaTestnet,
   'Mantle Mainnet': mantle,
   'Linea Mainnet': linea,

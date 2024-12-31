@@ -234,6 +234,10 @@ contract SubmissionManager is BoardStorage, BoardView {
         Task storage task = board.tasks[_taskId];
 
         if (address(board.rewardToken) == address(0)) {
+            require(
+                task.rewardAmount <= board.totalPledged,
+                "Reward amount exceeds total pledged"
+            );
             payable(_submitter).transfer(task.rewardAmount);
         } else {
             require(
@@ -241,5 +245,6 @@ contract SubmissionManager is BoardStorage, BoardView {
                 "Reward transfer failed"
             );
         }
+        board.totalPledged -= task.rewardAmount;
     }
 }

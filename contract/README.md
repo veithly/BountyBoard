@@ -325,7 +325,7 @@ BountyBoard:
 ```shell
 forge verify-contract \
   --verifier-url https://evm-testnet.flowscan.io/api \
-  0xf72eD6a6BC53669B7E818A106Ec9E7B090D3Da86 \
+  0x1483b61733f607eD7813769b2FF55b5649731dd6 \
   src/BountyBoard.sol:BountyBoard \
   --constructor-args $(cast abi-encode "constructor()")
 ```
@@ -355,4 +355,16 @@ forge verify-contract \
   0xf576133fB9B5ac7186Dd917C915d90aFFD396c11 \
   src/MockERC20.sol:MockERC20 \
   --constructor-args $(cast abi-encode "constructor(string,string)" "Bounty" "BOUNTY")
+```
+
+
+## Update
+
+```shell
+cast send --rpc-url https://testnet.evm.nodes.onflow.org \
+  --private-key $PRIVATE_KEY_FLOW \
+  0x09D61437f07838AB892Bd92386EC39462BfE1972 \ # proxy
+  "upgradeToAndCall(address,bytes)" \
+  0x1483b61733f607eD7813769b2FF55b5649731dd6 \ # implementation
+  0x
 ```
