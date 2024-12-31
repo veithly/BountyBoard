@@ -30,5 +30,5 @@ export interface SocialAccount {
   githubAccessToken?: string;
   encryptedTokens?: string;
   telegramUsername?: string;
-  telegramUserId?: string;
+  telegramUserId?: number | null;
 }

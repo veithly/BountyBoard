@@ -7,6 +7,8 @@ const elizaAgentUrl = `${process.env.ELIZA_API_URL}/${elizaAgentId}/message`;
 const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
 export async function POST(req: NextRequest) {
   try {
@@ -117,29 +119,53 @@ Content: ${JSON.stringify(data)}`,
     }
 
     // 发送到 Discord
-    const discordResponse = await fetch(
-      `https://discord.com/api/v10/channels/${channelId}/messages`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bot ${DISCORD_BOT_TOKEN}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          content: announcementText,
-        }),
-      }
-    );
+    if (DISCORD_BOT_TOKEN) {
+      const discordResponse = await fetch(
+        `https://discord.com/api/v10/channels/${channelId}/messages`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bot ${DISCORD_BOT_TOKEN}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            content: announcementText,
+          }),
+        }
+      );
 
-    if (!discordResponse.ok) {
-      const errorData = await discordResponse.json();
-      throw new Error(errorData.message || "Failed to send Discord message");
+      if (!discordResponse.ok) {
+        const errorData = await discordResponse.json();
+        throw new Error(errorData.message || "Failed to send Discord message");
+      }
     }
 
-    const result = await discordResponse.json();
+    // 发送到 Telegram
+    if (TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
+      const telegramResponse = await fetch(
+        `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            chat_id: TELEGRAM_CHAT_ID,
+            text: announcementText,
+            parse_mode: "HTML",
+          }),
+        }
+      );
+
+      if (!telegramResponse.ok) {
+        const errorData = await telegramResponse.json();
+        throw new Error(errorData.description || "Failed to send Telegram message");
+      }
+    }
+
     return NextResponse.json({
       success: true,
-      messageId: result.id,
+      message: "Announcement sent successfully",
     });
   } catch (error) {
     console.error("Error in announcement:", error);

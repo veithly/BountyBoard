@@ -37,7 +37,7 @@ function ProfileSettingsModalInner({
   const [isLoading, setIsLoading] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const setProfile = useSetProfile();
-  const { isInitialized, username: telegramUsername } = useTelegramAuth();
+  const { isInitialized, username: telegramUsername, userID } = useTelegramAuth();
   const { data: session } = useSession();
   const { address: userAddress } = useAccount();
 
@@ -71,6 +71,12 @@ function ProfileSettingsModalInner({
       toast({
         title: "Info",
         description: "To link your Telegram account, please use this dApp in Telegram Mini App.",
+      });
+    } else {
+      setSocialAccounts({
+        ...socialAccounts,
+        telegramUsername: telegramUsername,
+        telegramUserId: userID,
       });
     }
   };
