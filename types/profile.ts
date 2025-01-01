@@ -12,10 +12,6 @@ export interface AttestationData {
 }
 
 export interface SocialAccount {
-  twitter?: string;
-  discord?: string;
-  github?: string;
-  telegram?: string;
   xUserName?: string;
   xName?: string;
   xId?: string;
@@ -28,7 +24,7 @@ export interface SocialAccount {
   xAccessToken?: string;
   discordAccessToken?: string;
   githubAccessToken?: string;
-  encryptedTokens?: string;
   telegramUsername?: string;
   telegramUserId?: number | null;
+  encryptedTokens?: string;
 }

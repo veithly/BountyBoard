@@ -14,6 +14,7 @@ import { signIn, useSession } from "next-auth/react";
 import { SiGithub, SiX, SiDiscord, SiTelegram } from "@icons-pack/react-simple-icons";
 import ImageUpload from "./ImageUpload";
 import { useAccount } from "wagmi";
+import { encryptData } from "@/utils/encryption";
 
 interface ProfileSettingsModalProps {
   isOpen: boolean;
@@ -37,9 +38,112 @@ function ProfileSettingsModalInner({
   const [isLoading, setIsLoading] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const setProfile = useSetProfile();
-  const { isInitialized, username: telegramUsername, userID } = useTelegramAuth();
+  const { isInitialized, username: telegramUsername, userID: telegramUserId } = useTelegramAuth();
   const { data: session } = useSession();
   const { address: userAddress } = useAccount();
+  const isTelegramWebApp = isInitialized;
+
+  // 监听钱包地址变化，清除非 Telegram 的社交账号数据
+  useEffect(() => {
+    if (userAddress) {
+      setSocialAccounts((prev) => ({
+        ...(prev || {}),
+        telegramUsername: prev?.telegramUsername || "",
+        telegramUserId: prev?.telegramUserId || null,
+      }));
+    }
+  }, [userAddress]);
+
+  // 处理 Telegram 账号自动填充
+  useEffect(() => {
+    if (isTelegramWebApp && telegramUsername && telegramUserId) {
+      setSocialAccounts((prev) => ({
+        ...(prev || {}),
+        telegramUsername,
+        telegramUserId: Number(telegramUserId),
+      }));
+    }
+  }, [isTelegramWebApp, telegramUsername, telegramUserId]);
+
+  const handleSave = async () => {
+    try {
+      setIsLoading(true);
+
+      // 分离公开数据和敏感数据
+      const publicData = {
+        xUserName: socialAccounts?.xUserName,
+        xName: socialAccounts?.xName,
+        xId: socialAccounts?.xId,
+        discordUserName: socialAccounts?.discordUserName,
+        discordName: socialAccounts?.discordName,
+        discordId: socialAccounts?.discordId,
+        githubUserName: socialAccounts?.githubUserName,
+        githubName: socialAccounts?.githubName,
+        githubId: socialAccounts?.githubId,
+        telegramUsername: socialAccounts?.telegramUsername,
+        telegramUserId: socialAccounts?.telegramUserId,
+      };
+
+      // 敏感数据加密
+      const sensitiveData = {
+        xAccessToken: socialAccounts?.xAccessToken,
+        discordAccessToken: socialAccounts?.discordAccessToken,
+        githubAccessToken: socialAccounts?.githubAccessToken,
+      };
+
+      const encryptedTokens = await encryptData(JSON.stringify(sensitiveData));
+      const socialAccountsStr = JSON.stringify({
+        ...publicData,
+        encryptedTokens,
+      });
+
+      // 获取签名
+      const response = await fetch('/api/profile/sign', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          nickname,
+          avatar,
+          socialAccount: socialAccountsStr,
+          subject: address,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get signature from server');
+      }
+
+      const { signature } = await response.json();
+
+      // 使用签名调用合约
+      const { hash } = await setProfile({
+        nickname,
+        avatar,
+        socialAccount: socialAccountsStr,
+        signature,
+      });
+
+      toast({
+        title: "Success",
+        description: "Profile updated successfully",
+      });
+      onSuccess?.();
+      onClose();
+    } catch (error) {
+      console.error("Failed to update profile:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: typeof error === 'object' && error !== null && 'message' in error
+          ? String(error.message)
+          : 'Failed to update profile',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // 获取用户资料
   const { data: profileData, isSuccess: profileLoaded, refetch: refetchProfile } = useGetProfile(address);
@@ -62,21 +166,12 @@ function ProfileSettingsModalInner({
     }
   }, [profileLoaded, profileData, setSocialAccounts]);
 
-  // 检查是否在 Telegram Mini App 环境中
-  const isTelegramWebApp = isInitialized;
-
   // 处理 Telegram 验证点击
   const handleTelegramVerification = () => {
     if (!telegramUsername) {
       toast({
         title: "Info",
         description: "To link your Telegram account, please use this dApp in Telegram Mini App.",
-      });
-    } else {
-      setSocialAccounts({
-        ...socialAccounts,
-        telegramUsername: telegramUsername,
-        telegramUserId: userID,
       });
     }
   };
@@ -204,73 +299,6 @@ function ProfileSettingsModalInner({
     onClose();
   };
 
-  // 当在 Telegram Mini App 中时，自动填充 Telegram 用户名
-  useEffect(() => {
-    if (isTelegramWebApp && telegramUsername) {
-      setSocialAccounts({
-        ...socialAccounts,
-        telegramUsername,
-        telegram: telegramUsername,
-      });
-    }
-  }, [isTelegramWebApp, telegramUsername]);
-
-  const handleSave = async () => {
-    try {
-      setIsLoading(true);
-      const socialAccountsStr = JSON.stringify(socialAccounts);
-
-      // 从服务器获取签名
-      const response = await fetch('/api/profile/sign', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          nickname,
-          avatar,
-          socialAccount: socialAccountsStr,
-          subject: address,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to get signature from server');
-      }
-
-      const { signature } = await response.json();
-
-      // 使用签名调用合约
-      const { hash } = await setProfile({
-        nickname,
-        avatar,
-        socialAccount: socialAccountsStr,
-        signature,
-      });
-
-      // 重新获取用户资料
-      await refetchProfile();
-
-      toast({
-        title: "Success",
-        description: "Profile updated successfully",
-      });
-      onSuccess?.();
-      onClose();
-    } catch (error) {
-      console.error("Failed to update profile:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: typeof error === 'object' && error !== null && 'message' in error
-          ? String(error.message)
-          : 'Failed to update profile',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const getSocialAccountInfo = (
     provider: "twitter" | "discord" | "github",
     data: any,
@@ -283,7 +311,6 @@ function ProfileSettingsModalInner({
           xName: data.data.name,
           xId: data.data.id,
           xAccessToken: accessToken,
-          twitter: `@${data.data.username}`,
         };
       case "discord":
         return {
