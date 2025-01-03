@@ -310,6 +310,14 @@ export default function SubmissionDetailsModal({
     }
   };
 
+  useEffect(() => {
+    if (isOpen) {
+      setComment("");
+      setTransactionHash(null);
+      setSubmitStatus('idle');
+    }
+  }, [isOpen]);
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto bg-background border-border">

@@ -87,7 +87,7 @@ export interface TaskConfig {
   taskType: ['Plain Text' | 'Image' | 'Github Pull Request' | 'Contract Verification' | 'X Post' | 'X Follow' | 'X Retweet' | 'X Like' | 'Join Discord'];
   aiReview?: boolean;
   aiReviewPrompt?: string;
-  contractNetwork?: 'Mantle' | 'Mantle Sepolia' | 'Linea' | 'Linea Sepolia' | 'Ethereum' | 'Sepolia' | 'Flow EVM' | 'Flow EVM Testnet';
+  contractNetwork?: 'Mantle' | 'Mantle Sepolia' | 'Linea' | 'Linea Sepolia' | 'Ethereum' | 'Sepolia' | 'Flow EVM' | 'Flow EVM Testnet' | 'BSC' | 'BSC Testnet' | 'opBNB' | 'opBNB Testnet';
   XPostContent?: string;
   XFollowUsername?: string;
   XLikeId?: string;

@@ -148,6 +148,20 @@ ${fileContents.join('\n\n')}`;
                     ? 'https://evm-testnet.flowscan.io/api/v2'
                     : 'https://evm.flowscan.io/api/v2';
                   break;
+                case 'BSC':
+                  apiUrl = 'https://api.bscscan.com/api';
+                  apiKey = process.env.BSCSCAN_API_KEY || '';
+                  break;
+                case 'BSC Testnet':
+                  apiUrl = 'https://api-testnet.bscscan.com/api';
+                  apiKey = process.env.BSCSCAN_API_KEY || '';
+                  break;
+                case 'opBNB':
+                  apiUrl = 'https://op-bnb-mainnet-explorer-api.nodereal.io/api';
+                  break;
+                case 'opBNB Testnet':
+                  apiUrl = 'https://op-bnb-testnet-explorer-api.nodereal.io/api';
+                  break;
               }
 
               let content = '';
@@ -159,12 +173,9 @@ ${fileContents.join('\n\n')}`;
                     `${apiUrl}/smart-contracts/${proofData.contract}`
                   );
                   const data = await response.json();
-                  console.log('Flow EVM API Response:', data.source_code);
 
                   if (data.source_code) {
                     const sourceCode = data.source_code;
-
-                    // 尝试解析多文件合约
                     try {
                       const parsedSource = JSON.parse(sourceCode);
                       content = Object.entries(parsedSource)
@@ -180,7 +191,6 @@ ${fileContents.join('\n\n')}`;
                         })
                         .join('\n\n');
                     } catch (e) {
-                      // 如果不是多文件格式，直接使用源代码
                       content = sourceCode;
                     }
                   } else {
@@ -188,6 +198,48 @@ ${fileContents.join('\n\n')}`;
                   }
                 } catch (error: any) {
                   console.error('Error fetching from BlockScout API:', error);
+                  throw new Error(`Failed to fetch contract source code: ${error.message}`);
+                }
+              } else if (network.startsWith('opBNB')) {
+                // NodeReal API 调用
+                try {
+                  // 首先获取合约验证状态
+                  const verifyResponse = await fetch(
+                    `${apiUrl}/contract/preverify`, {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                      },
+                      body: JSON.stringify({
+                        address: proofData.contract
+                      }),
+                      redirect: 'follow'
+                    }
+                  );
+                  const verifyData = await verifyResponse.text();
+                  const data = JSON.parse(verifyData);
+
+                  if (data.data && data.data.input_json && data.data.input_json.sources) {
+                    // 直接从验证数据中获取源代码
+                    const sources = data.data.input_json.sources;
+                    content = Object.entries(sources)
+                      .filter(([filename]) => !filename.toLowerCase().includes('lib/') &&
+                        !filename.toLowerCase().includes("@")
+                      )
+                      .map(([filename, fileContent]: [string, any]) => {
+                        if (typeof fileContent === 'object' && fileContent !== null && 'content' in fileContent) {
+                          return `File: ${filename}\n${fileContent.content}`;
+                        } else {
+                          return `File: ${filename}\n${fileContent}`;
+                        }
+                      })
+                      .join('\n\n');
+                  } else {
+                    throw new Error('Contract source code not found or not verified');
+                  }
+                } catch (error: any) {
+                  console.error('Error fetching from NodeReal API:', error);
                   throw new Error(`Failed to fetch contract source code: ${error.message}`);
                 }
               } else {

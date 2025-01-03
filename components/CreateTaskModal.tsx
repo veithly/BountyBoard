@@ -316,6 +316,10 @@ export default function CreateTaskModal({
                 <SelectValue placeholder="Select Network" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="opBNB">Op BNB</SelectItem>
+                <SelectItem value="opBNB Testnet">Op BNB Testnet</SelectItem>
+                <SelectItem value="BSC">BSC</SelectItem>
+                <SelectItem value='BSC Testnet'>BSC Testnet</SelectItem>
                 <SelectItem value="Flow EVM">Flow EVM</SelectItem>
                 <SelectItem value="Flow EVM Testnet">Flow EVM Testnet</SelectItem>
                 <SelectItem value="Mantle">Mantle</SelectItem>

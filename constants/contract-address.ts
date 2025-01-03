@@ -1,7 +1,7 @@
 const contractAddress = {
   BountyBoard: {
     'Flow EVM Testnet': "0x09D61437f07838AB892Bd92386EC39462BfE1972",
-    'opBNB Testnet': "0x7F5c43e497d7F3392e7114809856Ac2fCc9454A6",
+    'opBNB Testnet': "0x397e12962a9dCed668FD5b7B2bfAfE585bdad323",
     Anvil: "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
     'Mantle Sepolia Testnet': "0x397e12962a9dCed668FD5b7B2bfAfE585bdad323",
     'Linea Sepolia Testnet': "0xcDCeb52842Cc6dcCA264aC9C9AA8C1da1e6637D7",

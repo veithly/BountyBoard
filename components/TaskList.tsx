@@ -249,6 +249,12 @@ export default function TaskList({
           taskId: task.id,
           comment: data.error,
         });
+        toast({
+          title: "Error",
+          description: "Failed to complete self check",
+          variant: "destructive",
+          duration: 1000,
+        });
         return;
       }
 
