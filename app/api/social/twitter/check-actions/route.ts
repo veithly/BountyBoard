@@ -46,12 +46,12 @@ export async function POST(req: Request) {
     const decryptedTokens = JSON.parse(decryptData(encryptedTokens));
     const accessToken = decryptedTokens.xAccessToken;
 
-    if (!accessToken) {
-      return NextResponse.json(
-        { error: "Invalid access token" },
-        { status: 401 }
-      );
-    }
+    // if (!accessToken) {
+    //   return NextResponse.json(
+    //     { error: "Invalid access token" },
+    //     { status: 401 }
+    //   );
+    // }
 
     const client = getTwitterClient();
     let result = { verified: false };

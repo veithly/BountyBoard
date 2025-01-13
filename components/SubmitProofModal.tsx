@@ -390,8 +390,8 @@ export default function SubmissionProofModal({
                       {(type === 'X Like' || type === 'X Retweet') && (
                         <SocialLinkButton
                           href={type === 'X Like' ?
-                            `https://x.com/i/status/${taskConfig.XLikeId}` :
-                            `https://x.com/i/status/${taskConfig.XRetweetId}`
+                            `${taskConfig.XLikeId}` :
+                            `${taskConfig.XRetweetId}`
                           }
                           icon={SiX}
                           label="View Tweet"
