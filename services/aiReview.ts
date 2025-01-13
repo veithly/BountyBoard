@@ -162,11 +162,14 @@ ${fileContents.join('\n\n')}`;
                 case 'opBNB Testnet':
                   apiUrl = 'https://op-bnb-testnet-explorer-api.nodereal.io/api';
                   break;
+                case 'Monad Devnet':
+                  apiUrl = 'https://explorer.monad-devnet.devnet101.com/api';
+                  break;
               }
 
               let content = '';
 
-              if (network.startsWith('Flow EVM')) {
+              if (network.startsWith('Flow EVM') || network.startsWith('Monad')) {
                 // BlockScout API 调用
                 try {
                   const response = await fetch(
