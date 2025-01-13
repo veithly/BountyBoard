@@ -315,6 +315,7 @@ ${fileContents.join('\n\n')}`;
           review_prompt: aiReviewPrompt
         },
         submission_content: content,
+        verification_contract: true,
         review_instructions: "Review the submission and return a JSON object WITHOUT markdown formatting. The response must be a valid JSON object with the following structure: { decision: 'APPROVED' or 'REJECTED', comment: 'explanation', confidence_score: number between 0 and 1 }",
         example_response: {
           decision: "APPROVED",

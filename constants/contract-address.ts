@@ -5,7 +5,7 @@ const contractAddress = {
     Anvil: "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
     'Mantle Sepolia Testnet': "0x397e12962a9dCed668FD5b7B2bfAfE585bdad323",
     'Linea Sepolia Testnet': "0xcDCeb52842Cc6dcCA264aC9C9AA8C1da1e6637D7",
-    'Monad Devnet': "0x7F5c43e497d7F3392e7114809856Ac2fCc9454A6",
+    'Monad Devnet': "0x397e12962a9dCed668FD5b7B2bfAfE585bdad323",
   },
   UserProfile: {
     'Flow EVM Testnet': "0xBec6DF509D1e02172A8e3e756720cD1f4447456d",
