@@ -1,19 +1,29 @@
 import { NextResponse } from "next/server";
+import { decryptData } from '@/utils/encryption-server';
 
-export async function GET(req: Request) {
+export async function POST(req: Request) {
   try {
-    const accessToken = req.headers.get('Authorization')?.split('Bearer ')[1];
-    const userId = req.headers.get('X-User-Id');
-    const guildId = req.headers.get('X-Guild-Id'); // Discord 服务器 ID
+    const { encryptedTokens, guildId, userId } = await req.json();
 
-    if (!accessToken || !userId || !guildId) {
+    if (!encryptedTokens || !userId || !guildId) {
       return NextResponse.json(
         { error: "Missing required parameters" },
         { status: 401 }
       );
     }
 
-    // 1. 先获取用户的公会列表
+    // 使用服务器端解密
+    const decryptedTokens = JSON.parse(decryptData(encryptedTokens));
+    const accessToken = decryptedTokens.discordAccessToken;
+
+    if (!accessToken) {
+      return NextResponse.json(
+        { error: "Invalid access token" },
+        { status: 401 }
+      );
+    }
+
+    // 获取用户的公会列表
     const guildsResponse = await fetch(
       'https://discord.com/api/users/@me/guilds',
       {
@@ -29,16 +39,10 @@ export async function GET(req: Request) {
     }
 
     const guilds = await guildsResponse.json();
-
-    // 2. 检查用户是否在指定的公会中
     const isInGuild = guilds.some((guild: any) => guild.id === guildId);
 
-    if (!isInGuild) {
-      throw new Error('Failed to fetch member data');
-    }
-
     return NextResponse.json({
-      inGuild: true,
+      inGuild: isInGuild,
     });
 
   } catch (error) {

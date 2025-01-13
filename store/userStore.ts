@@ -1,22 +1,16 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { socialAccount } from '@/types/profile';
+import { SocialAccount } from '@/types/profile';
 
-interface UserState {
-  socialAccounts: socialAccount | null;
-  setSocialAccounts: (accounts: socialAccount) => void;
+interface UserStore {
+  socialAccounts: SocialAccount | null;
+  setSocialAccounts: (accounts: SocialAccount | ((prev: SocialAccount | null) => SocialAccount)) => void;
   clearSocialAccounts: () => void;
 }
 
-export const useUserStore = create<UserState>()(
-  persist(
-    (set) => ({
-      socialAccounts: null,
-      setSocialAccounts: (accounts) => set({ socialAccounts: accounts }),
-      clearSocialAccounts: () => set({ socialAccounts: null }),
-    }),
-    {
-      name: 'user-storage',
-    }
-  )
-);
+export const useUserStore = create<UserStore>((set) => ({
+  socialAccounts: null,
+  setSocialAccounts: (accounts) => set((state) => ({
+    socialAccounts: typeof accounts === 'function' ? accounts(state.socialAccounts) : accounts
+  })),
+  clearSocialAccounts: () => set({ socialAccounts: null }),
+}));

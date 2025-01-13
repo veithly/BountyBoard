@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { CreateTaskParams, TaskConfig } from '@/types/types';
+import { CreateTaskParams, BoardConfig, TaskConfig } from '@/types/types';
 import { Calendar } from "@/components/ui/calendar";
 import { add, format } from "date-fns";
 import {
@@ -35,6 +35,8 @@ import { useToast } from "@/components/ui/use-toast";
 import { Badge } from "@/components/ui/badge";
 
 interface CreateTaskModalProps {
+  boardConfig: BoardConfig;
+  tokenSymbol: string;
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: any) => Promise<any>;
@@ -72,6 +74,8 @@ interface TaskDetailsState {
 }
 
 export default function CreateTaskModal({
+  boardConfig,
+  tokenSymbol,
   isOpen,
   onClose,
   onSubmit,
@@ -89,7 +93,7 @@ export default function CreateTaskModal({
   });
   const [taskDetails, setTaskDetails] = useState<TaskDetailsState>({
     deadline: initialData?.taskDetails.deadline
-      ? new Date(Number(initialData.taskDetails.deadline) * 1000)
+      ? new Date(Number(initialData.taskDetails.deadline) / 1000)
       : add(new Date(), { days: 7 }),
     maxCompletions: initialData?.taskDetails.maxCompletions || 1,
     rewardAmount: initialData?.taskDetails.rewardAmount || 0,
@@ -135,7 +139,7 @@ export default function CreateTaskModal({
     if (isOpen && initialData) {
       setTaskBasicInfo(initialData.taskBasicInfo);
       setTaskDetails({
-        deadline: new Date(Number(initialData.taskDetails.deadline)),
+        deadline: new Date(Number(initialData.taskDetails.deadline) / 1000),
         maxCompletions: initialData.taskDetails.maxCompletions,
         rewardAmount: initialData.taskDetails.rewardAmount,
         allowSelfCheck: initialData.taskDetails.allowSelfCheck || false,
@@ -176,6 +180,63 @@ export default function CreateTaskModal({
       setIsSubmitting(false);
     }
   }, [isConfirming, isConfirmed, transactionError, onConfirmed, toast]);
+
+  useEffect(() => {
+    const sendAnnouncement = async () => {
+      if (isConfirmed && boardConfig.channelId && taskBasicInfo.name && taskBasicInfo.description) {
+        try {
+          fetch('/api/discord-announcement', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              channelId: boardConfig.channelId,
+              type: mode === 'create' ? 'task_created' : 'task_updated',
+              data: {
+                taskName: taskBasicInfo.name,
+                taskDescription: taskBasicInfo.description,
+                taskTypes: selectedTypes,
+                taskConfig: taskConfig,
+                deadline: taskDetails.deadline,
+                maxCompletions: taskDetails.maxCompletions,
+                rewardAmount: taskDetails.rewardAmount,
+                tokenSymbol: tokenSymbol,
+                allowSelfCheck: taskDetails.allowSelfCheck,
+                aiReview: taskConfig.aiReview,
+                aiReviewPrompt: taskConfig.aiReviewPrompt,
+                socialRequirements: {
+                  ...(taskConfig.XPostContent && { xPost: taskConfig.XPostContent }),
+                  ...(taskConfig.XFollowUsername && { xFollow: taskConfig.XFollowUsername }),
+                  ...(taskConfig.XLikeId && { xLike: taskConfig.XLikeId }),
+                  ...(taskConfig.XRetweetId && { xRetweet: taskConfig.XRetweetId }),
+                  ...(taskConfig.DiscordChannelId && {
+                    discordServer: taskConfig.DiscordChannelId,
+                    discordInvite: taskConfig.DiscordInviteLink
+                  }),
+                }
+              }
+            }),
+          }).catch(error => {
+            console.error('Failed to send announcement:', error);
+          });
+        } catch (error) {
+          console.error('Failed to prepare announcement data:', error);
+        }
+      }
+    };
+
+    sendAnnouncement();
+  }, [
+    isConfirmed,
+    boardConfig.channelId,
+    taskBasicInfo,
+    taskConfig,
+    taskDetails,
+    selectedTypes,
+    mode,
+    tokenSymbol
+  ]);
 
   const taskTypes = [
     'Plain Text',
@@ -255,6 +316,14 @@ export default function CreateTaskModal({
                 <SelectValue placeholder="Select Network" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="opBNB">Op BNB</SelectItem>
+                <SelectItem value="opBNB Testnet">Op BNB Testnet</SelectItem>
+                <SelectItem value="BSC">BSC</SelectItem>
+                <SelectItem value='BSC Testnet'>BSC Testnet</SelectItem>
+                <SelectItem value="Flow EVM">Flow EVM</SelectItem>
+                <SelectItem value="Flow EVM Testnet">Flow EVM Testnet</SelectItem>
+                <SelectItem value="Mantle">Mantle</SelectItem>
+                <SelectItem value="Mantle Sepolia">Mantle Sepolia</SelectItem>
                 <SelectItem value="Linea">Linea</SelectItem>
                 <SelectItem value="Linea Sepolia">Linea Sepolia</SelectItem>
                 <SelectItem value="Ethereum">Ethereum</SelectItem>
@@ -462,7 +531,7 @@ export default function CreateTaskModal({
       try {
         const finalData: CreateTaskParams = {
           ...taskBasicInfo,
-          deadline: Math.floor(taskDetails.deadline.getTime() / 1000),
+          deadline: Math.floor(taskDetails.deadline.getTime()),
           maxCompletions: taskDetails.maxCompletions,
           rewardAmount: taskDetails.rewardAmount,
           allowSelfCheck: shouldShowSelfCheck ? taskDetails.allowSelfCheck : false,

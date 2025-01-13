@@ -75,6 +75,10 @@ export default function SubmissionDetailsModal({
 
   const getExplorerUrl = (address: string, network?: string) => {
     switch (network) {
+      case 'Mantle':
+        return `https://explorer.mantle.xyz/address/${address}`;
+      case 'Mantle Sepolia':
+        return `https://explorer.sepolia.mantle.xyz/address/${address}`;
       case 'Linea':
         return `https://lineascan.build/address/${address}`;
       case 'Linea Sepolia':
@@ -174,7 +178,7 @@ export default function SubmissionDetailsModal({
   };
 
   // 从 MemberSubmissionTable 复制并修改的 renderProofContent 函数
-  const renderProofContent = (proof: string, taskId: bigint) => {
+  const renderProofContent = (proof: string) => {
     try {
       const proofData: SubmissionProof = JSON.parse(proof);
       const taskConfig: TaskConfig = task ? JSON.parse(task.config || '{}') : {};
@@ -306,6 +310,14 @@ export default function SubmissionDetailsModal({
     }
   };
 
+  useEffect(() => {
+    if (isOpen) {
+      setComment("");
+      setTransactionHash(null);
+      setSubmitStatus('idle');
+    }
+  }, [isOpen]);
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto bg-background border-border">
@@ -352,7 +364,7 @@ export default function SubmissionDetailsModal({
             <div className="space-y-2">
               <span className="text-sm font-medium text-muted-foreground">Proof:</span>
               <div className="rounded-lg border border-border bg-background">
-                {renderProofContent(submission.proof, submission.taskId)}
+                {renderProofContent(submission.proof)}
               </div>
             </div>
 

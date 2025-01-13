@@ -12,9 +12,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useState, useEffect } from "react";
-import { Upload, Loader2, CheckCircle } from "lucide-react";
+import { Loader2, CheckCircle } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import Image from "next/image";
 import { TaskConfig, SubmissionProof } from "@/types/types";
 import {
   SiGithub,
@@ -24,6 +23,7 @@ import {
 } from '@icons-pack/react-simple-icons';
 import { useWaitForTransactionReceipt } from "wagmi";
 import { useUserStore } from '@/store/userStore';
+import ImageUpload from "@/components/ImageUpload";
 
 interface SubmissionProofModalProps {
   isOpen: boolean;
@@ -42,7 +42,6 @@ export default function SubmissionProofModal({
 }: SubmissionProofModalProps) {
   const { socialAccounts } = useUserStore();
   const [proofData, setProofData] = useState<SubmissionProof>({});
-  const [isUploading, setIsUploading] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [transactionHash, setTransactionHash] = useState<`0x${string}` | null>(null);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'submitting' | 'confirming' | 'confirmed'>('idle');
@@ -77,39 +76,8 @@ export default function SubmissionProofModal({
     }
   }, [isConfirmed, error, onClose, onConfirmed]);
 
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    setIsUploading(true);
-    const formData = new FormData();
-    formData.append("file", file);
-
-    try {
-      const response = await fetch("https://api.img2ipfs.org/api/v0/add", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) throw new Error("Upload failed");
-
-      const data = await response.json();
-      setProofData(prev => ({ ...prev, image: data.Url }));
-      toast({ title: "Success", description: "Image uploaded successfully" });
-    } catch (error) {
-      console.error("Upload error:", error);
-      toast({
-        title: "Error",
-        description: "Failed to upload image",
-        variant: "destructive",
-      });
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
   const verifyXAction = async (action: 'follow' | 'retweet' | 'like') => {
-    if (!socialAccounts?.xAccessToken) {
+    if (!socialAccounts?.xId) {
       toast({
         title: "Error",
         description: "Please connect your X account first",
@@ -121,15 +89,18 @@ export default function SubmissionProofModal({
     setIsVerifying(true);
     try {
       const response = await fetch(`/api/social/twitter/check-actions`, {
-        method: 'GET',
+        method: 'POST',
         headers: {
-          'Authorization': `Bearer ${socialAccounts.xAccessToken}`,
-          'X-User-Id': socialAccounts.xId,
-          'X-Action-Type': action,
-          'X-Target-User': taskConfig.XFollowUsername || '',
-          'X-Tweet-Id': action === 'like' ? taskConfig.XLikeId || '' :
-                        action === 'retweet' ? taskConfig.XRetweetId || '' : ''
-        } as HeadersInit
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          encryptedTokens: socialAccounts.encryptedTokens,
+          action,
+          targetUser: taskConfig.XFollowUsername || '',
+          tweetId: action === 'like' ? taskConfig.XLikeId || '' :
+                  action === 'retweet' ? taskConfig.XRetweetId || '' : '',
+          userId: socialAccounts.xId
+        })
       });
 
       if (response.status === 403) {
@@ -158,6 +129,7 @@ export default function SubmissionProofModal({
           xUserName: socialAccounts.xUserName,
           xName: socialAccounts.xName,
           xId: socialAccounts.xId,
+          encryptedTokens: socialAccounts.encryptedTokens,
           [`x${action.charAt(0).toUpperCase() + action.slice(1)}`]: true
         }));
         toast({
@@ -180,7 +152,7 @@ export default function SubmissionProofModal({
   };
 
   const verifyDiscordJoin = async () => {
-    if (!socialAccounts?.discordAccessToken) {
+    if (!socialAccounts?.discordId) {
       toast({
         title: "Error",
         description: "Please connect your Discord account first",
@@ -192,12 +164,15 @@ export default function SubmissionProofModal({
     setIsVerifying(true);
     try {
       const response = await fetch(`/api/social/discord/check-guild`, {
-        method: 'GET',
+        method: 'POST',
         headers: {
-          'Authorization': `Bearer ${socialAccounts.discordAccessToken}`,
-          'X-User-Id': socialAccounts.discordId,
-          'X-Guild-Id': taskConfig.DiscordChannelId || ''
-        } as HeadersInit
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          encryptedTokens: socialAccounts.encryptedTokens,
+          guildId: taskConfig.DiscordChannelId || '',
+          userId: socialAccounts.discordId
+        })
       });
 
       const data = await response.json();
@@ -208,7 +183,7 @@ export default function SubmissionProofModal({
           discordUserName: socialAccounts.discordUserName,
           discordName: socialAccounts.discordName,
           discordId: socialAccounts.discordId,
-          discordAccessToken: socialAccounts.discordAccessToken
+          encryptedTokens: socialAccounts.encryptedTokens,
         }));
         toast({
           title: "Success",
@@ -287,7 +262,7 @@ export default function SubmissionProofModal({
       default:
         return {
           text: "Submit Proof",
-          disabled: isUploading || isVerifying,
+          disabled: isVerifying,
           icon: null
         };
     }
@@ -353,35 +328,12 @@ export default function SubmissionProofModal({
                 return (
                   <div key="image" className="space-y-2">
                     <label className="text-sm font-medium text-foreground">Image Proof</label>
-                    <div className="flex items-center gap-4">
-                      {proofData.image && (
-                        <div className="relative w-24 h-24 rounded-md overflow-hidden border border-border">
-                          <Image
-                            src={proofData.image}
-                            alt="Proof"
-                            fill
-                            className="object-cover"
-                          />
-                        </div>
-                      )}
-                      <Button
-                        type="button"
-                        variant="outline"
-                        disabled={isUploading}
-                        onClick={() => document.getElementById('image-upload')?.click()}
-                        className="hover:bg-accent hover:text-accent-foreground"
-                      >
-                        <Upload className="h-4 w-4 mr-2" />
-                        {isUploading ? "Uploading..." : "Upload Image"}
-                      </Button>
-                      <Input
-                        id="image-upload"
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={handleImageUpload}
-                      />
-                    </div>
+                    <ImageUpload
+                      value={proofData.image || ''}
+                      onChange={(url) => setProofData(prev => ({ ...prev, image: url }))}
+                      label="Proof Image"
+                      className="w-full"
+                    />
                   </div>
                 );
 
@@ -459,7 +411,7 @@ export default function SubmissionProofModal({
                       <Button
                         type="button"
                         variant="outline"
-                        disabled={isVerifying || !socialAccounts?.xAccessToken}
+                        disabled={isVerifying || !socialAccounts?.xId}
                         onClick={() => verifyXAction(type.split(' ')[1].toLowerCase() as any)}
                         className="hover:bg-accent hover:text-accent-foreground"
                       >
@@ -498,7 +450,7 @@ export default function SubmissionProofModal({
                       <Button
                         type="button"
                         variant="outline"
-                        disabled={isVerifying || !socialAccounts?.discordAccessToken}
+                        disabled={isVerifying || !socialAccounts?.discordId}
                         onClick={verifyDiscordJoin}
                         className="hover:bg-accent hover:text-accent-foreground"
                       >

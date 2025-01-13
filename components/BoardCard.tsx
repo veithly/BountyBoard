@@ -9,6 +9,8 @@ import { BoardView } from '@/types/types';
 import { formatUnits, zeroAddress } from 'viem';
 import { Address } from './ui/Address';
 import { User2, Calendar, Coins } from 'lucide-react';
+import { getNativeTokenSymbol } from '@/utils/chain';
+import { useAccount } from 'wagmi';
 
 export default function BoardCard({
   board,
@@ -20,21 +22,22 @@ export default function BoardCard({
     avatar: string;
   }
 }) {
+  const { chain } = useAccount();
   const { data: tokenSymbol } = useTokenSymbol(board.rewardToken);
 
   return (
     <Link key={board.id} href={`/board/${board.id}`}>
-      <Card className="transition-all duration-300 hover:shadow-lg hover:scale-105">
-        <CardHeader>
-          <div className="flex items-center gap-4">
+      <Card className="transition-all duration-300 hover:shadow-lg hover:scale-[1.02] h-full">
+        <CardHeader className="p-4 md:p-6">
+          <div className="flex items-center gap-3 md:gap-4">
             {board.img && (
-              <div className="relative w-12 h-12 overflow-hidden rounded-lg flex-shrink-0">
+              <div className="relative w-10 h-10 md:w-12 md:h-12 overflow-hidden rounded-lg flex-shrink-0">
                 <Image
                   src={board.img}
                   alt={board.name}
                   fill
                   className="object-cover"
-                  sizes="48px"
+                  sizes="(max-width: 768px) 40px, 48px"
                   priority={false}
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
@@ -43,14 +46,16 @@ export default function BoardCard({
                 />
               </div>
             )}
-            <CardTitle className="break-words line-clamp-2 h-8">{board.name}</CardTitle>
+            <CardTitle className="break-words line-clamp-2 text-base md:text-lg">
+              {board.name}
+            </CardTitle>
           </div>
         </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground min-h-[3rem] break-words line-clamp-2">
+        <CardContent className="p-4 md:p-6 pt-0 md:pt-0">
+          <p className="text-sm text-muted-foreground min-h-[3rem] break-words line-clamp-2 mb-4">
             {board.description}
           </p>
-          <div className="flex justify-between items-center text-xs mt-4 text-muted-foreground">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 md:gap-4 text-xs text-muted-foreground">
             <div className="flex items-center gap-2 min-w-0">
               {creatorProfile?.avatar ? (
                 <Image
@@ -67,15 +72,17 @@ export default function BoardCard({
                 {creatorProfile?.nickname || <Address address={board.creator} />}
               </span>
             </div>
-            <div className="flex items-center gap-1 flex-shrink-0">
-              <Calendar className="h-4 w-4" />
-              {format(new Date(Number(board.createdAt) * 1000), 'PPP')}
-            </div>
-            <div className="flex items-center gap-1 flex-shrink-0">
-              <Coins className="h-4 w-4" />
-              <span className="truncate">
-                {formatUnits(board.totalPledged, 18)} {tokenSymbol ?? ((board.rewardToken === zeroAddress && 'ETH') || '')}
-              </span>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
+                <Calendar className="h-4 w-4" />
+                {format(new Date(Number(board.createdAt) * 1000), 'PPP')}
+              </div>
+              <div className="flex items-center gap-1">
+                <Coins className="h-4 w-4" />
+                <span className="truncate">
+                  {formatUnits(board.totalPledged, 18)} {tokenSymbol ?? ((board.rewardToken === zeroAddress && getNativeTokenSymbol(chain)) || '')}
+                </span>
+              </div>
             </div>
           </div>
         </CardContent>

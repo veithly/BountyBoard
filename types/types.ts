@@ -22,6 +22,11 @@ export interface BoardView {
   createdAt: bigint;
   closed: boolean;
   rewardToken: `0x${string}`;
+  config: string;
+}
+
+export interface BoardConfig {
+  channelId?: string;
 }
 
 // Task 相关接口
@@ -44,7 +49,6 @@ export interface TaskView {
 
 // Submission 相关接口
 export interface SubmissionView {
-  taskId: bigint;
   submitter: `0x${string}`;
   proof: string;
   status: number;
@@ -64,9 +68,10 @@ export interface BoardDetailView {
   closed: boolean;
   rewardToken: `0x${string}`;
   tasks: TaskView[];
-  submissions: SubmissionView[];
+  submissions: SubmissionView[][];
   members: `0x${string}`[];
   userTaskStatuses: UserTaskStatus[];
+  config: string;
 }
 
 // 创建 Board 的参数接口
@@ -75,13 +80,14 @@ export interface CreateBoardParams {
   description: string;
   img: string;
   rewardToken: string;
+  config?: string;
 }
 
 export interface TaskConfig {
   taskType: ['Plain Text' | 'Image' | 'Github Pull Request' | 'Contract Verification' | 'X Post' | 'X Follow' | 'X Retweet' | 'X Like' | 'Join Discord'];
   aiReview?: boolean;
   aiReviewPrompt?: string;
-  contractNetwork?: 'Linea' | 'Linea Sepolia' | 'Ethereum' | 'Sepolia';
+  contractNetwork?: 'Mantle' | 'Mantle Sepolia' | 'Linea' | 'Linea Sepolia' | 'Ethereum' | 'Sepolia' | 'Flow EVM' | 'Flow EVM Testnet' | 'BSC' | 'BSC Testnet' | 'opBNB' | 'opBNB Testnet';
   XPostContent?: string;
   XFollowUsername?: string;
   XLikeId?: string;

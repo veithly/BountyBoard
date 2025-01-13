@@ -1,84 +1,101 @@
 import { keccak256, encodeAbiParameters, parseAbiParameters, SignableMessage } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { NextRequest, NextResponse } from 'next/server';
-import { createPublicClient, http } from 'viem';
-import { lineaSepolia, Chain } from 'viem/chains';
+import { lineaSepolia, Chain, mantleSepoliaTestnet, mantle, linea, flowMainnet, flowTestnet, bsc, bscTestnet, opBNB, opBNBTestnet } from 'viem/chains';
 import anvil from '@/providers/my-anvil';
 import contractAddress from '@/constants/contract-address';
-import abi from '@/constants/BountyBoard.json';
 import { TaskDetailView } from '@/types/types';
 import { AIReviewService } from '@/services/aiReview';
+import { headers } from 'next/headers';
 
 const SIGNER_PRIVATE_KEY = process.env.SIGNER_ADDRESS_PRIVATE_KEY as `0x${string}`;
 
 // 支持的链配置
 const SUPPORTED_CHAINS: Record<string, Chain> = {
+  'BSC': bsc,
+  'BSC Testnet': bscTestnet,
+  'opBNB': opBNB,
+  'opBNB Testnet': opBNBTestnet,
+  'Flow EVM': flowMainnet,
+  'Flow EVM Testnet': flowTestnet,
+  'Mantle Sepolia Testnet': mantleSepoliaTestnet,
+  'Mantle Mainnet': mantle,
+  'Linea Mainnet': linea,
   'Linea Sepolia Testnet': lineaSepolia,
   'Anvil': anvil,
 };
 
 const aiReviewService = new AIReviewService();
 
+// 获取基础 URL
+function getBaseUrl() {
+  const headersList = headers();
+  const host = headersList.get('host') || 'localhost:3000';
+  return `https://${host}`;
+}
+
 // 验证社交账号操作
 async function verifySocialAction(taskConfig: any, proofData: any) {
   try {
+    // 如果没有社交账号任务配置，直接返回 true
+    if (!taskConfig.XFollowUsername &&
+        !taskConfig.XLikeId &&
+        !taskConfig.XRetweetId &&
+        !taskConfig.DiscordChannelId) {
+      return true;
+    }
+
+    const baseUrl = getBaseUrl();
+
     // 检查是否有 Twitter 相关任务
     if (taskConfig.XFollowUsername || taskConfig.XLikeId || taskConfig.XRetweetId) {
+      if (!proofData.encryptedTokens || !proofData.xId) {
+        throw new Error('Missing Twitter account information');
+      }
+
       // 验证 Twitter 账号
-      const verifyResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/social/twitter/verify`, {
+      const verifyResponse = await fetch(`${baseUrl}/api/social/twitter/check-actions`, {
+        method: 'POST',
         headers: {
-          'Authorization': `Bearer ${proofData.xAccessToken}`,
-          'X-User-Id': proofData.xId
-        }
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          encryptedTokens: proofData.encryptedTokens,
+          action: taskConfig.XFollowUsername ? 'follow' :
+                 taskConfig.XLikeId ? 'like' :
+                 taskConfig.XRetweetId ? 'retweet' : '',
+          targetUser: taskConfig.XFollowUsername || '',
+          tweetId: taskConfig.XLikeId || taskConfig.XRetweetId || '',
+          userId: proofData.xId
+        })
       });
 
       if (!verifyResponse.ok) {
-        throw new Error('Twitter account verification failed');
-      }
-
-      // 验证具体操作
-      const checkResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/social/twitter/check-actions`, {
-        headers: {
-          'X-User-Id': proofData.xId,
-          'X-Target-User': taskConfig.XFollowUsername || '',
-          'X-Tweet-Id': taskConfig.XLikeId || taskConfig.XRetweetId || '',
-          'X-Action-Type': taskConfig.XFollowUsername ? 'follow' :
-                          taskConfig.XLikeId ? 'like' :
-                          taskConfig.XRetweetId ? 'retweet' : ''
-        }
-      });
-
-      if (!checkResponse.ok) {
         throw new Error('Twitter action verification failed');
       }
 
-      const result = await checkResponse.json();
+      const result = await verifyResponse.json();
       if (!result.verified) {
         throw new Error('Twitter action not verified');
       }
     }
 
     // 验证 Discord 加入
-    if (taskConfig.DiscordChannelId && proofData.discordAccessToken) {
-      // 验证 Discord 账号
-      const verifyResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/social/discord/verify`, {
-        headers: {
-          'Authorization': `Bearer ${proofData.discordAccessToken}`,
-          'X-User-Id': proofData.discordId
-        }
-      });
-
-      if (!verifyResponse.ok) {
-        throw new Error('Discord account verification failed');
+    if (taskConfig.DiscordChannelId) {
+      if (!proofData.encryptedTokens || !proofData.discordId) {
+        throw new Error('Missing Discord account information');
       }
 
-      // 验证服务器成员资格
-      const checkResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/social/discord/check-guild`, {
+      const checkResponse = await fetch(`${baseUrl}/api/social/discord/check-guild`, {
+        method: 'POST',
         headers: {
-          'Authorization': `Bearer ${proofData.discordAccessToken}`,
-          'X-User-Id': proofData.discordId,
-          'X-Guild-Id': taskConfig.DiscordChannelId
-        }
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          encryptedTokens: proofData.encryptedTokens,
+          guildId: taskConfig.DiscordChannelId,
+          userId: proofData.discordId
+        })
       });
 
       if (!checkResponse.ok) {
@@ -100,10 +117,10 @@ async function verifySocialAction(taskConfig: any, proofData: any) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { boardId, taskId, address, proof, chainName } = await req.json();
+    const { boardId, boardConfig, taskId, address, proof, chainName, task } = await req.json();
 
     // 验证参数
-    if (!boardId || !taskId || !address || !proof || !chainName) {
+    if (!boardId || !taskId || !address || !proof || !chainName || !task) {
       return NextResponse.json(
         { error: 'Missing required parameters' },
         { status: 400 }
@@ -128,20 +145,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 创建对应链的客户端
-    const publicClient = createPublicClient({
-      chain,
-      transport: http()
-    });
-
-    // 获取任务详情进行验证
-    const task = await publicClient.readContract({
-      address: contractAddr as `0x${string}`,
-      abi,
-      functionName: 'getTaskDetail',
-      args: [BigInt(boardId), BigInt(taskId)]
-    }) as TaskDetailView;
-
     // 验证任务是否允许自检
     if (!task.allowSelfCheck) {
       return NextResponse.json(
@@ -150,8 +153,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    let checkData = proof;
-    const taskConfig = JSON.parse(task.config || '{}');
+    let checkData = 'Check Success';
+    const taskConfig = task.config;
     const proofData = JSON.parse(proof);
 
     // 添加社交账号验证
@@ -167,9 +170,11 @@ export async function POST(req: NextRequest) {
     // 如果任务配置中启用了 AI Review
     if (taskConfig.aiReview) {
       const aiReviewResult = await aiReviewService.review({
+        boardConfig,
         taskConfig,
         proofTypes: taskConfig.taskType,
-        proofData: JSON.parse(proof),
+        proofData,
+        taskName: task.name,
         taskDescription: task.description,
         aiReviewPrompt: taskConfig.aiReviewPrompt
       });
@@ -181,7 +186,7 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      checkData = aiReviewResult.reviewComment
+      checkData = aiReviewResult.reviewComment;
     }
 
     // 构造消息

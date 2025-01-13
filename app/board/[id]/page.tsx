@@ -1,7 +1,6 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useAddressProfiles } from "@/hooks/useAddressProfiles";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAccount, useWaitForTransactionReceipt } from "wagmi";
@@ -10,15 +9,22 @@ import { format, set } from "date-fns";
 import { toast } from "@/components/ui/use-toast";
 import Image from "next/image";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SiDiscord } from "@icons-pack/react-simple-icons";
 
 // Components
 import TaskList from "@/components/TaskList";
 import MemberSubmissionTable from "@/components/MemberSubmissionTable";
 import DynamicModal from "@/components/DynamicModal";
 import BoardActionsDropdown from "@/components/BoardActionsDropdown";
-import LoadingSpinner from "@/components/ui/loading";
 import { Badge } from "@/components/ui/badge";
 import CreateTaskModal from "@/components/CreateTaskModal";
+import BoardForm from "@/components/BoardForm";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 // Contract Hooks & ABI
 import {
@@ -38,6 +44,7 @@ import {
   useGetTasksForBoard,
   useIsBoardMember,
   useGetBoardDetail,
+  useGetProfiles,
 } from "@/hooks/useContract";
 // GraphQL and Contract Addresses
 import {
@@ -50,6 +57,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Address } from "@/components/ui/Address";
 import { Chain, formatUnits, zeroAddress } from "viem";
 import { Info, Calendar, Coins, Users, User2 } from "lucide-react";
+import { getNativeTokenSymbol } from "@/utils/chain";
 
 // Modal Configurations
 export const modalConfigs = {
@@ -99,7 +107,7 @@ export default function BoardPage() {
 
   const { data: board, refetch } = useGetBoardDetail(BigInt(id as string));
 
-  // Get all addresses to fetch profiles for
+  // 获取所有需要获取资料的地址
   const addressesToFetch = useMemo(() => {
     if (!board || typeof board !== "object") return [];
 
@@ -127,16 +135,28 @@ export default function BoardPage() {
     return Array.from(addresses);
   }, [board]);
 
-  // Add type assertion for isMember with explicit typing
-  const { data: isMember = false } = useIsBoardMember(
+  // 批量获取用户资料
+  const { data: profilesData } = useGetProfiles(addressesToFetch);
+
+  // 将资料数据转换为映射格式
+  const userProfiles = useMemo(() => {
+    if (!profilesData || !Array.isArray(profilesData)) return {};
+
+    const [nicknames, avatars, socialAccounts, _, __] = profilesData;
+    return addressesToFetch.reduce((acc, address, index) => {
+      acc[address.toLowerCase()] = {
+        nickname: nicknames[index],
+        avatar: avatars[index],
+        socialAccount: socialAccounts[index],
+      };
+      return acc;
+    }, {} as Record<string, { nickname: string; avatar: string; socialAccount: string }>);
+  }, [profilesData, addressesToFetch]);
+
+  const { data: isMember = false, refetch: refetchIsMember } = useIsBoardMember(
     id as string,
     address as `0x${string}`
-  ) as { data: boolean };
-  // Add useAddressProfiles hook and type the result
-  const userProfiles = useAddressProfiles(addressesToFetch) as Record<
-    string,
-    { nickname: string; avatar: string }
-  >;
+  ) as { data: boolean; refetch: () => void };
 
   if (!board || !isBoardDetailView(board)) {
     return <BoardSkeleton />;
@@ -150,7 +170,10 @@ export default function BoardPage() {
         address={address}
         chain={chain!}
         onTaskSelect={setSelectedTask}
-        refetch={refetch}
+        refetch={() => {
+          refetch();
+          refetchIsMember();
+        }}
         isCreator={
           isConnected && board.creator.toLowerCase() === address?.toLowerCase()
         }
@@ -213,6 +236,7 @@ function BoardDetails({
   const [isUpdateTaskModalOpen, setIsUpdateTaskModalOpen] = useState(false);
   const [selectedTaskForUpdate, setSelectedTaskForUpdate] =
     useState<TaskView>();
+  const [showBoardForm, setShowBoardForm] = useState(false);
 
   // Modal Handlers
   const handleOpenModal = (
@@ -220,24 +244,13 @@ function BoardDetails({
     taskId?: bigint,
     submission?: Submission
   ) => {
-    setModalType(type);
-    setSelectedTaskId(taskId);
-    setSelectedSubmission(submission);
-    setIsModalOpen(true);
-
-    // 预填充更新表单
     if (type === "updateBoard") {
-      // 预填充 board 更新表单
-      const initialBoardData = {
-        name: board.name,
-        description: board.description,
-        img: board.img,
-        rewardToken: board.rewardToken === zeroAddress ? "" : board.rewardToken,
-      };
-      setInitialFormData(initialBoardData);
+      setShowBoardForm(true);
     } else {
-      // 其他类型的 modal 不需要预填充
-      setInitialFormData(undefined);
+      setModalType(type);
+      setSelectedTaskId(taskId);
+      setSelectedSubmission(submission);
+      setIsModalOpen(true);
     }
   };
 
@@ -348,15 +361,6 @@ function BoardDetails({
           boardId: boardIdNum,
           taskId: BigInt(taskIdNum!), // Convert to BigInt with non-null assertion
           reviewer: data.reviewer,
-        });
-        break;
-      case "updateBoard":
-        result = await updateBountyBoard({
-          boardId: boardIdNum,
-          name: data.name,
-          description: data.description,
-          img: data.img,
-          rewardToken: data.rewardToken,
         });
         break;
       case "pledgeTokens":
@@ -480,7 +484,9 @@ function BoardDetails({
           <Coins className="h-4 w-4" />
           <strong>Reward Token:</strong>{" "}
           {tokenSymbol.data ??
-            ((board.rewardToken === zeroAddress && "ETH") || "")}
+            ((board.rewardToken === zeroAddress &&
+              getNativeTokenSymbol(chain)) ||
+              "")}
           {!(board.rewardToken === zeroAddress) && (
             <Address address={board.rewardToken} />
           )}
@@ -490,7 +496,9 @@ function BoardDetails({
           <strong>Total Pledged:</strong>{" "}
           {formatUnits(BigInt(board.totalPledged), 18)}{" "}
           {tokenSymbol.data ??
-            ((board.rewardToken === zeroAddress && "ETH") || "")}
+            ((board.rewardToken === zeroAddress &&
+              getNativeTokenSymbol(chain)) ||
+              "")}
         </div>
         <div className="flex items-center gap-2 text-muted-foreground mb-4">
           <Users className="h-4 w-4" />
@@ -530,21 +538,38 @@ function BoardDetails({
           <TabsContent value="bounties">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">Available Tasks</h3>
-              {address && isCreator && (
-                <Button onClick={() => setIsCreateTaskModalOpen(true)}>
-                  Create Task
-                </Button>
-              )}
               {/* Join Board Button */}
               {address && !isMember && (
                 <Button onClick={() => handleAction("joinBoard")}>
                   Join Board
                 </Button>
               )}
+              {isWalletConnected && isCreator && (
+                <div className="flex gap-2">
+                  <Button onClick={() => setIsCreateTaskModalOpen(true)}>
+                    Create Task
+                  </Button>
+                  {isCreator && (
+                    <Button
+                      variant="outline"
+                      onClick={() =>
+                        window.open(
+                          "https://discord.com/oauth2/authorize?client_id=1309894992713613404",
+                          "_blank"
+                        )
+                      }
+                    >
+                      <SiDiscord className="mr-2 h-4 w-4" />
+                      Add Discord Bot
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
             <TaskList
               tasks={board.tasks}
               boardId={board.id}
+              boardConfig={JSON.parse(board.config || "{}")}
               userTaskStatuses={board.userTaskStatuses || []} // Add this prop
               address={address}
               chain={chain}
@@ -598,11 +623,14 @@ function BoardDetails({
           onSubmit={handleCreateTask}
           onConfirmed={refetch}
           mode="create"
+          boardConfig={JSON.parse(board.config || "{}")}
+          tokenSymbol={tokenSymbol.data || getNativeTokenSymbol(chain)}
         />
 
         {/* Update Task Modal */}
         {selectedTaskForUpdate && (
           <CreateTaskModal
+            boardConfig={JSON.parse(board.config)}
             isOpen={isUpdateTaskModalOpen}
             onClose={() => {
               setIsUpdateTaskModalOpen(false);
@@ -638,6 +666,7 @@ function BoardDetails({
                 ? JSON.parse(selectedTaskForUpdate.config).taskType || []
                 : [],
             }}
+            tokenSymbol={tokenSymbol.data || getNativeTokenSymbol(chain)}
           />
         )}
 
@@ -652,6 +681,31 @@ function BoardDetails({
             onSubmit={handleModalSubmit}
             onConfirmed={refetch}
           />
+        )}
+
+        {showBoardForm && (
+          <Dialog open={showBoardForm} onOpenChange={setShowBoardForm}>
+            <DialogContent className="">
+              <DialogHeader>
+                <DialogTitle>Update Board</DialogTitle>
+              </DialogHeader>
+              <BoardForm
+                initialData={{
+                  id: board.id,
+                  name: board.name,
+                  description: board.description,
+                  img: board.img,
+                  rewardToken:
+                    board.rewardToken === zeroAddress ? "" : board.rewardToken,
+                  config: board.config,
+                }}
+                onSubmit={updateBountyBoard}
+                mode="update"
+                redirectPath={`/board/${board.id}`}
+                isDialog={true}
+              />
+            </DialogContent>
+          </Dialog>
         )}
       </CardContent>
     </Card>

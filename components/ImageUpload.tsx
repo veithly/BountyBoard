@@ -27,21 +27,12 @@ export default function ImageUpload({ value, onChange, label, className }: Image
     img.onload = async () => {
       URL.revokeObjectURL(objectUrl);
 
-      if (Math.abs(img.width - img.height) > 100) {
-        toast({
-          title: "Warning",
-          description: "Please upload a square image for best results",
-          variant: "destructive",
-        });
-        return;
-      }
-
       setIsUploading(true);
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("smfile", file);
 
       try {
-        const response = await fetch("https://api.img2ipfs.org/api/v0/add", {
+        const response = await fetch("/api/upload", {
           method: "POST",
           body: formData,
         });
@@ -49,16 +40,25 @@ export default function ImageUpload({ value, onChange, label, className }: Image
         if (!response.ok) throw new Error("Upload failed");
 
         const data = await response.json();
-        onChange(data.Url);
-        toast({
-          title: "Success",
-          description: "Image uploaded successfully"
-        });
+
+        if (data.success) {
+          onChange(data.data.url);
+          toast({
+            title: "Success",
+            description: "Img uploaded successfully"
+          });
+        } else {
+          if (data.code === "image_repeated") {
+            onChange(data.images);
+          } else {
+            throw new Error(data.message || "Upload failed");
+          }
+        }
       } catch (error) {
         console.error("Upload error:", error);
         toast({
           title: "Error",
-          description: "Failed to upload image",
+          description: "Failed to upload img",
           variant: "destructive",
         });
       } finally {
@@ -114,12 +114,12 @@ export default function ImageUpload({ value, onChange, label, className }: Image
             <div className="relative group aspect-square">
               <Image
                 src={value}
-                alt={label || "Board image"}
+                alt={label || "Board img"}
                 fill
                 className="object-cover p-2"
               />
               <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
-                <p className="text-sm text-white/80">Click to change image</p>
+                <p className="text-sm text-white/80">Click to change img</p>
                 <Button
                   type="button"
                   variant="outline"
@@ -128,7 +128,7 @@ export default function ImageUpload({ value, onChange, label, className }: Image
                   onClick={() => document.getElementById('image-upload')?.click()}
                 >
                   <Upload className="h-4 w-4 mr-2" />
-                  Change Image
+                  Change Img
                 </Button>
               </div>
             </div>
@@ -144,11 +144,8 @@ export default function ImageUpload({ value, onChange, label, className }: Image
                     Uploading...
                   </span>
                 ) : (
-                  "Drop your image here"
+                  "Drop your img here"
                 )}
-              </p>
-              <p className="text-purple-400/60 text-sm mb-4">
-                Recommended: Square image (1:1 ratio)
               </p>
               <Button
                 type="button"
@@ -159,7 +156,7 @@ export default function ImageUpload({ value, onChange, label, className }: Image
                 className="bg-purple-500/10 border-purple-500/30 hover:bg-purple-500/20 hover:border-purple-500/50"
               >
                 <Upload className="mr-2 h-4 w-4" />
-                Upload Image
+                Upload Img
               </Button>
             </div>
           )}

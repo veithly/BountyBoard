@@ -1,29 +1,14 @@
-import { NextResponse } from 'next/server';
-import { createWalletClient, http, defineChain, encodeAbiParameters, parseAbiParameters } from 'viem';
+import { keccak256, encodeAbiParameters, parseAbiParameters, SignableMessage } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
-import { lineaSepolia } from 'viem/chains';
+import { NextRequest, NextResponse } from 'next/server';
 
 const SIGNER_PRIVATE_KEY = process.env.SIGNER_ADDRESS_PRIVATE_KEY as `0x${string}`;
-const DOMAIN = {
-  name: 'UserProfile',
-  version: '1',
-  chainId: lineaSepolia.id,
-  verifyingContract: process.env.PORTAL_ADDRESS as `0x${string}`
-};
 
-const TYPES = {
-  UserProfile: [
-    { name: 'nickname', type: 'string' },
-    { name: 'avatar', type: 'string' },
-    { name: 'socialAccount', type: 'string' },
-    { name: 'subject', type: 'address' }
-  ]
-};
-
-export async function POST(request: Request) {
+export async function POST(req: NextRequest) {
   try {
-    const { nickname, avatar, socialAccount, subject } = await request.json();
+    const { nickname, avatar, socialAccount, subject } = await req.json();
 
+    // 验证参数
     if (!nickname || !avatar || !socialAccount || !subject) {
       return NextResponse.json(
         { error: 'Missing required parameters' },
@@ -31,23 +16,26 @@ export async function POST(request: Request) {
       );
     }
 
-    const account = privateKeyToAccount(SIGNER_PRIVATE_KEY);
-    const client = createWalletClient({
-      account,
-      chain: lineaSepolia,
-      transport: http()
-    });
+    // 验证私钥格式
+    if (!SIGNER_PRIVATE_KEY || !SIGNER_PRIVATE_KEY.startsWith('0x') || SIGNER_PRIVATE_KEY.length !== 66) {
+      throw new Error('Invalid SIGNER_PRIVATE_KEY format');
+    }
 
-    const signature = await client.signTypedData({
-      domain: DOMAIN,
-      types: TYPES,
-      primaryType: 'UserProfile',
-      message: {
-        nickname,
-        avatar,
-        socialAccount,
-        subject
-      }
+    // 构造消息
+    const message = encodeAbiParameters(
+      parseAbiParameters('string, string, string, address'),
+      [nickname, avatar, socialAccount, subject as `0x${string}`]
+    );
+
+    // 计算消息哈希
+    const messageHash = keccak256(message);
+
+    // 创建账户
+    const account = privateKeyToAccount(SIGNER_PRIVATE_KEY);
+
+    // 签名消息
+    const signature = await account.signMessage({
+      message: { raw: messageHash } as SignableMessage
     });
 
     return NextResponse.json({
@@ -57,7 +45,7 @@ export async function POST(request: Request) {
       socialAccount
     });
   } catch (error) {
-    console.error("Signing error:", error);
+    console.error('Error in profile signing:', error);
     return NextResponse.json(
       { error: 'Failed to sign message' },
       { status: 500 }
