@@ -328,6 +328,7 @@ export default function CreateTaskModal({
                 <SelectItem value="Linea Sepolia">Linea Sepolia</SelectItem>
                 <SelectItem value="Ethereum">Ethereum</SelectItem>
                 <SelectItem value="Sepolia">Sepolia</SelectItem>
+                <SelectItem value="Monad Devnet">Monad Devnet</SelectItem>
               </SelectContent>
             </Select>
           </div>

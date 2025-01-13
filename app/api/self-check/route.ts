@@ -2,6 +2,7 @@ import { keccak256, encodeAbiParameters, parseAbiParameters, SignableMessage } f
 import { privateKeyToAccount } from 'viem/accounts';
 import { NextRequest, NextResponse } from 'next/server';
 import { lineaSepolia, Chain, mantleSepoliaTestnet, mantle, linea, flowMainnet, flowTestnet, bsc, bscTestnet, opBNB, opBNBTestnet } from 'viem/chains';
+import monadDevnet from '@/providers/monad';
 import anvil from '@/providers/my-anvil';
 import contractAddress from '@/constants/contract-address';
 import { TaskDetailView } from '@/types/types';
@@ -23,6 +24,7 @@ const SUPPORTED_CHAINS: Record<string, Chain> = {
   'Linea Mainnet': linea,
   'Linea Sepolia Testnet': lineaSepolia,
   'Anvil': anvil,
+  'Monad Devnet': monadDevnet,
 };
 
 const aiReviewService = new AIReviewService();

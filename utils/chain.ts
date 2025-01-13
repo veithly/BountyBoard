@@ -28,6 +28,8 @@ export const getNativeTokenSymbol = (chain?: Chain): string => {
       return 'MNT';
     case 5000: // Mantle Mainnet
       return 'MNT';
+    case 20143: // Monad
+      return 'DMON';
     default:
       return 'ETH';
   }

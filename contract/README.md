@@ -109,12 +109,16 @@ forge create --rpc-url $RPC_URL_LINEA \
 forge create --rpc-url $RPC_URL_MANTLE \
   --private-key $PRIVATE_KEY_MANTLE \
   src/BountyBoard.sol:BountyBoard
+
+forge create --rpc-url $RPC_URL_MONAD \
+  --private-key $PRIVATE_KEY_MONAD \
+  src/BountyBoard.sol:BountyBoard
 ```
 
 BountyBoard Proxy
 
 ```shell
-cast calldata "initialize(address)" $SIGNER_ADDRESS
+IMPLEMENTATION_ADDRESS=$(cast calldata "initialize(address)" $SIGNER_ADDRESS)
 
 forge create --rpc-url $RPC_URL_OPBNB \
   --private-key $PRIVATE_KEY_OPBNB \
@@ -130,6 +134,11 @@ forge create --rpc-url $RPC_URL_LINEA \
   --private-key $PRIVATE_KEY_LINEA \
   lib/openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Proxy.sol:ERC1967Proxy \
   --constructor-args $IMPLEMENTATION_ADDRESS $INITIALIZE_CALLDATA
+
+forge create --rpc-url $RPC_URL_MONAD \
+  --private-key $PRIVATE_KEY_MONAD \
+  lib/openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Proxy.sol:ERC1967Proxy \
+  --constructor-args $IMPLEMENTATION_ADDRESS $INITIALIZE_CALLDATA
 ```
 
 UserProfile
@@ -140,6 +149,8 @@ forge create --rpc-url $RPC_URL_OPBNB --private-key $PRIVATE_KEY_OPBNB src/UserP
 forge create --rpc-url $RPC_URL_MANTLE --private-key $PRIVATE_KEY_MANTLE src/UserProfile.sol:UserProfile --constructor-args $SIGNER_ADDRESS
 
 forge create --rpc-url $RPC_URL_LINEA --private-key $PRIVATE_KEY_LINEA src/UserProfile.sol:UserProfile --constructor-args $SIGNER_ADDRESS
+
+forge create --rpc-url $RPC_URL_MONAD --private-key $PRIVATE_KEY_MONAD src/UserProfile.sol:UserProfile --constructor-args $SIGNER_ADDRESS
 ```
 
 Mock ERC20
@@ -150,6 +161,8 @@ forge create --rpc-url $RPC_URL_OPBNB --private-key $PRIVATE_KEY_OPBNB src/MockE
 forge create --rpc-url $RPC_URL_MANTLE --private-key $PRIVATE_KEY_MANTLE src/MockERC20.sol:MockERC20 --constructor-args "Bounty" "BOUNTY"
 
 forge create --rpc-url $RPC_URL_LINEA --private-key $PRIVATE_KEY_LINEA src/MockERC20.sol:MockERC20 --constructor-args "Bounty" "BOUNTY"
+
+forge create --rpc-url $RPC_URL_MONAD --private-key $PRIVATE_KEY_MONAD src/MockERC20.sol:MockERC20 --constructor-args "BIG JB" "JB"
 ```
 
 UserProfilePortal
@@ -328,6 +341,12 @@ forge verify-contract \
   0x1483b61733f607eD7813769b2FF55b5649731dd6 \
   src/BountyBoard.sol:BountyBoard \
   --constructor-args $(cast abi-encode "constructor()")
+
+forge verify-contract \
+  --verifier-url https://explorer.monad-devnet.devnet101.com/api \
+  0x7F5c43e497d7F3392e7114809856Ac2fCc9454A6 \
+  src/BountyBoard.sol:BountyBoard \
+  --constructor-args $(cast abi-encode "constructor()")
 ```
 
 BountyBoard Proxy:
@@ -337,6 +356,12 @@ forge verify-contract \
   0x09D61437f07838AB892Bd92386EC39462BfE1972 \
   lib/openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Proxy.sol:ERC1967Proxy \
   --constructor-args $(cast abi-encode "constructor(address,bytes)" "0xf72eD6a6BC53669B7E818A106Ec9E7B090D3Da86" $(cast calldata "initialize(address)" "0x2809dCa37069918607b1eAaf591dE29fC389D3Cc"))
+
+forge verify-contract \
+  --verifier-url https://explorer.monad-devnet.devnet101.com/api \
+  0x7F5c43e497d7F3392e7114809856Ac2fCc9454A6 \
+  lib/openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Proxy.sol:ERC1967Proxy \
+  --constructor-args $(cast abi-encode "constructor(address,bytes)" "0x7F5c43e497d7F3392e7114809856Ac2fCc9454A6" $(cast calldata "initialize(address)" "0x2809dCa37069918607b1eAaf591dE29fC389D3Cc"))
 ```
 
 UserProfile:
@@ -344,6 +369,12 @@ UserProfile:
 forge verify-contract \
   --verifier-url https://evm-testnet.flowscan.io/api \
   0xBec6DF509D1e02172A8e3e756720cD1f4447456d \
+  src/UserProfile.sol:UserProfile \
+  --constructor-args $(cast abi-encode "constructor(address)" $SIGNER_ADDRESS)
+
+forge verify-contract \
+  --verifier-url https://explorer.monad-devnet.devnet101.com/api \
+  0xE3945d3fE0f67962220f1f66069Cd9fea9E76659 \
   src/UserProfile.sol:UserProfile \
   --constructor-args $(cast abi-encode "constructor(address)" $SIGNER_ADDRESS)
 ```
@@ -355,8 +386,13 @@ forge verify-contract \
   0xf576133fB9B5ac7186Dd917C915d90aFFD396c11 \
   src/MockERC20.sol:MockERC20 \
   --constructor-args $(cast abi-encode "constructor(string,string)" "Bounty" "BOUNTY")
-```
 
+forge verify-contract \
+  --verifier-url https://explorer.monad-devnet.devnet101.com/api \
+  0x698e8942d63cbFf3525fec8740A7EAaD6A251472 \
+  src/MockERC20.sol:MockERC20 \
+  --constructor-args $(cast abi-encode "constructor(string,string)" "BIG JB" "JB")
+```
 
 ## Update
 
