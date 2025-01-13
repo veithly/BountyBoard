@@ -163,7 +163,7 @@ ${fileContents.join('\n\n')}`;
                   apiUrl = 'https://op-bnb-testnet-explorer-api.nodereal.io/api';
                   break;
                 case 'Monad Devnet':
-                  apiUrl = 'https://explorer.monad-devnet.devnet101.com/api';
+                  apiUrl = 'https://explorer.monad-devnet.devnet101.com/api/v2/';
                   break;
               }
 
