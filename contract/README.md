@@ -162,7 +162,7 @@ forge create --rpc-url $RPC_URL_MANTLE --private-key $PRIVATE_KEY_MANTLE src/Moc
 
 forge create --rpc-url $RPC_URL_LINEA --private-key $PRIVATE_KEY_LINEA src/MockERC20.sol:MockERC20 --constructor-args "Bounty" "BOUNTY"
 
-forge create --rpc-url $RPC_URL_MONAD --private-key $PRIVATE_KEY_MONAD src/MockERC20.sol:MockERC20 --constructor-args "BIG JB" "JB"
+forge create --rpc-url $RPC_URL_MONAD --private-key $PRIVATE_KEY_MONAD src/MockERC20.sol:MockERC20 --constructor-args "Bounty Point" "Point"
 ```
 
 UserProfilePortal
@@ -388,9 +388,9 @@ forge verify-contract \
 
 forge verify-contract \
   --verifier-url https://explorer.monad-devnet.devnet101.com/api \
-  0x698e8942d63cbFf3525fec8740A7EAaD6A251472 \
+  0x6Dec7D60f7A38DA254Ef2299aDCa7C497BF7b318 \
   src/MockERC20.sol:MockERC20 \
-  --constructor-args $(cast abi-encode "constructor(string,string)" "BIG JB" "JB")
+  --constructor-args $(cast abi-encode "constructor(string,string)" "Bounty Point" "Point")
 ```
 
 ## Update

@@ -11,11 +11,11 @@ contract UserProfileTest is Test {
     uint256 public signerPrivateKey;
 
     function setUp() public {
-        // 设置签名者
+        // Set the signer
         signerPrivateKey = 0xA11CE;
         signerAddress = vm.addr(signerPrivateKey);
 
-        // 部署合约
+        // Deploy contract
         userProfile = new UserProfile(signerAddress);
     }
 
@@ -24,7 +24,7 @@ contract UserProfileTest is Test {
         string memory avatar = "avatar_url";
         string memory socialAccount = "@alice";
 
-        // 准备签名数据
+        // Prepare signature data
         bytes32 messageHash = keccak256(
             abi.encode(
                 keccak256(bytes(nickname)),
@@ -44,10 +44,10 @@ contract UserProfileTest is Test {
         );
         bytes memory signature = abi.encodePacked(r, s, v);
 
-        // 设置个人资料
+        // Set profile
         userProfile.setProfile(nickname, avatar, socialAccount, signature);
 
-        // 验证个人资料
+        // Verify profile
         (
             string memory returnedNickname,
             string memory returnedAvatar,
@@ -62,7 +62,7 @@ contract UserProfileTest is Test {
     }
 
     function testGetProfiles() public {
-        // 创建多个用户并设置个人资料
+        // Create multiple users and set up profiles.
         address[] memory users = new address[](3);
         string[] memory nicknames = new string[](3);
         string[] memory avatars = new string[](3);
@@ -76,7 +76,7 @@ contract UserProfileTest is Test {
                 abi.encodePacked("@user", vm.toString(i + 1))
             );
 
-            // 准备签名
+            // Prepare signature
             bytes32 messageHash = keccak256(
                 abi.encode(
                     keccak256(bytes(nicknames[i])),
@@ -96,7 +96,7 @@ contract UserProfileTest is Test {
             );
             bytes memory signature = abi.encodePacked(r, s, v);
 
-            // 设置个人资料
+            // Set profile
             vm.prank(users[i]);
             userProfile.setProfile(
                 nicknames[i],
@@ -106,7 +106,7 @@ contract UserProfileTest is Test {
             );
         }
 
-        // 批量获取个人资料
+        // Batch retrieve profiles
         (
             string[] memory returnedNicknames,
             string[] memory returnedAvatars,
@@ -115,7 +115,7 @@ contract UserProfileTest is Test {
             bool[] memory exists
         ) = userProfile.getProfiles(users);
 
-        // 验证结果
+        // Verify the result
         for (uint256 i = 0; i < 3; i++) {
             assertEq(returnedNicknames[i], nicknames[i]);
             assertEq(returnedAvatars[i], avatars[i]);
@@ -126,7 +126,7 @@ contract UserProfileTest is Test {
     }
 
     function testGetAllUsers() public {
-        // 创建多个用户个人资料
+        // Create multiple user profiles
         address[] memory users = new address[](3);
         for (uint256 i = 0; i < 3; i++) {
             users[i] = address(uint160(i + 1));
@@ -140,7 +140,7 @@ contract UserProfileTest is Test {
                 abi.encodePacked("@user", vm.toString(i + 1))
             );
 
-            // 准备签名
+            // Prepare signature
             bytes32 messageHash = keccak256(
                 abi.encode(
                     keccak256(bytes(nickname)),
@@ -160,19 +160,19 @@ contract UserProfileTest is Test {
             );
             bytes memory signature = abi.encodePacked(r, s, v);
 
-            // 设置个人资料
+            // Set profile
             vm.prank(users[i]);
             userProfile.setProfile(nickname, avatar, socialAccount, signature);
         }
 
-        // 获取所有用户
+        // Get all users
         address[] memory allUsers = userProfile.getAllUsers();
         assertEq(allUsers.length, 3);
 
-        // 验证用户数量
+        // Verify user count
         assertEq(userProfile.getUserCount(), 3);
 
-        // 验证用户地址
+        // Verify user address
         for (uint256 i = 0; i < 3; i++) {
             assertEq(allUsers[i], users[i]);
         }
@@ -195,7 +195,7 @@ contract UserProfileTest is Test {
         string memory avatar = "avatar_url";
         string memory socialAccount = "@alice";
 
-        // 使用错误的私钥签名
+        // Using the wrong private key to sign
         uint256 wrongPrivateKey = 0xB0B;
         bytes32 messageHash = keccak256(
             abi.encode(

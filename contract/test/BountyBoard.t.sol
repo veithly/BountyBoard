@@ -17,29 +17,29 @@ contract BountyBoardTest is Test {
     uint256 public signerPrivateKey;
 
     function setUp() public {
-        // 设置签名者
+        // Set the signer
         signerPrivateKey = 0xA11CE;
         signerAddress = vm.addr(signerPrivateKey);
 
-        // 部署合约
+        // Deploy contract
         rewardToken = IERC20(address(new MockERC20("Test Token", "TEST")));
 
-        // 部署实现合约
+        // Deploy the implementation contract
         BountyBoard implementation = new BountyBoard();
 
-        // 准备初始化数据
+        // Prepare initialization data
         bytes memory initData = abi.encodeWithSelector(
             BountyBoard.initialize.selector,
             signerAddress
         );
 
-        // 部署代理合约
+        // Deploy the proxy contract
         ERC1967Proxy proxy = new ERC1967Proxy(
             address(implementation),
             initData
         );
 
-        // 获取代理合约实例
+        // Get the proxy contract instance
         bountyBoard = BountyBoard(payable(address(proxy)));
     }
 
@@ -98,17 +98,17 @@ contract BountyBoardTest is Test {
     }
 
     function testJoinBoard() public {
-        // 创建新的测试账户而不是使用当前账户
+        // Create a new test account instead of using the current account.
         address user = makeAddr("user");
         vm.startPrank(user);
 
-        // 创建板块
+        // Create a section/forum/board
         string memory boardName = "Test Board";
         string memory boardDescription = "This is a test board";
         string memory img = "http://example.com/image.png";
         bountyBoard.createBountyBoard(boardName, boardDescription, img, address(rewardToken));
 
-        // 使用不同的账户加入板块
+        // Join the section with different accounts
         vm.stopPrank();
         vm.prank(makeAddr("joiner"));
         bountyBoard.joinBoard(0);
@@ -148,19 +148,19 @@ contract BountyBoardTest is Test {
     }
 
     function testPledgeTokens() public {
-        // 创建板块
+        // Create a section/forum/board
         string memory initialName = "Test Board";
         string memory initialDesc = "This is a test board";
         string memory img = "http://example.com/image.png";
         bountyBoard.createBountyBoard(initialName, initialDesc, img, address(rewardToken));
 
-        // 如果使用 ERC20 代币，需要先 approve
+        // If using ERC20 tokens, you need to approve first.
         if (address(rewardToken) != address(0)) {
             MockERC20(address(rewardToken)).approve(address(bountyBoard), type(uint256).max);
         }
 
         uint256 pledgeAmount = 1000;
-        // 如果是原生代币，需要发送 value
+        // If it is a native token, the value needs to be sent.
         if (address(rewardToken) == address(0)) {
             bountyBoard.pledgeTokens{value: pledgeAmount}(0, pledgeAmount);
         } else {
@@ -172,7 +172,7 @@ contract BountyBoardTest is Test {
     }
 
     function testSubmitProof() public {
-        // 创建板块和任务
+        // Create sections and tasks
         string memory boardName = "Test Board";
         string memory boardDesc = "Test Description";
         string memory img = "http://example.com/image.png";
@@ -197,11 +197,11 @@ contract BountyBoardTest is Test {
             allowSelfCheck
         );
 
-        // 提交证明
+        // Submit proof
         string memory proof = "http://example.com/proof";
         bountyBoard.submitProof(0, 0, proof);
 
-        // 验证提交
+        // Verify submission
         (
             address submitter,
             string memory submittedProof,
@@ -214,7 +214,7 @@ contract BountyBoardTest is Test {
     }
 
     function testReviewSubmission() public {
-        // 创建板块和任务
+        // Create sections and tasks
         bountyBoard.createBountyBoard(
             "Test Board",
             "Test Description",
@@ -233,19 +233,19 @@ contract BountyBoardTest is Test {
             true // allowSelfCheck
         );
 
-        // 质押代币
+        // Pledged tokens
         MockERC20(address(rewardToken)).mint(address(this), 500);
         rewardToken.approve(address(bountyBoard), 500);
         bountyBoard.pledgeTokens(0, 500);
 
-        // 提交证明
+        // Submit proof
         string memory submissionProof = "http://example.com/proof";
         bountyBoard.submitProof(0, 0, submissionProof);
 
-        // 直接进行审核（因创建者已经是审核者）
+        // Directly proceed to review (as the creator is already a reviewer)
         bountyBoard.reviewSubmission(0, 0, address(this), 1, "Good job!");
 
-        // 验证审核结果
+        // Verify audit results
         (
             address submitter,
             string memory proofResult,
@@ -256,13 +256,13 @@ contract BountyBoardTest is Test {
 
         assertEq(submitter, address(this));
         assertEq(proofResult, submissionProof);
-        assertEq(status, 1);  // 1 表示已通过
+        assertEq(status, 1);  // 1 indicates passed
         assertEq(reviewComment, "Good job!");
         assertTrue(_submittedAt > 0);
     }
 
     function testSelfCheckSubmission() public {
-        // 创建板块和任务
+        // Create sections and tasks
         bountyBoard.createBountyBoard(
             "Test Board",
             "Test Description",
@@ -281,17 +281,17 @@ contract BountyBoardTest is Test {
             true // allowSelfCheck
         );
 
-        // 质押代币
+        // Pledged tokens
         MockERC20(address(rewardToken)).mint(address(this), 500); // 5 * 100
         rewardToken.approve(address(bountyBoard), 500);
         bountyBoard.pledgeTokens(0, 500);
 
-        // 加入板块
+        // Add a section/board
         address user = makeAddr("user");
         vm.prank(user);
         bountyBoard.joinBoard(0);
 
-        // 准备签名数据
+        // Prepare signature data
         bytes32 messageHash = keccak256(abi.encode(
             uint256(0),
             uint256(0),
@@ -303,7 +303,7 @@ contract BountyBoardTest is Test {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(signerPrivateKey, ethSignedMessageHash);
         bytes memory signature = abi.encodePacked(r, s, v);
 
-        // 提交自检
+        // Submit self-inspection
         vm.prank(user);
         bountyBoard.selfCheckSubmission(
             0,
@@ -312,7 +312,7 @@ contract BountyBoardTest is Test {
             "Task completed successfully"
         );
 
-        // 验证提交结果
+        // Verify submission result
         (
             address submitter,
             string memory proofResult,
@@ -321,7 +321,7 @@ contract BountyBoardTest is Test {
             string memory reviewComment
         ) = bountyBoard.bountySubmissions(0, 0, user);
 
-        // 验证结果
+        // Verify the result
         assertEq(submitter, user);
         assertEq(proofResult, "Task completed successfully");
         assertEq(reviewComment, "Task completed successfully");
@@ -341,12 +341,12 @@ contract BountyBoardTest is Test {
     }
 
     function testFailSelfCheckWithInvalidSignature() public {
-        // 创建板块和任务
+        // Create sections and tasks
         string memory boardName = "Test Board";
         bountyBoard.createBountyBoard(boardName, "", "", address(rewardToken));
         bountyBoard.createTask(0, "Task", "", 0, 1, 100, "", true);
 
-        // 使用错误的私钥签名
+        // Using the wrong private key to sign
         uint256 wrongPrivateKey = 0xB0B;
         address user = makeAddr("user");
         string memory checkData = "Test";
@@ -364,7 +364,7 @@ contract BountyBoardTest is Test {
     }
 
     function testUserTaskStatus() public {
-        // 1. 创建板块
+        // 1. Create a section/forum/board
         bountyBoard.createBountyBoard(
             "Test Board",
             "Test Description",
@@ -372,7 +372,7 @@ contract BountyBoardTest is Test {
             address(rewardToken)
         );
 
-        // 2. 创建两个任务
+        // 2. Create two tasks
         bountyBoard.createTask(
             0,
             "Task 1",
@@ -395,28 +395,28 @@ contract BountyBoardTest is Test {
             true
         );
 
-        // 3. 创建测试用户并加入板块
+        // 3. Create test users and add them to the section.
         address user = makeAddr("user");
         vm.startPrank(user);
         bountyBoard.joinBoard(0);
 
-        // 4. 提交第一个任务的证明
+        // 4. Submit the proof of the first task.
         string memory proof1 = "Proof for task 1";
         bountyBoard.submitProof(0, 0, proof1);
 
-        // 5. 获取板块详情并验证用户任务状态
+        // 5. Get section details and verify user task status.
         BountyBoard.BoardDetailView memory boardDetail = bountyBoard.getBoardDetail(0);
 
-        // 打印调试信息
+        // Print debug information
         console.log("Number of tasks:");
         console.logUint(boardDetail.tasks.length);
         console.log("Number of user task statuses:");
         console.logUint(boardDetail.userTaskStatuses.length);
 
-        // 6. 验证用户任务状态数组长度
+        // 6. Verify the length of the user task status array.
         assertEq(boardDetail.userTaskStatuses.length, 2, "Should have status for both tasks");
 
-        // 7. 验证第一个任务的状态（已提交）
+        // 7. Verify the status of the first task (submitted)
         BountyBoard.UserTaskStatus memory status1 = boardDetail.userTaskStatuses[0];
         console.log("Task 1 - TaskId:");
         console.logUint(uint256(status1.taskId));
@@ -436,7 +436,7 @@ contract BountyBoardTest is Test {
         assertEq(status1.submitProof, proof1, "Proof should match submitted proof");
         assertEq(status1.reviewComment, "", "Review comment should be empty");
 
-        // 8. 验证第二个任务的状态（未提交）
+        // 8. Verify the status of the second task (not submitted)
         BountyBoard.UserTaskStatus memory status2 = boardDetail.userTaskStatuses[1];
         console.log("Task 2 - TaskId:");
         console.logUint(uint256(status2.taskId));
@@ -452,16 +452,16 @@ contract BountyBoardTest is Test {
         assertEq(status2.submitProof, "", "Proof should be empty");
         assertEq(status2.reviewComment, "", "Review comment should be empty");
 
-        // 在审核之前添加代币质押
-        vm.stopPrank();  // 停止用户上下文
+        // Add token staking before review.
+        vm.stopPrank();  // Stop user context
         MockERC20(address(rewardToken)).mint(address(this), 1000);
         rewardToken.approve(address(bountyBoard), 1000);
         bountyBoard.pledgeTokens(0, 1000);
 
-        // 9. 测试审核后的状态变化
+        // 9. Test the status change after audit.
         bountyBoard.reviewSubmission(0, 0, user, 1, "Good job!");
 
-        vm.prank(user);  // 切换回用户上下文查看结果
+        vm.prank(user);  // Switch back to the user context to view the results
         boardDetail = bountyBoard.getBoardDetail(0);
         status1 = boardDetail.userTaskStatuses[0];
 
@@ -473,14 +473,14 @@ contract BountyBoardTest is Test {
         assertEq(status1.status, 1, "Status should be approved (1)");
         assertEq(status1.reviewComment, "Good job!", "Review comment should be set");
 
-        // 10. 测试重复提交已通过的任务
+        // 10. Test resubmission of tasks that have already been passed.
         vm.prank(user);
         vm.expectRevert("User has already been approved for this task");
         bountyBoard.submitProof(0, 0, "New proof");
     }
 
     function testUserTaskStatusWithMultipleSubmissions() public {
-        // 1. 设置初始环境
+        // 1. Set initial environment
         bountyBoard.createBountyBoard(
             "Test Board",
             "Test Description",
@@ -499,7 +499,7 @@ contract BountyBoardTest is Test {
             true
         );
 
-        // 2. 创建多个用户并加入板块
+        // 2. Create multiple users and add them to the section.
         address[] memory users = new address[](3);
         for(uint i = 0; i < users.length; i++) {
             users[i] = makeAddr(string.concat("user", Strings.toString(i)));
@@ -507,12 +507,12 @@ contract BountyBoardTest is Test {
             bountyBoard.joinBoard(0);
         }
 
-        // 3. 多个用户提交证明
+        // 3. Multiple users submit proofs.
         for(uint i = 0; i < users.length; i++) {
             vm.prank(users[i]);
             bountyBoard.submitProof(0, 0, string.concat("Proof from user ", Strings.toString(i)));
 
-            // 获取并验证每个用户的提交状态
+            // Get and verify the submission status of each user.
             vm.prank(users[i]);
             BountyBoard.BoardDetailView memory boardDetail = bountyBoard.getBoardDetail(0);
             BountyBoard.UserTaskStatus memory status = boardDetail.userTaskStatuses[0];
@@ -536,18 +536,18 @@ contract BountyBoardTest is Test {
             );
         }
 
-        // 4. 审核不同状态
+        // 4. Review different statuses
         int8[] memory reviewStatuses = new int8[](3);
-        reviewStatuses[0] = 1;  // 通过
-        reviewStatuses[1] = -1; // 拒绝
-        reviewStatuses[2] = 0;  // 保持待定
+        reviewStatuses[0] = 1;  // Through
+        reviewStatuses[1] = -1; // Refuse
+        reviewStatuses[2] = 0;  // Keep pending
 
         string[] memory comments = new string[](3);
         comments[0] = "Approved";
         comments[1] = "Rejected";
         comments[2] = "Still pending";
 
-        // 在审核之前添加代币质押 (确保在正确的上下文中)
+        // Add token staking before review (ensure in the correct context)
         MockERC20(address(rewardToken)).mint(address(this), 1000);
         rewardToken.approve(address(bountyBoard), 1000);
         bountyBoard.pledgeTokens(0, 1000);
@@ -555,7 +555,7 @@ contract BountyBoardTest is Test {
         for(uint i = 0; i < users.length; i++) {
             bountyBoard.reviewSubmission(0, 0, users[i], reviewStatuses[i], comments[i]);
 
-            // 验证审核后的状态
+            // Verify the status after review.
             vm.prank(users[i]);
             BountyBoard.BoardDetailView memory boardDetail = bountyBoard.getBoardDetail(0);
             BountyBoard.UserTaskStatus memory status = boardDetail.userTaskStatuses[0];
@@ -573,13 +573,13 @@ contract BountyBoardTest is Test {
     }
 
     function testBoardViews() public {
-        // 1. 创建板块
+        // 1. Create a section/forum/board
         string memory boardName = "Test Board";
         string memory boardDesc = "Test Description";
         string memory img = "http://example.com/image.png";
         bountyBoard.createBountyBoard(boardName, boardDesc, img, address(rewardToken));
 
-        // 2. 创建任务
+        // 2. Create task
         bountyBoard.createTask(
             0,                              // boardId
             "Task 1",                       // name
@@ -591,16 +591,16 @@ contract BountyBoardTest is Test {
             true                           // allowSelfCheck
         );
 
-        // 3. 添加成员
+        // 3. Add member
         address member = makeAddr("member");
         vm.prank(member);
         bountyBoard.joinBoard(0);
 
-        // 4. 提交任务
+        // 4. Submit task
         vm.prank(member);
         bountyBoard.submitProof(0, 0, "Test proof");
 
-        // 5. 测试 getAllBoards
+        // 5. Test getAllBoards
         console.log("Testing getAllBoards:");
         BountyBoard.BoardView[] memory allBoards = bountyBoard.getAllBoards();
         for(uint i = 0; i < allBoards.length; i++) {
@@ -611,7 +611,7 @@ contract BountyBoardTest is Test {
             console.log("- Total Pledged:", allBoards[i].totalPledged);
         }
 
-        // 6. 测试 getTasksForBoard
+        // 6. Test getTasksForBoard
         console.log("\nTesting getTasksForBoard:");
         BountyBoard.TaskView[] memory tasks = bountyBoard.getTasksForBoard(0);
         for(uint i = 0; i < tasks.length; i++) {
@@ -622,9 +622,9 @@ contract BountyBoardTest is Test {
             console.log("- Completions:", tasks[i].numCompletions);
         }
 
-        // 7. 测试 getBoardDetail
+        // 7. Test getBoardDetail
         console.log("\nTesting getBoardDetail:");
-        vm.prank(member);  // 使用成员身份查看
+        vm.prank(member);  // Use membership to view
         BountyBoard.BoardDetailView memory detail = bountyBoard.getBoardDetail(0);
 
         console.log("Board Detail:");
@@ -642,7 +642,7 @@ contract BountyBoardTest is Test {
             console.log("- Proof:", detail.userTaskStatuses[i].submitProof);
         }
 
-        // 8. 测试 getBoardsByMember
+        // 8. Test getBoardsByMember
         console.log("\nTesting getBoardsByMember:");
         BountyBoard.BoardView[] memory memberBoards = bountyBoard.getBoardsByMember(member);
         for(uint i = 0; i < memberBoards.length; i++) {
@@ -651,7 +651,7 @@ contract BountyBoardTest is Test {
             console.log("- Description:", memberBoards[i].description);
         }
 
-        // 9. 验证数据正确性
+        // 9. Verify data correctness
         assertEq(allBoards.length, 1, "Should have one board");
         assertEq(tasks.length, 1, "Should have one task");
         assertEq(detail.members.length, 2, "Should have two members");

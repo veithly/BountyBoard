@@ -145,7 +145,7 @@ contract SubmissionManager is BoardStorage, BoardView {
         uint256 _boardId,
         uint256 _taskId,
         bytes memory _signature,
-        string memory _checkData // 审核意见
+        string memory _checkData // Review opinion
     ) public {
         Board storage board = boards[_boardId];
         Task storage task = board.tasks[_taskId];
@@ -163,26 +163,26 @@ contract SubmissionManager is BoardStorage, BoardView {
             "User is not a member of this board"
         );
 
-        // 构造消息哈希
+        // Construct message hash
         bytes32 messageHash = keccak256(
             abi.encode(_boardId, _taskId, msg.sender, _checkData)
         );
 
-        // 转换为以太坊签名消息哈希
+        // Convert to Ethereum signed message hash
         bytes32 ethSignedMessageHash = MessageHashUtils.toEthSignedMessageHash(
             messageHash
         );
 
-        // 恢复签名者地址
+        // Restore signer address
         address recoveredSigner = ECDSA.recover(
             ethSignedMessageHash,
             _signature
         );
 
-        // 验证签名者
+        // Verify the signer
         require(signerAddress == recoveredSigner, "Invalid signature");
 
-        // 创建或更新提交
+        // Create or update commit
         Submission storage submission = bountySubmissions[_boardId][_taskId][
             msg.sender
         ];
@@ -191,7 +191,7 @@ contract SubmissionManager is BoardStorage, BoardView {
         submission.submittedAt = block.timestamp;
         submission.reviewComment = _checkData;
 
-        // 分发奖励
+        // Distribute rewards
         distributeReward(_boardId, _taskId, msg.sender);
         task.numCompletions++;
 
@@ -215,7 +215,7 @@ contract SubmissionManager is BoardStorage, BoardView {
         );
     }
 
-    // 添加辅助函数
+    // Add helper function
     function isBoardMember(
         uint256 _boardId,
         address _member

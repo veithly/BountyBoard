@@ -43,7 +43,7 @@ contract BoardView is BoardStorage {
         string config;
     }
 
-    // 获取所有活跃的板块
+    // Get all active sections/forum areas
     function getAllBoards() public view returns (BoardViewStruct[] memory) {
         uint256 activeCount = 0;
         for (uint256 i = 0; i < boardCount; i++) {
@@ -73,24 +73,24 @@ contract BoardView is BoardStorage {
         return result;
     }
 
-    // 获取板块详情
+    // Get section details
     function getBoardDetail(uint256 _boardId) public view returns (BoardDetailView memory) {
         Board storage board = boards[_boardId];
 
-        // 创建二维数组存储所有提交
-        // 第一维是任务，第二维是每个成员的提交
+        // Create a two-dimensional array to store all submissions.
+        // The first dimension is the task, the second dimension is the submission of each member.
         Submission[][] memory allSubmissions = new Submission[][](board.tasks.length);
 
-        // 初始化每个任务的提交数组
+        // Initialize the submission array for each task.
         for(uint i = 0; i < board.tasks.length; i++) {
             allSubmissions[i] = new Submission[](board.members.length);
-            // 获取每个成员的提交
+            // Get each member's commit.
             for(uint j = 0; j < board.members.length; j++) {
                 allSubmissions[i][j] = bountySubmissions[_boardId][board.tasks[i].id][board.members[j]];
             }
         }
 
-        // 获取当前用户的任务状态
+        // Get the current user's task status
         UserTaskStatus[] memory userTaskStatuses = new UserTaskStatus[](board.tasks.length);
         for(uint i = 0; i < board.tasks.length; i++) {
             Task storage task = board.tasks[i];
@@ -124,7 +124,7 @@ contract BoardView is BoardStorage {
         );
     }
 
-    // 检查用户是否是板块成员
+    // Check if the user is a member of the board/forum section.
     function isBoardMember(uint256 _boardId, address _member) public view virtual returns (bool) {
         Board storage board = boards[_boardId];
         for (uint i = 0; i < board.members.length; i++) {
@@ -133,7 +133,7 @@ contract BoardView is BoardStorage {
         return false;
     }
 
-    // 获取用户加入的板块
+    // Get the sections the user has joined
     function getBoardsByMember(address _member) public view returns (BoardViewStruct[] memory) {
         uint256 count = 0;
         for(uint256 i = 0; i < boardCount; i++) {

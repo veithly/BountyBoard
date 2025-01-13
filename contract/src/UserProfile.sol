@@ -49,7 +49,7 @@ contract UserProfile is Ownable, EIP712 {
         string memory socialAccount,
         bytes memory signature
     ) external {
-        // 验证签名
+        // Verify signature
         bytes32 digest = keccak256(
             abi.encode(nickname, avatar, socialAccount, msg.sender)
         );

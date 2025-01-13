@@ -4,7 +4,7 @@ pragma solidity ^0.8.9;
 import "./BoardStorage.sol";
 
 contract TaskManager is BoardStorage {
-    // 事件定义
+    // Event definition
     event TaskCreated(
         uint256 indexed boardId,
         uint256 indexed taskId,
@@ -50,7 +50,7 @@ contract TaskManager is BoardStorage {
         uint256 _maxCompletions,
         uint256 _rewardAmount,
         string memory _config,
-        bool _allowSelfCheck      // 保留allowSelfCheck参数
+        bool _allowSelfCheck      // Keep the allowSelfCheck parameter
     ) public {
         Board storage board = boards[_boardId];
         require(

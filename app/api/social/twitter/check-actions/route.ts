@@ -137,7 +137,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ verified: true });//result);
 
   } catch (error: any) {
-    console.error('错误:', error);
+    console.error('Error:', error);
     return NextResponse.json(
       { error: "Failed to process request", details: error.message },
       { status: 500 }

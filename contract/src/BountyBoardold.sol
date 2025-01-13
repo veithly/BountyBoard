@@ -35,7 +35,7 @@ contract BountyBoard is
         uint256 createdAt;  // Timestamp of task creation
         bool cancelled;     // Flag to indicate if the task is cancelled
         string config;      // Configuration string for the task
-        bool allowSelfCheck;     // 是否允许自行Check
+        bool allowSelfCheck;     // Whether self-check is allowed
     }
 
     // Structure to represent a bounty board
@@ -51,7 +51,7 @@ contract BountyBoard is
         address[] members;  // Array of board members
         uint256 createdAt;  // Timestamp of board creation
         bool closed;        // Flag to indicate if the board is closed
-        string config;        // 新增字段
+        string config;        // Add new field
     }
 
     // Mapping from bounty board ID to bounty board details
@@ -79,7 +79,7 @@ contract BountyBoard is
         string description,
         address rewardToken,
         uint256 createdAt,
-        string config      // 新增字段
+        string config      // Add new field
     );
 
     // Event emitted when tokens are pledged to a bounty board
@@ -180,7 +180,7 @@ contract BountyBoard is
         string name,
         string description,
         address rewardToken,
-        string config      // 新增字段
+        string config      // Add new field
     );
 
     // Event emmitted when distribution of reward tokens is updated
@@ -196,7 +196,7 @@ contract BountyBoard is
 
     address private _implementation;
 
-    // 添加签名者地址
+    // Add signer address
     address public signerAddress;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -212,15 +212,15 @@ contract BountyBoard is
         signerAddress = _signerAddress;
     }
 
-    // 添加必要的 UUPS 升级授权函数
+    // Add necessary UUPS upgrade authorization functions
     function _authorizeUpgrade(address newImplementation) internal override onlyRole(DEFAULT_ADMIN_ROLE) {
         require(newImplementation != address(0), "New implementation cannot be zero address");
         require(newImplementation != address(this), "New implementation cannot be same as current");
 
-        // 获取当前实现地址
+        // Get the current implementation address
         address currentImplementation = _implementation;
 
-        // 发出升级事件
+        // Emit upgrade event
         emit ContractUpgraded(currentImplementation, newImplementation);
     }
 
@@ -232,7 +232,7 @@ contract BountyBoard is
         string memory _description,
         string memory _img,
         address _rewardToken,
-        string memory _config     // 新增参数
+        string memory _config     // Add new parameter
     ) public {
         // Create a new bounty board and store it in the `boards` mapping
         Board storage newBoard = boards[boardCount];
@@ -252,7 +252,7 @@ contract BountyBoard is
         newBoard.members.push(msg.sender);
         newBoard.createdAt = block.timestamp;
         newBoard.closed = false;
-        newBoard.config = _config;    // 新增赋值
+        newBoard.config = _config;    // Add assignment
 
         _grantRole(REVIEWER_ROLE, msg.sender);
 
@@ -263,7 +263,7 @@ contract BountyBoard is
             _description,
             _rewardToken,
             block.timestamp,
-            _config      // 新增字段
+            _config      // Add new field
         );
 
         boardCount++;
@@ -276,7 +276,7 @@ contract BountyBoard is
         string memory _description,
         string memory _img,
         address _rewardToken,
-        string memory _config     // 新增参数
+        string memory _config     // Add new parameter
     ) public {
         Board storage board = boards[_boardId];
         require(
@@ -290,7 +290,7 @@ contract BountyBoard is
         if (_rewardToken != address(0)) {
             board.rewardToken = IERC20(_rewardToken);
         }
-        board.config = _config;    // 新增赋值
+        board.config = _config;    // Add assignment
 
         emit BountyBoardUpdated(_boardId, _name, _description, _rewardToken, _config);
     }
@@ -304,7 +304,7 @@ contract BountyBoard is
         uint256 _maxCompletions,
         uint256 _rewardAmount,
         string memory _config,
-        bool _allowSelfCheck      // 保留allowSelfCheck参数
+        bool _allowSelfCheck      // Keep the allowSelfCheck parameter
     ) public {
         Board storage board = boards[_boardId];
         require(
@@ -571,7 +571,7 @@ contract BountyBoard is
             "Only the task creator can add reviewers"
         );
 
-        // 检查审核员是 否已存在
+        // Check if the auditor already exists
         for(uint i = 0; i < task.reviewers.length; i++) {
             require(task.reviewers[i] != _reviewer, "Reviewer already exists");
         }
@@ -636,18 +636,18 @@ contract BountyBoard is
     }
 
 
-    // 添加更新签名者地址的函数
+    // Add a function to update the signer's address.
     function setSignerAddress(address _newSignerAddress) public onlyRole(DEFAULT_ADMIN_ROLE) {
         require(_newSignerAddress != address(0), "Invalid signer address");
         signerAddress = _newSignerAddress;
     }
 
-    // 修改selfCheckSubmission函数
+    // Modify the selfCheckSubmission function
     function selfCheckSubmission(
         uint256 _boardId,
         uint256 _taskId,
         bytes memory _signature,
-        string memory _checkData  // 审核意见
+        string memory _checkData  // Review comments
     ) public {
         Board storage board = boards[_boardId];
         Task storage task = board.tasks[_taskId];
@@ -665,7 +665,7 @@ contract BountyBoard is
             "User is not a member of this board"
         );
 
-        // 构造消息哈希
+        // Construct message hash
         bytes32 messageHash = keccak256(abi.encode(
             _boardId,
             _taskId,
@@ -673,23 +673,23 @@ contract BountyBoard is
             _checkData
         ));
 
-        // 转换为以太坊签名消息哈希
+        // Convert to Ethereum signed message hash
         bytes32 ethSignedMessageHash = MessageHashUtils.toEthSignedMessageHash(messageHash);
 
-        // 恢复签名者地址
+        // Restore signer address
         address recoveredSigner = ECDSA.recover(ethSignedMessageHash, _signature);
 
-        // 验证签名者
+        // Verify the signer
         require(signerAddress == recoveredSigner, "Invalid signature");
 
-        // 创建或更新提交
+        // Create or update commit
         Submission storage submission = bountySubmissions[_boardId][_taskId][msg.sender];
         submission.submitter = msg.sender;
         submission.status = 1;
         submission.submittedAt = block.timestamp;
         submission.reviewComment = _checkData;
 
-        // 分发奖励
+        // Distribute rewards
         distributeReward(_boardId, _taskId, msg.sender);
         task.numCompletions++;
 
@@ -724,7 +724,7 @@ contract BountyBoard is
         uint256 createdAt;
         address rewardToken;
         bool closed;
-        string config;        // 新增字段
+        string config;        // Add new field
     }
 
     // Function to get all boards without mappings
@@ -752,7 +752,7 @@ contract BountyBoard is
                     board.createdAt,
                     address(board.rewardToken),
                     board.closed,
-                    board.config     // 新增字段
+                    board.config     // Add new field
                 );
             }
         }
@@ -833,7 +833,7 @@ contract BountyBoard is
         SubmissionView[] submissions;
         address[] members;
         UserTaskStatus[] userTaskStatuses;
-        string config;        // 新增字段
+        string config;        // Add new field
     }
 
     // Define a struct for submission view
@@ -846,17 +846,17 @@ contract BountyBoard is
         string reviewComment;
     }
 
-    // 修改 UserTaskStatus 结构体定义
+    // Modify the UserTaskStatus struct definition.
     struct UserTaskStatus {
         uint256 taskId;
         bool submitted;
         int8 status;         // -1 = rejected, 0 = pending, 1 = approved
         uint256 submittedAt;
-        string submitProof;  // 改名以避免与 submitted 混淆
+        string submitProof;  // Rename to avoid confusion with submitted
         string reviewComment;
     }
 
-    // 定义简化的任务详情视图结构体
+    // Define a simplified task detail view structure
     struct TaskDetailView {
         uint256 id;
         string name;
@@ -873,7 +873,7 @@ contract BountyBoard is
         bool allowSelfCheck;
     }
 
-    // 获取任务详情的函数
+    // Function to get task details
     function getTaskDetail(uint256 _boardId, uint256 _taskId) public view returns (TaskDetailView memory) {
         Board storage board = boards[_boardId];
         require(_taskId < board.tasks.length, "Task does not exist");
@@ -901,7 +901,7 @@ contract BountyBoard is
     function getBoardDetail(uint256 _boardId) public view returns (BoardDetailView memory) {
         Board storage board = boards[_boardId];
 
-        // 获取任务列表
+        // Get task list
         TaskView[] memory tasks = new TaskView[](board.tasks.length);
         for(uint i = 0; i < board.tasks.length; i++) {
             Task storage task = board.tasks[i];
@@ -923,7 +923,7 @@ contract BountyBoard is
             });
         }
 
-        // 获取提交记录
+        // Get commit history
         uint256 submissionCount = 0;
         for (uint256 i = 0; i < board.tasks.length; i++) {
             for (uint256 j = 0; j < board.members.length; j++) {
@@ -953,7 +953,7 @@ contract BountyBoard is
             }
         }
 
-        // 获取用户任务状态
+        // Get user task status
         UserTaskStatus[] memory userTaskStatuses = new UserTaskStatus[](board.tasks.length);
         for(uint i = 0; i < board.tasks.length; i++) {
             Task storage task = board.tasks[i];
@@ -969,7 +969,7 @@ contract BountyBoard is
             });
         }
 
-        // 返回完整的 BoardDetailView
+        // Return the complete BoardDetailView.
         return BoardDetailView({
             currentUser: msg.sender,
             id: board.id,
@@ -985,11 +985,11 @@ contract BountyBoard is
             submissions: submissions,
             members: board.members,
             userTaskStatuses: userTaskStatuses,
-            config: board.config     // 新增字段
+            config: board.config     // Add new field
         });
     }
 
-    // 获取用户加入的所有Board
+    // Get all Boards the user has joined
     function getBoardsByMember(address _member) public view returns (BoardView[] memory) {
         uint256 count = 0;
         for(uint256 i = 0; i < boardCount; i++) {
@@ -1014,7 +1014,7 @@ contract BountyBoard is
                     createdAt: board.createdAt,
                     rewardToken: address(board.rewardToken),
                     closed: board.closed,
-                    config: board.config     // 新增字段
+                    config: board.config     // Add new field
                 });
                 currentIndex++;
             }

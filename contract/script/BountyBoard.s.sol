@@ -16,14 +16,14 @@ contract BountyBoardScript is Script {
 
         vm.startBroadcast(deployerPrivateKey);
 
-        // 1. 部署实现合约
+        // 1. Deploy the implementation contract
         BountyBoard implementation = new BountyBoard();
         console.log("Implementation deployed at:", address(implementation));
 
-        // 2. 确保实现合约已正确部署
+        // Ensure the implementation contract is deployed correctly.
         require(address(implementation) != address(0), "Implementation deployment failed");
 
-        // 3. 准备初始化数据
+        // 3. Prepare initialization data
         bytes memory initData = abi.encodeWithSelector(
             BountyBoard.initialize.selector,
             signerAddress
@@ -31,20 +31,20 @@ contract BountyBoardScript is Script {
         console.log("Initialize data length:", initData.length);
 
         if (upgradeAddress != address(0)) {
-            // 如果定义了升级地址，则进行合约升级
+            // If the upgrade address is defined, proceed with contract upgrade.
             console.log("Upgrading contract at address:", upgradeAddress);
             UUPSUpgradeable proxy = UUPSUpgradeable(upgradeAddress);
             proxy.upgradeToAndCall(address(implementation), "");
             console.log("Contract upgraded at:", upgradeAddress);
         } else {
-            // 否则，创建新的代理合约
+            // Otherwise, create a new proxy contract.
             ERC1967Proxy proxy = new ERC1967Proxy(
                 address(implementation),
                 initData
             );
             console.log("Proxy deployed at:", address(proxy));
 
-            // 5. 创建代理合约的接口实例并验证初始化
+            // 5. Create an interface instance of the proxy contract and verify initialization.
             BountyBoard bountyBoard = BountyBoard(payable(address(proxy)));
             require(bountyBoard.signerAddress() == signerAddress, "Initialization verification failed");
 

@@ -8,13 +8,13 @@ contract UserProfileScript is Script {
     function setUp() public {}
 
     function run() public {
-        // 从环境变量获取必要参数
+        // Obtain necessary parameters from environment variables.
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address signerAddress = vm.envAddress("SIGNER_ADDRESS");
 
         vm.startBroadcast(deployerPrivateKey);
 
-        // 部署合约
+        // Deploy contract
         UserProfile userProfile = new UserProfile(signerAddress);
         console.log("UserProfile deployed at:", address(userProfile));
         console.log("Signer address set to:", userProfile.signerAddress());

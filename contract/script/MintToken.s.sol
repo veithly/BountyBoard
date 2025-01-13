@@ -6,16 +6,16 @@ import "../src/MockERC20.sol";
 
 contract MintTokenScript is Script {
     function run() external {
-        // 开始广播交易
+        // Start broadcasting the transaction
         vm.startBroadcast();
 
-        // 部署合约的地址（如果已经部署过，直接使用现有地址）
+        // Address of the deployed contract (use the existing address if it has already been deployed)
         address tokenAddress = 0xaEbAfCa968c845bD69206Ba3c61cFbf59D123A23;
         MockERC20 token = MockERC20(tokenAddress);
 
-        // mint 代币给指定地址
+        // Mint tokens to a specified address
         address recipient = 0x9DB42275a5F1752392b31D4E9Af2D7A318263887;
-        uint256 amount = 1000000000000 * 10**18; // mint 1000 个代币
+        uint256 amount = 1000000000000 * 10**18; // mint 1000 tokens
         token.mint(recipient, amount);
 
         vm.stopBroadcast();
