@@ -16,16 +16,16 @@ function BoardsPageInner() {
   const { data: boardsData, isLoading } = useGetAllBoards();
   const { address } = useAccount();
 
-  // 获取所有创建者地址
+  // Get all creator addresses
   const creatorAddresses = useMemo(() => {
     if (!boardsData || !Array.isArray(boardsData)) return [];
     return boardsData.map((board: BoardView) => board.creator as `0x${string}`);
   }, [boardsData]);
 
-  // 批量获取创建者资料
+  // Batch retrieve creator profiles
   const { data: profilesData } = useGetProfiles(creatorAddresses);
 
-  // 将资料数据转换为映射格式
+  // Convert data information into a map format.
   const creatorProfiles = useMemo(() => {
     if (!profilesData || !Array.isArray(profilesData)) return {};
 

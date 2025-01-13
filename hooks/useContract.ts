@@ -30,7 +30,6 @@ function getUserProfileAddress(chain?: { name: string }) {
   ] as `0x${string}`;
 }
 
-// 通用合约函数调用 hook
 export function useBountyBoardFunction(functionName: string) {
   const { writeContractAsync } = useWriteContract();
   const { toast } = useToast();
@@ -65,7 +64,7 @@ export function useBountyBoardFunction(functionName: string) {
   };
 }
 
-// 创建板块
+// Create a board/forum section
 export function useCreateBoard() {
   const contractFunction = useBountyBoardFunction("createBountyBoard");
 
@@ -80,7 +79,7 @@ export function useCreateBoard() {
   };
 }
 
-// 创建任务
+// Create task
 export function useCreateTask() {
   const contractFunction = useBountyBoardFunction("createTask");
 
@@ -108,7 +107,7 @@ export function useCreateTask() {
   };
 }
 
-// 更新任务
+// Update task
 export function useUpdateTask() {
   const contractFunction = useBountyBoardFunction("updateTask");
 
@@ -138,7 +137,7 @@ export function useUpdateTask() {
   };
 }
 
-// 提交证明
+// Submit proof
 export function useSubmitProof() {
   const contractFunction = useBountyBoardFunction("submitProof");
 
@@ -147,7 +146,7 @@ export function useSubmitProof() {
   };
 }
 
-// 审核提交
+// Review submission
 export function useReviewSubmission() {
   const contractFunction = useBountyBoardFunction("reviewSubmission");
 
@@ -165,7 +164,7 @@ export function useReviewSubmission() {
   };
 }
 
-// 自检提交
+// Self-check commit
 export function useSelfCheckSubmission() {
   const contractFunction = useBountyBoardFunction('selfCheckSubmission');
 
@@ -185,7 +184,7 @@ export function useSelfCheckSubmission() {
 }
 
 
-// 添加审核员
+// Add auditor
 export function useAddReviewerToTask() {
   const contractFunction = useBountyBoardFunction("addReviewerToTask");
 
@@ -194,7 +193,7 @@ export function useAddReviewerToTask() {
   };
 }
 
-// 自行检查
+// Self-inspection
 export function useSelfCheck() {
   const contractFunction = useBountyBoardFunction("selfCheck");
 
@@ -203,7 +202,7 @@ export function useSelfCheck() {
   };
 }
 
-// 取消任务
+// Cancel task
 export function useCancelTask() {
   const contractFunction = useBountyBoardFunction("cancelTask");
 
@@ -212,7 +211,7 @@ export function useCancelTask() {
   };
 }
 
-// 授权代币
+// Authorized token
 export function useApproveTokens(tokenAddress: `0x${string}`) {
   const { writeContractAsync } = useWriteContract();
   const { toast } = useToast();
@@ -243,7 +242,7 @@ export function useApproveTokens(tokenAddress: `0x${string}`) {
   };
 }
 
-// 质押代币
+// Pledged tokens
 export function usePledgeTokens(tokenAddress: `0x${string}`) {
   const { address, chain } = useAccount();
   const bountyBoardAddress = contractAddress.BountyBoard[chain?.name as keyof typeof contractAddress.BountyBoard] as `0x${string}`;
@@ -279,7 +278,7 @@ export function usePledgeTokens(tokenAddress: `0x${string}`) {
   };
 }
 
-// 加入赏金板
+// Add bounty board
 export function useJoinBoard() {
   const contractFunction = useBountyBoardFunction("joinBoard");
 
@@ -288,7 +287,7 @@ export function useJoinBoard() {
   };
 }
 
-// 添加审核员
+// Add auditor
 export function useAddReviewerToBounty() {
   const contractFunction = useBountyBoardFunction("addReviewerToBounty");
 
@@ -305,7 +304,7 @@ export function useAddReviewerToBounty() {
   };
 }
 
-// 取消赏金任务
+// Cancel bounty task
 export function useCancelBounty() {
   const contractFunction = useBountyBoardFunction("cancelBounty");
 
@@ -314,7 +313,7 @@ export function useCancelBounty() {
   };
 }
 
-// 关闭赏金板
+// Close the bounty board.
 export function useCloseBoard() {
   const contractFunction = useBountyBoardFunction("closeBoard");
 
@@ -323,7 +322,7 @@ export function useCloseBoard() {
   };
 }
 
-// 提取质押代币
+// Extract staked tokens
 export function useWithdrawPledgedTokens() {
   const contractFunction = useBountyBoardFunction("withdrawPledgedTokens");
 
@@ -332,7 +331,7 @@ export function useWithdrawPledgedTokens() {
   };
 }
 
-// 更新赏金板
+// Update bounty board
 export function useUpdateBountyBoard() {
   const contractFunction = useBountyBoardFunction("updateBountyBoard");
 
@@ -370,7 +369,7 @@ export function useTokenSymbol(rewardTokenAddress: `0x${string}`) {
 }
 
 
-// 读取函数
+// Read function
 export function useGetAllBoards() {
   const { chain } = useAccount();
 
@@ -429,7 +428,7 @@ export function useIsBoardMember(boardId: string, address?: `0x${string}`) {
   });
 }
 
-// 获取用户加入的所有板块
+// Get all sections the user has joined
 export function useGetBoardsByMember(address?: `0x${string}`) {
   const { chain } = useAccount();
   const bountyBoardAddress = contractAddress.BountyBoard[chain?.name as keyof typeof contractAddress.BountyBoard] as `0x${string}`;
@@ -445,7 +444,7 @@ export function useGetBoardsByMember(address?: `0x${string}`) {
   });
 }
 
-// 设置个人资料
+// Set profile
 export function useSetProfile() {
   const { chain } = useAccount();
   const { toast } = useToast();
@@ -486,7 +485,7 @@ export function useSetProfile() {
   };
 }
 
-// 获取个人资料
+// Get profile
 export function useGetProfile(address?: `0x${string}`) {
   const { chain } = useAccount();
   const userProfileAddress = getUserProfileAddress(chain);
@@ -502,7 +501,7 @@ export function useGetProfile(address?: `0x${string}`) {
   });
 }
 
-// 批量获取个人资料
+// Batch retrieve profiles
 export function useGetProfiles(addresses?: `0x${string}`[]) {
   const { chain } = useAccount();
   const userProfileAddress = getUserProfileAddress(chain);
@@ -518,7 +517,7 @@ export function useGetProfiles(addresses?: `0x${string}`[]) {
   });
 }
 
-// 获取所有用户
+// Get all users
 export function useGetAllUsers() {
   const { chain } = useAccount();
   const userProfileAddress = getUserProfileAddress(chain);
@@ -530,7 +529,7 @@ export function useGetAllUsers() {
   });
 }
 
-// 更新用户资料
+// Update user profile
 export function useUpdateProfile() {
   const { writeContractAsync } = useWriteContract();
   const { toast } = useToast();

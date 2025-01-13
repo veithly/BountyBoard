@@ -108,7 +108,7 @@ export default function BoardForm({ initialData, onSubmit, mode, redirectPath = 
         description: `Board ${mode === 'create' ? 'created' : 'updated'} successfully.`,
       });
 
-      // 发送Discord公告
+      // Send Discord announcement
       if (formData.channelId) {
         fetch('/api/discord-announcement', {
           method: 'POST',

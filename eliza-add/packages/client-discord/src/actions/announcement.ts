@@ -89,7 +89,7 @@ export default {
                 throw new Error("Invalid channel or channel not found");
             }
 
-            // 更新状态以包含频道信息
+            // Update status to include channel information
             state = {
                 ...state,
                 channelName: channel.name,
@@ -97,7 +97,7 @@ export default {
                 content: message.content.text,
             };
 
-            // 使用模板生成格式化的公告内容
+            // Use a template to generate formatted notice content
             const context = composeContext({
                 state,
                 template: announcementTemplate,
@@ -113,10 +113,10 @@ export default {
                 throw new Error("Failed to generate announcement content");
             }
 
-            // 发送公告
+            // Send announcement
             await channel.send(formattedContent);
 
-            // 回调通知发送结果
+            // Callback to notify the sending result
             if (callback) {
                 const responseContent: Content = {
                     text: "✅ Announcement has been sent successfully!",

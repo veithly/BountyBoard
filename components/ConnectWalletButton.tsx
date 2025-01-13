@@ -31,7 +31,7 @@ function ConnectWalletButtonInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // 处理 URL 参数控制 modal
+  // Handle URL parameter control for modal
   useEffect(() => {
     const modalParam = searchParams.get('modal');
     const shouldOpenModal = localStorage.getItem("profileModalShouldOpen");
@@ -42,17 +42,17 @@ function ConnectWalletButtonInner() {
   }, [searchParams]);
 
   const handleOpenModal = () => {
-    // 更新 URL 参数
+    // Update URL parameters
     const newUrl = `${window.location.pathname}?modal=profile`;
     window.history.pushState({}, '', newUrl);
     setIsProfileModalOpen(true);
   };
 
   const handleCloseModal = () => {
-    // 清理 URL 参数
+    // Clean up URL parameters
     const newUrl = window.location.pathname;
     window.history.replaceState({}, '', newUrl);
-    // 清理 localStorage
+    // Clear localStorage
     localStorage.removeItem("profileModalShouldOpen");
     localStorage.removeItem("verificationInfo");
     localStorage.removeItem("profileFormData");
@@ -80,15 +80,15 @@ function ConnectWalletButtonInner() {
         const ready = mounted;
         const connected = ready && account && chain;
 
-        // 使用合约 hook 获取用户资料
+        // Use contract hook to get user profile
         const { data: userProfileData } = useGetProfile(connected ? account.address as `0x${string}` : undefined);
 
-        // 当合约数据更新时，更新本地状态
+        // When contract data is updated, update local state
         useEffect(() => {
           if (userProfileData && Array.isArray(userProfileData)) {
             const [nickname, avatar, socialAccount] = userProfileData;
 
-            // 解析并设置社交账号信息到 store
+            // Parse and set social account information to the store
             try {
               const parsedSocialAccount = JSON.parse(socialAccount);
               setSocialAccounts(parsedSocialAccount);

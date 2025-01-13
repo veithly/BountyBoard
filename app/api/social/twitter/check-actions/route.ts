@@ -12,7 +12,7 @@ type Tweet = {
   id?: string;
 };
 
-// 扩展类型定义
+// Extend type definition
 type PublicMetrics = {
   like_count?: number;
   retweet_count?: number;
@@ -42,7 +42,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // 使用服务器端解密
+    // Use server-side decryption
     const decryptedTokens = JSON.parse(decryptData(encryptedTokens));
     const accessToken = decryptedTokens.xAccessToken;
 
@@ -92,7 +92,7 @@ export async function POST(req: Request) {
             "tweet.fields": ["public_metrics"]
           }) as TweetResponse;
 
-          // 添加空值检查
+          // Add null check
           result.verified = Boolean(
             tweet?.data?.public_metrics?.like_count &&
             tweet.data.public_metrics.like_count > 0
@@ -116,7 +116,7 @@ export async function POST(req: Request) {
             "tweet.fields": ["public_metrics"]
           }) as TweetResponse;
 
-          // 添加空值检查
+          // Add null check
           result.verified = Boolean(
             tweet?.data?.public_metrics?.retweet_count &&
             tweet.data.public_metrics.retweet_count > 0

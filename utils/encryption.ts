@@ -1,9 +1,9 @@
-// AES 配置
+// AES Configuration
 const ALGORITHM = 'AES-GCM';
 const IV_LENGTH = 12;
 
 /**
- * 获取加密密钥
+ * Get the encryption key
  */
 const getEncryptionKey = async (): Promise<CryptoKey> => {
   const key = process.env.NEXT_PUBLIC_ENCRYPTION_KEY;
@@ -11,7 +11,7 @@ const getEncryptionKey = async (): Promise<CryptoKey> => {
     throw new Error('Encryption key is not configured');
   }
 
-  // 从 base64 字符串导入密钥
+  // Import key from base64 string
   const keyBuffer = Uint8Array.from(atob(key), c => c.charCodeAt(0));
   return await window.crypto.subtle.importKey(
     'raw',
@@ -23,7 +23,7 @@ const getEncryptionKey = async (): Promise<CryptoKey> => {
 };
 
 /**
- * 加密数据
+ * Encrypt data
  */
 export const encryptData = async (data: string): Promise<string> => {
   try {
@@ -37,13 +37,12 @@ export const encryptData = async (data: string): Promise<string> => {
       encodedData
     );
 
-    // 创建合并后的数组
+    // Create merged array
     const encryptedArray = new Uint8Array(encryptedData);
     const combined = new Uint8Array(iv.length + encryptedArray.length);
     combined.set(iv, 0);
     combined.set(encryptedArray, iv.length);
 
-    // 转换为 base64
     return btoa(String.fromCharCode.apply(null, Array.from(combined)));
   } catch (error) {
     console.error('Encryption error:', error);
@@ -52,7 +51,7 @@ export const encryptData = async (data: string): Promise<string> => {
 };
 
 /**
- * 解密数据
+ * Decrypt data
  */
 export const decryptData = async (encryptedData: string): Promise<string> => {
   try {

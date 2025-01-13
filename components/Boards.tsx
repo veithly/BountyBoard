@@ -15,9 +15,9 @@ import { BOARDS } from '@/graphql/queries';
 
 const url = process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT as string;
 
-// 单个 Board 组件
+// Single Board component
 const BoardCard = ({ board }: { board: BoardView }) => {
-  const { data: tokenSymbol } = useTokenSymbol(board.rewardToken); // 在组件内部使用 useTokenSymbol
+  const { data: tokenSymbol } = useTokenSymbol(board.rewardToken); // Use useTokenSymbol inside the component
 
   return (
     <Link key={board.id} href={`/board/${board.id}`}>
@@ -59,7 +59,7 @@ export default function Boards() {
   return (
     <>
       {data?.map((board: BoardView) => (
-        <BoardCard key={board.id} board={board} /> // 渲染 BoardCard 组件
+        <BoardCard key={board.id} board={board} /> // Render BoardCard component
       ))}
     </>
   );

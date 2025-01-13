@@ -43,7 +43,7 @@ function ProfileSettingsModalInner({
   const { address: userAddress } = useAccount();
   const isTelegramWebApp = isInitialized;
 
-  // 监听钱包地址变化，清除非 Telegram 的社交账号数据
+  // Listen for changes in wallet address, clear social account data that is not Telegram's
   useEffect(() => {
     if (userAddress) {
       setSocialAccounts((prev) => ({
@@ -54,7 +54,7 @@ function ProfileSettingsModalInner({
     }
   }, [userAddress]);
 
-  // 处理 Telegram 账号自动填充
+  // Handle Telegram account auto-fill
   useEffect(() => {
     if (isTelegramWebApp && telegramUsername && telegramUserId) {
       setSocialAccounts((prev) => ({
@@ -69,7 +69,7 @@ function ProfileSettingsModalInner({
     try {
       setIsLoading(true);
 
-      // 分离公开数据和敏感数据
+      // Separate public data and sensitive data
       const publicData = {
         xUserName: socialAccounts?.xUserName,
         xName: socialAccounts?.xName,
@@ -84,7 +84,7 @@ function ProfileSettingsModalInner({
         telegramUserId: socialAccounts?.telegramUserId,
       };
 
-      // 敏感数据加密
+      // Sensitive data encryption
       const sensitiveData = {
         xAccessToken: socialAccounts?.xAccessToken,
         discordAccessToken: socialAccounts?.discordAccessToken,
@@ -97,7 +97,7 @@ function ProfileSettingsModalInner({
         encryptedTokens,
       });
 
-      // 获取签名
+      // Get signature
       const response = await fetch('/api/profile/sign', {
         method: 'POST',
         headers: {
@@ -117,7 +117,7 @@ function ProfileSettingsModalInner({
 
       const { signature } = await response.json();
 
-      // 使用签名调用合约
+      // Use the signature to call the contract
       const { hash } = await setProfile({
         nickname,
         avatar,
@@ -145,10 +145,10 @@ function ProfileSettingsModalInner({
     }
   };
 
-  // 获取用户资料
+  // Get user profile
   const { data: profileData, isSuccess: profileLoaded, refetch: refetchProfile } = useGetProfile(address);
 
-  // 初始化用户资料
+  // Initialize user profile
   useEffect(() => {
     if (profileLoaded && profileData && Array.isArray(profileData)) {
       const [userNickname, userAvatar, socialAccountStr] = profileData;
@@ -166,7 +166,7 @@ function ProfileSettingsModalInner({
     }
   }, [profileLoaded, profileData, setSocialAccounts]);
 
-  // 处理 Telegram 验证点击
+  // Handle Telegram authentication click
   const handleTelegramVerification = () => {
     if (!telegramUsername) {
       toast({
@@ -176,24 +176,24 @@ function ProfileSettingsModalInner({
     }
   };
 
-  // 保存表单数据到 localStorage
+  // Save form data to localStorage
   const saveFormData = (data: any) => {
     localStorage.setItem("profileFormData", JSON.stringify(data));
   };
 
-  // 从 localStorage 获取表单数据
+  // Retrieve form data from localStorage
   const loadFormData = () => {
     const saved = localStorage.getItem("profileFormData");
     return saved ? JSON.parse(saved) : null;
   };
 
-  // 处理社交账号验证
+  // Handle social account verification
   const handleSocialVerification = async (provider: "twitter" | "discord" | "github") => {
     try {
       setIsVerifying(true);
       saveFormData({ nickname, avatar, socialAccounts });
 
-      // 保存验证信息到 localStorage
+      // Save verification information to localStorage
       const verificationInfo = { modalType: "profile", provider };
       localStorage.setItem("verificationInfo", JSON.stringify(verificationInfo));
       localStorage.setItem("profileModalShouldOpen", "true");
@@ -212,7 +212,7 @@ function ProfileSettingsModalInner({
     }
   };
 
-  // 处理验证回调
+  // Handle the verification callback
   useEffect(() => {
     const savedVerificationInfo = localStorage.getItem("verificationInfo");
     const verificationInfo = savedVerificationInfo ? JSON.parse(savedVerificationInfo) : null;
@@ -226,12 +226,12 @@ function ProfileSettingsModalInner({
       }
 
       try {
-        // 重新获取用户资料
+        // Reacquire user profile
         await refetchProfile();
 
         const savedData = loadFormData();
         if (savedData) {
-          // 恢复保存的表单数据
+          // Restore saved form data
           setNickname(savedData.nickname || "");
           setAvatar(savedData.avatar || "");
           if (savedData.socialAccounts) {
@@ -277,7 +277,7 @@ function ProfileSettingsModalInner({
       }
     };
 
-    // 如果有 modal 参数或者 shouldOpenModal，执行验证并打开弹窗
+    // If there is a modal parameter or shouldOpenModal, perform verification and open the modal.
     if (modalParam === 'profile' || shouldOpenModal) {
       verifyAccount();
       if (!isOpen) {
@@ -285,14 +285,14 @@ function ProfileSettingsModalInner({
       }
     }
   }, [session, isOpen, refetchProfile]);
-  // 处理关闭弹窗
+  // Handle closing the popup window
   const handleClose = () => {
-    // 清理所有临时数据
+    // Clear all temporary data
     localStorage.removeItem("verificationInfo");
     localStorage.removeItem("profileModalShouldOpen");
     localStorage.removeItem("profileFormData");
 
-    // 清理 URL 参数
+    // Clean up URL parameters
     const newUrl = window.location.pathname;
     window.history.replaceState({}, '', newUrl);
 
@@ -406,7 +406,7 @@ function ProfileSettingsModalInner({
               </Button>
             </div>
 
-            {/* Telegram Mini App 提示 */}
+            {/* Telegram Mini App Prompt */}
             {!isTelegramWebApp && (
               <Alert variant="warning" className="bg-yellow-500/10 border-yellow-500/30">
                 <AlertCircle className="h-4 w-4 text-yellow-500" />

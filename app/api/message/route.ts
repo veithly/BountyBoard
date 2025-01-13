@@ -21,7 +21,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 构建消息体，匹配服务端期望的格式
     const messagePayload = {
       roomId: stringToUuid(channelId + "-" + elizaAgentId),
       userId: stringToUuid(elizaAgentUserId),
@@ -35,7 +34,6 @@ export async function POST(req: NextRequest) {
       }
     };
 
-    // 调用AI代理接口
     const response = await fetch(elizaAgentUrl, {
       method: 'POST',
       headers: {
@@ -49,7 +47,6 @@ export async function POST(req: NextRequest) {
       throw new Error(errorDetails.error || 'Unknown error');
     }
 
-    // 服务端返回的是数组，包含AI的响应和可能的额外消息
     const aiResponses = await response.json();
 
     return NextResponse.json({

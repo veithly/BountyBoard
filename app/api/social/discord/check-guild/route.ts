@@ -12,7 +12,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // 使用服务器端解密
+    // Use server-side decryption
     const decryptedTokens = JSON.parse(decryptData(encryptedTokens));
     const accessToken = decryptedTokens.discordAccessToken;
 
@@ -23,7 +23,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // 获取用户的公会列表
+    // Get the user's guild list
     const guildsResponse = await fetch(
       'https://discord.com/api/users/@me/guilds',
       {

@@ -396,7 +396,7 @@ export class DiscordClient extends EventEmitter {
                 throw new Error("Invalid channel or channel not found");
             }
 
-            // 使用 MessageManager 格式化公告
+            // Use MessageManager to format the announcement
             const formattedContent =
                 await this.messageManager.formatAnnouncement(
                     content,
@@ -408,7 +408,7 @@ export class DiscordClient extends EventEmitter {
                 throw new Error("Failed to generate announcement content");
             }
 
-            // 发送消息
+            // Send message
             const messages = await sendMessageInChunks(
                 channel,
                 formattedContent.text,
@@ -416,7 +416,7 @@ export class DiscordClient extends EventEmitter {
                 []
             );
 
-            // 保存到记忆
+            // Save to memory
             const memory: Memory = {
                 id: stringToUuid(
                     `announcement-${Date.now()}-${this.runtime.agentId}`

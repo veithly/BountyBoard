@@ -117,6 +117,9 @@ ${fileContents.join('\n\n')}`;
               let apiKey = '';
 
               switch (network) {
+                case 'Monad Devnet':
+                  apiUrl = 'https://explorer.monad-devnet.devnet101.com/api/v2/';
+                  break;
                 case 'Mantle':
                   apiUrl = 'https://api.mantlescan.xyz/api';
                   apiKey = process.env.MANTLESCAN_API_KEY || '';
@@ -162,15 +165,12 @@ ${fileContents.join('\n\n')}`;
                 case 'opBNB Testnet':
                   apiUrl = 'https://op-bnb-testnet-explorer-api.nodereal.io/api';
                   break;
-                case 'Monad Devnet':
-                  apiUrl = 'https://explorer.monad-devnet.devnet101.com/api/v2/';
-                  break;
               }
 
               let content = '';
 
               if (network.startsWith('Flow EVM') || network.startsWith('Monad')) {
-                // BlockScout API 调用
+                // BlockScout API call
                 try {
                   const response = await fetch(
                     `${apiUrl}/smart-contracts/${proofData.contract}`
@@ -204,9 +204,9 @@ ${fileContents.join('\n\n')}`;
                   throw new Error(`Failed to fetch contract source code: ${error.message}`);
                 }
               } else if (network.startsWith('opBNB')) {
-                // NodeReal API 调用
+                // NodeReal API call
                 try {
-                  // 首先获取合约验证状态
+                  // First, get the contract verification status
                   const verifyResponse = await fetch(
                     `${apiUrl}/contract/preverify`, {
                       method: 'POST',
@@ -224,7 +224,7 @@ ${fileContents.join('\n\n')}`;
                   const data = JSON.parse(verifyData);
 
                   if (data.data && data.data.input_json && data.data.input_json.sources) {
-                    // 直接从验证数据中获取源代码
+                    // Directly obtain the source code from the validation data
                     const sources = data.data.input_json.sources;
                     content = Object.entries(sources)
                       .filter(([filename]) => !filename.toLowerCase().includes('lib/') &&
@@ -246,7 +246,7 @@ ${fileContents.join('\n\n')}`;
                   throw new Error(`Failed to fetch contract source code: ${error.message}`);
                 }
               } else {
-                // 原有的 Etherscan 风格 API 调用
+                // Original Etherscan-style API call
                 const response = await fetch(
                   `${apiUrl}?module=contract&action=getsourcecode&address=${proofData.contract}&apikey=${apiKey || ''}`
                 );
@@ -307,7 +307,7 @@ ${fileContents.join('\n\n')}`;
       const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
       const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
 
-      // 构建结构化的提示词
+      // Build structured prompts
       const prompt = {
         task_info: {
           name: taskName,
@@ -345,7 +345,7 @@ ${fileContents.join('\n\n')}`;
       const data = await response.json();
       let result = data.candidates[0].content.parts[0].text;
 
-      // 清理响应文本，移除可能的 markdown 标记
+      // Clean up the response text, remove potential markdown markup.
       result = result.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
 
       try {
@@ -360,7 +360,7 @@ ${fileContents.join('\n\n')}`;
         console.error('Error parsing Gemini response:', error);
         console.log('Raw response:', result);
 
-        // 如果解析失败，尝试使用简单的文本匹配
+        // If parsing fails, try using simple text matching
         const isApproved = result.toLowerCase().includes('approved');
         const comment = result.split('\n').find((line: string) =>
           line.toLowerCase().includes('comment') ||

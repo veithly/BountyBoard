@@ -45,7 +45,6 @@ contract BoardStorage {
         string reviewComment;
     }
 
-    // 状态变量
     mapping(uint256 => Board) public boards;
     uint256 public boardCount;
     mapping(uint256 => mapping(uint256 => mapping(address => Submission))) public bountySubmissions;

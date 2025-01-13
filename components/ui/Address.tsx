@@ -13,7 +13,7 @@ interface AddressProps {
   className?: string
   size?: 'sm' | 'lg'
 }
-// 省略地址中间部分的函数
+// Function to abbreviate the middle part of the address
 function shortenAddress(address: string) {
   return `${address.slice(0, 6)}...${address.slice(-4)}`
 }

@@ -39,3 +39,5 @@ next-env.d.ts
 run-*.json
 
 certificates
+
+/draft

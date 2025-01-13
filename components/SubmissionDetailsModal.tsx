@@ -23,7 +23,6 @@ interface SubmissionDetailsModalProps {
   onConfirmed?: () => void;
 }
 
-// 添加一个通用的社交平台按钮组件
 const SocialButton = ({
   href,
   icon: Icon,
@@ -75,6 +74,8 @@ export default function SubmissionDetailsModal({
 
   const getExplorerUrl = (address: string, network?: string) => {
     switch (network) {
+      case 'Monad':
+        return `https://explorer.monad-devnet.devnet101.com/address/${address}`;
       case 'Mantle':
         return `https://explorer.mantle.xyz/address/${address}`;
       case 'Mantle Sepolia':
@@ -88,7 +89,7 @@ export default function SubmissionDetailsModal({
       case 'Sepolia':
         return `https://sepolia.etherscan.io/address/${address}`;
       default:
-        return `https://lineascan.build/address/${address}`; // 默认 Linea
+        return `https://lineascan.build/address/${address}`; // Default Linea
     }
   };
 
@@ -135,7 +136,7 @@ export default function SubmissionDetailsModal({
     }
   };
 
-  // 监听交易状态
+  // Listen for transaction status
   useEffect(() => {
     if (isConfirmed && submitStatus !== 'confirmed') {
       setSubmitStatus('confirmed');
@@ -177,7 +178,7 @@ export default function SubmissionDetailsModal({
     };
   };
 
-  // 从 MemberSubmissionTable 复制并修改的 renderProofContent 函数
+  // Copy and modify renderProofContent function from MemberSubmissionTable
   const renderProofContent = (proof: string) => {
     try {
       const proofData: SubmissionProof = JSON.parse(proof);
@@ -368,7 +369,7 @@ export default function SubmissionDetailsModal({
               </div>
             </div>
 
-            {/* 审核部分 - 只对审核人员显示 */}
+            {/* Review section - Only displayed to reviewers */}
             {isReviewer && submission.status === 0 && (
               <div className="space-y-4 pt-4 border-t border-border">
                 <div className="space-y-2">

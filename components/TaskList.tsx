@@ -70,7 +70,7 @@ export default function TaskList({
   onCancelTask,
   refetch,
   chain,
-  userProfiles = {}, // 添加默认空对象
+  userProfiles = {}, // Add default empty object
   isCreator: isCreatorProp,
   isMember,
   onOpenModal,
@@ -164,7 +164,7 @@ export default function TaskList({
         duration: Infinity,
       });
 
-      // 验证必要参数
+      // Verify required parameters
       if (
         !address ||
         !chain ||
@@ -189,7 +189,7 @@ export default function TaskList({
         return;
       }
 
-      // 获取当前任务的提交证明
+      // Get the submission proof of the current task
       const currentSubmission = userTaskStatuses.find(
         (status) => status.taskId === task.id
       );
@@ -204,7 +204,7 @@ export default function TaskList({
         return;
       }
 
-      // 解析提交的证明数据
+      // Parse the submitted proof data
       const submissionProof = JSON.parse(currentSubmission.submitProof);
 
       const taskJson = {
@@ -373,7 +373,7 @@ export default function TaskList({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    {/* Submit Proof - 只在未提交或被拒绝时显示 */}
+                    {/* Submit Proof - Only displayed when not submitted or rejected */}
                     {address &&
                       (!getTaskStatus(task).isSubmitted ||
                         getTaskStatus(task).status !== 1) && (
@@ -403,7 +403,7 @@ export default function TaskList({
                       </>
                     )}
 
-                    {/* Self Check - 只在已提交但未审核时显示 */}
+                    {/* Self Check - Only display when submitted but not yet reviewed */}
                     {task.allowSelfCheck &&
                       getTaskStatus(task).isSubmitted &&
                       getTaskStatus(task).status === 0 && (

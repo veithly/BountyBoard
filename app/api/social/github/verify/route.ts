@@ -14,7 +14,7 @@ export async function GET(req: Request) {
       );
     }
 
-    // 使用 GitHub API 获取用户信息
+    // Use GitHub API to get user information
     const response = await fetch(
       `https://api.github.com/user`, {
         headers: {

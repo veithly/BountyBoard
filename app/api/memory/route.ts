@@ -12,7 +12,6 @@ export async function POST(req: NextRequest) {
   try {
     const { content, channelId } = await req.json();
 
-    // 验证请求体
     if (!content || !channelId) {
       return NextResponse.json(
         { error: "Missing required fields" },
@@ -28,7 +27,6 @@ export async function POST(req: NextRequest) {
       createdAt: new Date(),
     };
 
-    // 调用代理接口
     const response = await fetch(elizaAgentUrl, {
       method: 'POST',
       headers: {

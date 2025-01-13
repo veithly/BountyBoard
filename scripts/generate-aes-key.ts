@@ -3,47 +3,47 @@ const fs = require('fs');
 const path = require('path');
 
 /**
- * 生成加密密钥和配置
+ * Generate encryption key and configuration
  */
 function generateEncryptionConfig() {
-  // 生成32字节(256位)的随机密钥
+  // Generate a 32-byte (256-bit) random key
   const key = cryptoNode.randomBytes(32);
 
   const config = {
     NEXT_PUBLIC_ENCRYPTION_KEY: key.toString('base64')
   };
 
-  // 创建环境变量文件内容
+  // Create environment variable file content
   const envContent = Object.entries(config)
     .map(([key, value]) => `${key}=${value}`)
     .join('\n');
 
-  // 将配置写入.env文件
+  // Write configuration to .env file
   const envPath = path.join(process.cwd(), '.env');
 
-  // 如果文件存在，先读取现有内容
+  // If the file exists, read the existing content first.
   let existingContent = '';
   try {
     existingContent = fs.readFileSync(envPath, 'utf8');
   } catch (error) {
-    // 文件不存在，忽略错误
+    // File does not exist, ignore the error.
   }
 
-  // 更新或添加新的配置
+  // Update or add new configuration
   const envLines = existingContent.split('\n');
   const newEnvLines = envLines.filter(line =>
     !line.startsWith('NEXT_PUBLIC_ENCRYPTION_KEY=')
   );
   newEnvLines.push(envContent);
 
-  // 写入更新后的内容
+  // Write updated content
   fs.writeFileSync(envPath, newEnvLines.join('\n'));
 
-  console.log('加密配置已生成并保存到 .env 文件');
-  console.log('请确保将这些值安全地保存在其他地方作为备份');
-  console.log('\n生成的配置:');
+  console.log('Encryption key generated and saved to .env file');
+  console.log('Please ensure to securely store these values elsewhere as a backup');
+  console.log('\nGenerated configuration:');
   console.log('NEXT_PUBLIC_ENCRYPTION_KEY:', config.NEXT_PUBLIC_ENCRYPTION_KEY);
 }
 
-// 运行生成器
+// Run the generator
 generateEncryptionConfig();

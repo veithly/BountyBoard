@@ -23,9 +23,7 @@ export async function POST(req: NextRequest) {
 
     let announcementText = '';
 
-    // 检查是否配置了 Eliza
     if (elizaAgentUrl && elizaAgentId) {
-      // 使用现有的 Eliza 逻辑
       const aiResponse = await fetch(elizaAgentUrl, {
         method: "POST",
         headers: {
@@ -50,7 +48,6 @@ Content: ${JSON.stringify(data)}`,
         throw new Error(errorDetails.error || "Failed to get AI response");
       }
 
-      // 处理 Eliza 响应...
       const reader = aiResponse.body?.getReader();
       let aiContent = "";
 
@@ -79,7 +76,6 @@ Content: ${JSON.stringify(data)}`,
         throw new Error("Failed to parse Eliza response");
       }
     }
-    // 如果没有配置 Eliza 但配置了 Google AI
     else if (GOOGLE_API_KEY) {
       const prompt = {
         announcement_request: {
@@ -118,7 +114,6 @@ Content: ${JSON.stringify(data)}`,
       throw new Error("Could not generate announcement text");
     }
 
-    // 发送到 Discord
     if (DISCORD_BOT_TOKEN) {
       const discordResponse = await fetch(
         `https://discord.com/api/v10/channels/${channelId}/messages`,
@@ -140,7 +135,6 @@ Content: ${JSON.stringify(data)}`,
       }
     }
 
-    // 发送到 Telegram
     if (TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
       const telegramResponse = await fetch(
         `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,

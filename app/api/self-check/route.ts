@@ -11,7 +11,7 @@ import { headers } from 'next/headers';
 
 const SIGNER_PRIVATE_KEY = process.env.SIGNER_ADDRESS_PRIVATE_KEY as `0x${string}`;
 
-// 支持的链配置
+// Supported chain configurations
 const SUPPORTED_CHAINS: Record<string, Chain> = {
   'BSC': bsc,
   'BSC Testnet': bscTestnet,
@@ -29,17 +29,17 @@ const SUPPORTED_CHAINS: Record<string, Chain> = {
 
 const aiReviewService = new AIReviewService();
 
-// 获取基础 URL
+// Get the base URL
 function getBaseUrl() {
   const headersList = headers();
   const host = headersList.get('host') || 'localhost:3000';
   return `https://${host}`;
 }
 
-// 验证社交账号操作
+// Verify social account operation
 async function verifySocialAction(taskConfig: any, proofData: any) {
   try {
-    // 如果没有社交账号任务配置，直接返回 true
+    // If there is no social account task configuration, return true directly
     if (!taskConfig.XFollowUsername &&
         !taskConfig.XLikeId &&
         !taskConfig.XRetweetId &&
@@ -49,13 +49,13 @@ async function verifySocialAction(taskConfig: any, proofData: any) {
 
     const baseUrl = getBaseUrl();
 
-    // 检查是否有 Twitter 相关任务
+    // Check if there are Twitter-related tasks
     if (taskConfig.XFollowUsername || taskConfig.XLikeId || taskConfig.XRetweetId) {
       if (!proofData.encryptedTokens || !proofData.xId) {
         throw new Error('Missing Twitter account information');
       }
 
-      // 验证 Twitter 账号
+      // Verify Twitter account
       const verifyResponse = await fetch(`${baseUrl}/api/social/twitter/check-actions`, {
         method: 'POST',
         headers: {
@@ -82,7 +82,7 @@ async function verifySocialAction(taskConfig: any, proofData: any) {
       }
     }
 
-    // 验证 Discord 加入
+    // Verify Discord join
     if (taskConfig.DiscordChannelId) {
       if (!proofData.encryptedTokens || !proofData.discordId) {
         throw new Error('Missing Discord account information');
@@ -121,7 +121,7 @@ export async function POST(req: NextRequest) {
   try {
     const { boardId, boardConfig, taskId, address, proof, chainName, task } = await req.json();
 
-    // 验证参数
+    // Validate parameters
     if (!boardId || !taskId || !address || !proof || !chainName || !task) {
       return NextResponse.json(
         { error: 'Missing required parameters' },
@@ -129,7 +129,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 获取对应链的配置
+    // Get the configuration for the corresponding chain
     const chain = SUPPORTED_CHAINS[chainName];
     if (!chain) {
       return NextResponse.json(
@@ -138,7 +138,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 获取对应链的合约地址
     const contractAddr = contractAddress.BountyBoard[chain.name as keyof typeof contractAddress.BountyBoard];
     if (!contractAddr) {
       return NextResponse.json(
@@ -147,7 +146,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 验证任务是否允许自检
+    // Verify if the task allows self-inspection
     if (!task.allowSelfCheck) {
       return NextResponse.json(
         { error: 'Task does not allow self-check' },
@@ -159,7 +158,7 @@ export async function POST(req: NextRequest) {
     const taskConfig = task.config;
     const proofData = JSON.parse(proof);
 
-    // 添加社交账号验证
+    // Add social account verification
     try {
       await verifySocialAction(taskConfig, proofData);
     } catch (error: any) {
@@ -169,7 +168,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 如果任务配置中启用了 AI Review
+    // If AI Review is enabled in the task configuration
     if (taskConfig.aiReview) {
       const aiReviewResult = await aiReviewService.review({
         boardConfig,
@@ -191,23 +190,23 @@ export async function POST(req: NextRequest) {
       checkData = aiReviewResult.reviewComment;
     }
 
-    // 构造消息
+    // Construct message
     const message = encodeAbiParameters(
       parseAbiParameters('uint256, uint256, address, string'),
       [BigInt(boardId), BigInt(taskId), address as `0x${string}`, checkData]
     );
 
-    // 计算消息哈希
+    // Calculate message hash
     const messageHash = keccak256(message);
 
-    // 验证私钥格式
+    // Validate private key format
     if (!SIGNER_PRIVATE_KEY || !SIGNER_PRIVATE_KEY.startsWith('0x') || SIGNER_PRIVATE_KEY.length !== 66) {
       throw new Error('Invalid SIGNER_PRIVATE_KEY format');
     }
 
     const account = privateKeyToAccount(SIGNER_PRIVATE_KEY);
 
-    // 签名消息
+    // Sign the message
     const signature = await account.signMessage({
       message: { raw: messageHash } as SignableMessage
     });

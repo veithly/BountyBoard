@@ -673,7 +673,7 @@ export class MessageManager {
             },
         });
 
-        // 使用默认公告模板
+        // Use default notice template
         const template = discordAnnouncementTemplate;
 
         const context = composeContext({

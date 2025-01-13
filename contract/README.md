@@ -358,7 +358,7 @@ forge verify-contract \
 
 forge verify-contract \
   --verifier-url https://explorer.monad-devnet.devnet101.com/api \
-  0x7F5c43e497d7F3392e7114809856Ac2fCc9454A6 \
+  0x397e12962a9dCed668FD5b7B2bfAfE585bdad323 \
   lib/openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Proxy.sol:ERC1967Proxy \
   --constructor-args $(cast abi-encode "constructor(address,bytes)" "0x7F5c43e497d7F3392e7114809856Ac2fCc9454A6" $(cast calldata "initialize(address)" "0x2809dCa37069918607b1eAaf591dE29fC389D3Cc"))
 ```

@@ -316,6 +316,7 @@ export default function CreateTaskModal({
                 <SelectValue placeholder="Select Network" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="Monad Devnet">Monad Devnet</SelectItem>
                 <SelectItem value="opBNB">Op BNB</SelectItem>
                 <SelectItem value="opBNB Testnet">Op BNB Testnet</SelectItem>
                 <SelectItem value="BSC">BSC</SelectItem>
@@ -328,7 +329,6 @@ export default function CreateTaskModal({
                 <SelectItem value="Linea Sepolia">Linea Sepolia</SelectItem>
                 <SelectItem value="Ethereum">Ethereum</SelectItem>
                 <SelectItem value="Sepolia">Sepolia</SelectItem>
-                <SelectItem value="Monad Devnet">Monad Devnet</SelectItem>
               </SelectContent>
             </Select>
           </div>

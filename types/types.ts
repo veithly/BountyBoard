@@ -11,7 +11,7 @@ export interface Member {
   member: `0x${string}`;
 }
 
-// Board 相关接口
+// Board related interfaces
 export interface BoardView {
   id: bigint;
   creator: `0x${string}`;
@@ -29,7 +29,7 @@ export interface BoardConfig {
   channelId?: string;
 }
 
-// Task 相关接口
+// Task related interfaces
 export interface TaskView {
   id: bigint;
   name: string;
@@ -47,7 +47,7 @@ export interface TaskView {
   reviewers: `0x${string}`[];
 }
 
-// Submission 相关接口
+// Submission related interfaces
 export interface SubmissionView {
   submitter: `0x${string}`;
   proof: string;
@@ -56,7 +56,7 @@ export interface SubmissionView {
   reviewComment: string;
 }
 
-// Board 详情视图接口
+// Board Detail View Interface
 export interface BoardDetailView {
   id: bigint;
   creator: `0x${string}`;
@@ -74,7 +74,7 @@ export interface BoardDetailView {
   config: string;
 }
 
-// 创建 Board 的参数接口
+// Create parameter interface for Board
 export interface CreateBoardParams {
   name: string;
   description: string;
@@ -96,7 +96,7 @@ export interface TaskConfig {
   DiscordInviteLink?: string;
 }
 
-// 创建 Task 的参数接口
+// Interface for creating Task parameters
 export interface CreateTaskParams {
   boardId: bigint;
   name: string;
@@ -108,7 +108,7 @@ export interface CreateTaskParams {
   allowSelfCheck: boolean;
 }
 
-// 更新 Task 的参数接口
+// Update the parameter interface of Task
 export interface UpdateTaskParams extends CreateTaskParams {
   taskId: bigint;
 }
@@ -139,14 +139,14 @@ export interface SelfCheckParams {
   checkData: string;
 }
 
-// 提交 Proof 的参数接口
+// Interface for submitting Proof parameters
 export interface SubmitProofParams {
   boardId: bigint;
   taskId: bigint;
   proof: string;
 }
 
-// 审核提交的参数接口
+// Interface for auditing submitted parameters
 export interface ReviewSubmissionParams {
   boardId: bigint;
   taskId: bigint;
@@ -155,20 +155,20 @@ export interface ReviewSubmissionParams {
   reviewComment: string;
 }
 
-// 添加审核员的参数接口
+// Add the parameter interface for the auditor
 export interface AddReviewerParams {
   boardId: bigint;
   taskId: bigint;
   reviewer: string;
 }
 
-// 质押代币的参数接口
+// Parameters interface for staking tokens
 export interface PledgeTokensParams {
   boardId: bigint;
   amount: number;
 }
 
-// 更新 Board 的参数接口
+// Update the parameter interface of Board
 export interface UpdateBoardParams {
   boardId: bigint;
   name: string;
@@ -193,7 +193,7 @@ export interface TaskDetailView {
   allowSelfCheck: boolean;
 }
 
-// 用户任务状态接口
+// User task status interface
 export interface UserTaskStatus {
   taskId: bigint;
   submitted: boolean;

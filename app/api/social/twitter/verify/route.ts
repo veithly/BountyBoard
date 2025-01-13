@@ -14,7 +14,7 @@ export async function GET(req: Request) {
       );
     }
 
-    // 使用传入的 token 获取用户信息
+    // Use the passed token to obtain user information
     const response = await fetch(
       `https://api.twitter.com/2/users/me`, {
         headers: {

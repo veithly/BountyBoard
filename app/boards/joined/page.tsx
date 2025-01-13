@@ -16,16 +16,16 @@ function JoinedBoardsPageInner() {
   const { address } = useAccount();
   const { data: boardsData = [], isLoading } = useGetBoardsByMember(address);
 
-  // 获取所有创建者地址
+  // Get all creator addresses
   const creatorAddresses = useMemo(() => {
     if (!boardsData || !Array.isArray(boardsData)) return [];
     return boardsData.map((board: BoardView) => board.creator as `0x${string}`);
   }, [boardsData]);
 
-  // 批量获取创建者资料
+  // Batch retrieve creator profiles
   const { data: profilesData } = useGetProfiles(creatorAddresses);
 
-  // 将资料数据转换为映射格式
+  // Convert data information into a map format
   const creatorProfiles = useMemo(() => {
     if (!profilesData || !Array.isArray(profilesData)) return {};
 
@@ -40,7 +40,7 @@ function JoinedBoardsPageInner() {
     }, {} as Record<string, { nickname: string; avatar: string; socialAccount: string }>);
   }, [profilesData, creatorAddresses]);
 
-  // 如果未连接钱包，显示提示信息
+  // If the wallet is not connected, display a prompt message.
   if (!address) {
     return (
       <div className="container mx-auto p-6 text-center">

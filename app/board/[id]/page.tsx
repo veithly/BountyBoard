@@ -107,7 +107,7 @@ export default function BoardPage() {
 
   const { data: board, refetch } = useGetBoardDetail(BigInt(id as string));
 
-  // 获取所有需要获取资料的地址
+  // Get all the addresses that need to obtain information.
   const addressesToFetch = useMemo(() => {
     if (!board || typeof board !== "object") return [];
 
@@ -135,10 +135,10 @@ export default function BoardPage() {
     return Array.from(addresses);
   }, [board]);
 
-  // 批量获取用户资料
+  // Batch retrieve user profiles
   const { data: profilesData } = useGetProfiles(addressesToFetch);
 
-  // 将资料数据转换为映射格式
+  // Convert data information into a map format
   const userProfiles = useMemo(() => {
     if (!profilesData || !Array.isArray(profilesData)) return {};
 
@@ -303,7 +303,7 @@ function BoardDetails({
     hash: transactionHash,
   });
 
-  // 监听交易确认状态
+  // Listen for transaction confirmation status
   useEffect(() => {
     if (isConfirming) {
       toast({
@@ -320,7 +320,7 @@ function BoardDetails({
         title: "Success!",
         description: "Transaction confirmed.",
       });
-      setTransactionHash(undefined); // 重置交易哈希值
+      setTransactionHash(undefined); // Reset transaction hash value
       refetch();
     } else if (error) {
       toast({
@@ -328,7 +328,7 @@ function BoardDetails({
         description: "Transaction failed.",
         variant: "destructive",
       });
-      setTransactionHash(undefined); // 重置交易哈希值
+      setTransactionHash(undefined); // Reset transaction hash value
     }
   }, [isConfirming, isConfirmed, error, refetch]);
 
@@ -378,7 +378,7 @@ function BoardDetails({
 
   const tokenSymbol = useTokenSymbol(board.rewardToken);
 
-  // 处理创建任务
+  // Handle task creation
   const handleCreateTask = async (data: any) => {
     const result = await createTask({
       boardId: board.id,
@@ -393,7 +393,7 @@ function BoardDetails({
     return result;
   };
 
-  // 处理更新任务
+  // Handle update task
   const handleUpdateTask = async (data: any) => {
     if (!selectedTaskForUpdate) return;
     const result = await updateTask({
@@ -410,7 +410,7 @@ function BoardDetails({
     return result;
   };
 
-  // 打开更新任务模态框
+  // Open the update task modal box
   const handleOpenUpdateTaskModal = (task: TaskView) => {
     setSelectedTaskForUpdate(task);
     setIsUpdateTaskModalOpen(true);

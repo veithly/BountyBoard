@@ -14,7 +14,7 @@ export async function GET(req: Request) {
       );
     }
 
-    // 使用 Discord API 获取用户信息
+    // Use Discord API to get user information
     const response = await fetch(
       `https://discord.com/api/users/@me`, {
         headers: {

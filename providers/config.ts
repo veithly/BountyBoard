@@ -10,12 +10,12 @@ import {
 } from '@rainbow-me/rainbowkit/wallets'
 import { connectorsForWallets } from '@rainbow-me/rainbowkit'
 
-// 根据环境变量决定使用的链
+// accroding to the environment variable
 const chains = process.env.NODE_ENV === 'development'
-  ? [anvil, flowTestnet, opBNBTestnet, monad] as const
-  : [flowTestnet, opBNBTestnet, monad] as const
+  ? [anvil, monad] as const
+  : [monad] as const
 
-// 配置钱包
+// configure wallets
 const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || ''
 
 const connectors = connectorsForWallets(
@@ -37,7 +37,7 @@ const connectors = connectorsForWallets(
   }
 )
 
-// 配置 transport
+// configure transports
 const transports = Object.fromEntries(
   chains.map((chain) => [chain.id, http()])
 ) as Record<number, ReturnType<typeof http>>
