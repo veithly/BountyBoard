@@ -74,7 +74,7 @@ export default function SubmissionDetailsModal({
 
   const getExplorerUrl = (address: string, network?: string) => {
     switch (network) {
-      case 'Monad':
+      case 'Monad Devnet':
         return `https://explorer.monad-devnet.devnet101.com/address/${address}`;
       case 'Mantle':
         return `https://explorer.mantle.xyz/address/${address}`;
