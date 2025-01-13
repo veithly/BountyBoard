@@ -26,7 +26,7 @@ import { getNativeTokenSymbol } from "@/utils/chain";
 
 function getUserProfileAddress(chain?: { name: string }) {
   return contractAddress.UserProfile[
-    (chain?.name || 'Flow EVM Testnet') as keyof typeof contractAddress.UserProfile
+    (chain?.name || 'Monad Devnet') as keyof typeof contractAddress.UserProfile
   ] as `0x${string}`;
 }
 
@@ -374,7 +374,7 @@ export function useGetAllBoards() {
   const { chain } = useAccount();
 
   const bountyBoardAddress = contractAddress.BountyBoard[
-    (chain?.name || 'Flow EVM Testnet') as keyof typeof contractAddress.BountyBoard
+    (chain?.name || 'Monad Devnet') as keyof typeof contractAddress.BountyBoard
   ] as `0x${string}`;
 
   return useReadContract<typeof abi, "getAllBoards", BoardView[]>({
@@ -391,7 +391,7 @@ export function useGetBoardDetail(boardId: bigint) {
   const { chain, address } = useAccount();
 
   const bountyBoardAddress = contractAddress.BountyBoard[
-    (chain?.name || 'Flow EVM Testnet') as keyof typeof contractAddress.BountyBoard
+    (chain?.name || 'Monad Devnet') as keyof typeof contractAddress.BountyBoard
   ] as `0x${string}`;
 
   return useReadContract<typeof abi, "getBoardDetail", [BoardDetailView]>({
