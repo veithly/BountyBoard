@@ -164,19 +164,18 @@ BountyBoard
 
 ```shell
 forge verify-contract \
-  --verifier-url https://api-opbnb-testnet.bscscan.com/api \
-  --etherscan-api-key $OPBNBSCAN_API_KEY \
-  --compiler-version "v0.8.27+commit.40a35a09" \
-  0x7F5c43e497d7F3392e7114809856Ac2fCc9454A6 \
+  --verifier-url https://open-platform.nodereal.io/211305baaf5045a5b95b113001d5ce08/op-bnb-testnet/contract/ \
+  0x2444c80AFB66c86441055cEa9fEf7C8145b652b1 \
   src/BountyBoard.sol:BountyBoard \
   --constructor-args $(cast abi-encode "constructor()") \
   --watch
+
 
 forge verify-contract \
   --verifier-url https://api-opbnb-testnet.bscscan.com/api \
   --etherscan-api-key $OPBNBSCAN_API_KEY \
   --compiler-version "v0.8.27+commit.40a35a09" \
-  0x397e12962a9dCed668FD5b7B2bfAfE585bdad323 \
+  0x7F5c43e497d7F3392e7114809856Ac2fCc9454A6 \
   lib/openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Proxy.sol:ERC1967Proxy \
   --constructor-args $(cast abi-encode "constructor(address,bytes)" "0x7F5c43e497d7F3392e7114809856Ac2fCc9454A6" "0xc4d66de80000000000000000000000002809dca37069918607b1eaaf591de29fc389d3cc") \
   --watch
@@ -367,4 +366,13 @@ cast send --rpc-url https://testnet.evm.nodes.onflow.org \
   "upgradeToAndCall(address,bytes)" \
   0x1483b61733f607eD7813769b2FF55b5649731dd6 \ # implementation
   0x
+
+# opbnb
+cast send --rpc-url $RPC_URL_OPBNB \
+  --private-key $PRIVATE_KEY_OPBNB \
+  0x397e12962a9dCed668FD5b7B2bfAfE585bdad323 \ # proxy
+  "upgradeToAndCall(address,bytes)" \
+  0x2444c80AFB66c86441055cEa9fEf7C8145b652b1 \ # implementation
+  0x
 ```
+
