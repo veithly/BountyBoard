@@ -84,9 +84,9 @@ pnpm start --characters="characters/BountyBoard.character.json"
 
 **Home**
 
-![Bounty Board](./assets/screenshotHome.png)
+![Bounty Board](./assets/ScreenshotHome.png)
 
 **Task**
 
-![Bounty Board](./assets/screenshotTask.png)
+![Bounty Board](./assets/ScreenshotTask.png)
 
