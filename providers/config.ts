@@ -1,5 +1,5 @@
 import { http, createConfig } from 'wagmi'
-import { flowTestnet, opBNBTestnet, anvil } from 'wagmi/chains'
+import { lineaSepolia, flowTestnet, opBNBTestnet, anvil } from 'wagmi/chains'
 import monad from './monad'
 import {
   injectedWallet,
@@ -12,8 +12,8 @@ import { connectorsForWallets } from '@rainbow-me/rainbowkit'
 
 // accroding to the environment variable
 const chains = process.env.NODE_ENV === 'development'
-  ? [anvil, monad] as const
-  : [monad] as const
+  ? [anvil, lineaSepolia, flowTestnet, opBNBTestnet, monad] as const
+  : [lineaSepolia, flowTestnet, opBNBTestnet] as const
 
 // configure wallets
 const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || ''
