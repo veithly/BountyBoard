@@ -11,13 +11,13 @@ import { Suspense } from "react";
 // Use Cases data
 const USE_CASES = [
   {
-    title: "Developer Education",
-    image: "/home/DeveloperEducation.jpg",
-    description: "Attract developers to your project ecosystem through AI-powered learning paths and incentivized development programs.",
+    title: "Community Building",
+    image: "/home/CommunityBuilding.jpg",
+    description: "Encourage DAO members to organize and participate in community activities with automated reward distribution.",
     features: [
-      "Create collaborative study groups and track learning progress within the Bounty Board platform",
-      "Reward contributors upon completion of project milestones, incentivizing continued engagement",
-      "Utilize AI to automate code reviews, ensuring efficient and consistent evaluation of submissions"
+      "AI-assisted Discord and social media engagement tracking",
+      "Automated community event management and reward distribution",
+      "Smart contract-based governance participation incentives"
     ],
     reverse: false
   },
@@ -33,13 +33,13 @@ const USE_CASES = [
     reverse: true
   },
   {
-    title: "Community Building",
-    image: "/home/CommunityBuilding.jpg",
-    description: "Encourage DAO members to organize and participate in community activities with automated reward distribution.",
+    title: "Developer Education",
+    image: "/home/DeveloperEducation.jpg",
+    description: "Attract developers to your project ecosystem through AI-powered learning paths and incentivized development programs.",
     features: [
-      "AI-assisted Discord and social media engagement tracking",
-      "Automated community event management and reward distribution",
-      "Smart contract-based governance participation incentives"
+      "Create collaborative study groups and track learning progress within the Bounty Board platform",
+      "Reward contributors upon completion of project milestones, incentivizing continued engagement",
+      "Utilize AI to automate code reviews, ensuring efficient and consistent evaluation of submissions"
     ],
     reverse: false
   }

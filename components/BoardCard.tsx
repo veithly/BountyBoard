@@ -52,7 +52,7 @@ export default function BoardCard({
           </div>
         </CardHeader>
         <CardContent className="p-4 md:p-6 pt-0 md:pt-0">
-          <p className="text-sm text-muted-foreground min-h-[3rem] break-words line-clamp-2 mb-4">
+          <p className="text-sm text-muted-foreground min-h-[2rem] line-clamp-2 mb-3">
             {board.description}
           </p>
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 md:gap-4 text-xs text-muted-foreground">
