@@ -1,0 +1,19 @@
+[package]
+name = "bounty-board"
+version = "0.1.0"
+edition = "2021"
+description = "Bounty Board Program for Solana"
+authors = ["Your Name <your.email@example.com>"]
+
+[features]
+no-entrypoint = []
+
+[dependencies]
+solana-program = "1.17.7"
+borsh = "0.10.3"
+thiserror = "1.0.50"
+spl-token = { version = "4.0.0", features = ["no-entrypoint"] }
+spl-associated-token-account = { version = "2.2.0", features = ["no-entrypoint"] }
+
+[lib]
+crate-type = ["cdylib", "lib"]
